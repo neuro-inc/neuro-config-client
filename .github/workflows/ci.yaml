@@ -10,9 +10,6 @@ on:
 jobs:
   test:
     name: Run client tests
-    defaults:
-      run:
-        working-directory: client
     runs-on: ubuntu-latest
     steps:
     - name: Checkout commit
