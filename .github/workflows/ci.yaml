@@ -29,8 +29,7 @@ jobs:
           hashFiles('setup.py') }}
     - name: Install dependencies
       run: |
-        pip3 install -U pip
-        pip3 install -r requirements/dev.txt
+        python -m pip install -r requirements/dev.txt
     - name: Lint
       run: make lint
       env:
