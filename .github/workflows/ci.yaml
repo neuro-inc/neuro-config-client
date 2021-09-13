@@ -28,9 +28,9 @@ jobs:
         key: ${{ runner.os }}-py-3.8-${{ hashFiles('requirements/*.txt') }}-${{
           hashFiles('setup.py') }}
     - name: Install dependencies
-      pip install -U pip
-      pip install -r requirements/dev.txt
-      run: make setup
+      run: |
+        pip install -U pip
+        pip install -r requirements/dev.txt
     - name: Lint
       run: make lint
       env:
