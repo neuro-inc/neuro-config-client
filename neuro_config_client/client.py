@@ -3,6 +3,7 @@ from types import TracebackType
 from typing import Optional, Sequence, Type
 
 import aiohttp
+from aiohttp import ClientResponseError
 from yarl import URL
 
 from .converters import PrimitiveToClusterConverter
@@ -70,3 +71,16 @@ class ConfigClient:
             response.raise_for_status()
             payload = await response.json()
             return self._primitive_to_cluster_converter.convert_cluster(payload)
+
+    async def create_blank_cluster(
+        self, name: str, token: str, ignore_existing: bool = False
+    ) -> None:
+        assert self._client
+        payload = {"name": name, "token": token}
+        try:
+            async with self._client.post(self._clusters_url, json=payload) as resp:
+                resp.raise_for_status()
+        except ClientResponseError as e:
+            is_existing = e.status == 400 and "already exists" in e.message
+            if not ignore_existing or is_existing:
+                raise
