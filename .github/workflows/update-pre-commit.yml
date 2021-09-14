@@ -12,7 +12,7 @@ jobs:
       with:
         python-version: 3.8.10
     - name: Install dependencies
-      run: cd server && make setup
+      run: make setup
     - name: Run pre-commit autoupdate
       run: pre-commit autoupdate
     - id: generate_token
