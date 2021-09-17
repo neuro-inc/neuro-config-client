@@ -22,14 +22,16 @@ jobs:
       uses: actions/cache@v2.1.6
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-py-3.8-${{ hashFiles('requirements.txt') }}-${{
-          hashFiles('setup.py') }}
+        key: ${{ runner.os }}-py-3.8-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py')
+          }}
     - name: Install dependencies
       uses: py-actions/py-dependency-install@v2
       with:
         path: requirements.txt
     - name: Lint
-      run: make lint
+      run: |
+        echo "::add-matcher::.github/actionlint-matcher.json"
+        make run
       env:
         CI_LINT_RUN: 1
     - name: Run tests
