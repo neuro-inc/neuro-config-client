@@ -7,8 +7,15 @@ from yarl import URL
 
 
 @dataclass(frozen=True)
+class ExtraStorageConfig:
+    path: str
+    size_mb: int
+
+
+@dataclass(frozen=True)
 class StorageConfig:
     url: URL
+    extra_storage: Sequence[ExtraStorageConfig] = ()
 
 
 @dataclass(frozen=True)
