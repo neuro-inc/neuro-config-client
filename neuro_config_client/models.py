@@ -52,6 +52,7 @@ class DisksConfig:
 @dataclass(frozen=True)
 class BucketsConfig:
     url: URL
+    disable_creation: bool = False
 
 
 class ACMEEnvironment(str, enum.Enum):

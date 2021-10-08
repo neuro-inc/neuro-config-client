@@ -370,9 +370,13 @@ class TestPrimitiveToCLusterConverter:
         )
 
     def test_convert_buckets(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_buckets({"url": "https://buckets-dev.neu.ro"})
+        result = converter.convert_buckets(
+            {"url": "https://buckets-dev.neu.ro", "disable_creation": True}
+        )
 
-        assert result == BucketsConfig(url=URL("https://buckets-dev.neu.ro"))
+        assert result == BucketsConfig(
+            url=URL("https://buckets-dev.neu.ro"), disable_creation=True
+        )
 
     def test_convert_ingress(self, converter: PrimitiveToClusterConverter) -> None:
         result = converter.convert_ingress(
