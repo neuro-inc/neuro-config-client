@@ -226,6 +226,7 @@ class PrimitiveToClusterConverter:
     def convert_buckets(self, payload: Dict[str, Any]) -> BucketsConfig:
         return BucketsConfig(
             url=URL(payload["url"]),
+            disable_creation=payload.get("disable_creation", False),
         )
 
     def convert_ingress(self, payload: Dict[str, Any]) -> IngressConfig:
