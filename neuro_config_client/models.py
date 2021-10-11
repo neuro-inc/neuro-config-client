@@ -8,8 +8,8 @@ from yarl import URL
 
 @dataclass(frozen=True)
 class VolumeConfig:
-    path: str
     size_mb: int
+    path: Optional[str] = None
 
 
 @dataclass(frozen=True)

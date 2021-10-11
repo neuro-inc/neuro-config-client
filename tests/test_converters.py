@@ -286,13 +286,19 @@ class TestPrimitiveToCLusterConverter:
         result = converter.convert_storage(
             {
                 "url": "https://storage-dev.neu.ro",
-                "volumes": [{"path": "/volume", "size_mb": 1024}],
+                "volumes": [
+                    {"path": "/volume", "size_mb": 1024},
+                    {"size_mb": 1025},
+                ],
             }
         )
 
         assert result == StorageConfig(
             url=URL("https://storage-dev.neu.ro"),
-            volumes=[VolumeConfig(path="/volume", size_mb=1024)],
+            volumes=[
+                VolumeConfig(path="/volume", size_mb=1024),
+                VolumeConfig(size_mb=1025),
+            ],
         )
 
     def test_convert_blob_storage(self, converter: PrimitiveToClusterConverter) -> None:
