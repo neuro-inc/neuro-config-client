@@ -11,7 +11,6 @@ from .models import (
     Cluster,
     DisksConfig,
     DNSConfig,
-    ExtraStorageConfig,
     IdleJobConfig,
     IngressConfig,
     MetricsConfig,
@@ -25,6 +24,7 @@ from .models import (
     StorageConfig,
     TPUPreset,
     TPUResource,
+    VolumeConfig,
 )
 
 
@@ -177,13 +177,11 @@ class PrimitiveToClusterConverter:
     def convert_storage(self, payload: Dict[str, Any]) -> StorageConfig:
         return StorageConfig(
             url=URL(payload["url"]),
-            extra_storage=[
-                self.convert_extra_storage(e) for e in payload.get("extra_storage", ())
-            ],
+            volumes=[self.convert_volume(e) for e in payload.get("volumes", ())],
         )
 
-    def convert_extra_storage(self, payload: Dict[str, Any]) -> ExtraStorageConfig:
-        return ExtraStorageConfig(path=payload["path"], size_mb=payload["size_mb"])
+    def convert_volume(self, payload: Dict[str, Any]) -> VolumeConfig:
+        return VolumeConfig(path=payload["path"], size_mb=payload["size_mb"])
 
     def convert_blob_storage(self, payload: Dict[str, Any]) -> BlobStorageConfig:
         return BlobStorageConfig(url=URL(payload["url"]))
