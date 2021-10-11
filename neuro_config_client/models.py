@@ -7,7 +7,7 @@ from yarl import URL
 
 
 @dataclass(frozen=True)
-class ExtraStorageConfig:
+class VolumeConfig:
     path: str
     size_mb: int
 
@@ -15,7 +15,7 @@ class ExtraStorageConfig:
 @dataclass(frozen=True)
 class StorageConfig:
     url: URL
-    extra_storage: Sequence[ExtraStorageConfig] = ()
+    volumes: Sequence[VolumeConfig] = ()
 
 
 @dataclass(frozen=True)

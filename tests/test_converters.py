@@ -13,7 +13,6 @@ from neuro_config_client.models import (
     Cluster,
     DisksConfig,
     DNSConfig,
-    ExtraStorageConfig,
     IdleJobConfig,
     IngressConfig,
     MetricsConfig,
@@ -27,6 +26,7 @@ from neuro_config_client.models import (
     StorageConfig,
     TPUPreset,
     TPUResource,
+    VolumeConfig,
 )
 
 
@@ -277,22 +277,22 @@ class TestPrimitiveToCLusterConverter:
         result = converter.convert_storage({"url": "https://storage-dev.neu.ro"})
 
         assert result == StorageConfig(
-            url=URL("https://storage-dev.neu.ro"), extra_storage=[]
+            url=URL("https://storage-dev.neu.ro"), volumes=[]
         )
 
-    def test_convert_storage_with_extra_storage(
+    def test_convert_storage_with_volumes(
         self, converter: PrimitiveToClusterConverter
     ) -> None:
         result = converter.convert_storage(
             {
                 "url": "https://storage-dev.neu.ro",
-                "extra_storage": [{"path": "/extra", "size_mb": 1024}],
+                "volumes": [{"path": "/volume", "size_mb": 1024}],
             }
         )
 
         assert result == StorageConfig(
             url=URL("https://storage-dev.neu.ro"),
-            extra_storage=[ExtraStorageConfig(path="/extra", size_mb=1024)],
+            volumes=[VolumeConfig(path="/volume", size_mb=1024)],
         )
 
     def test_convert_blob_storage(self, converter: PrimitiveToClusterConverter) -> None:
