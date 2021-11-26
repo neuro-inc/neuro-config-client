@@ -84,3 +84,8 @@ class ConfigClient:
             is_existing = e.status == 400 and "already exists" in e.message
             if not ignore_existing or is_existing:
                 raise
+
+    async def delete_cluster(self, name: str) -> None:
+        assert self._client
+        async with self._client.delete(self._clusters_url / name) as resp:
+            resp.raise_for_status()
