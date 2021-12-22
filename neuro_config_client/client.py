@@ -10,7 +10,6 @@ from yarl import URL
 from .converters import PrimitiveToClusterConverter
 from .models import Cluster
 
-
 logger = logging.getLogger(__name__)
 
 

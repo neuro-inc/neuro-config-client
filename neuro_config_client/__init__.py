@@ -18,7 +18,6 @@ from .models import (
     TPUResource,
 )
 
-
 __all__ = [
     "ConfigClient",
     "DNSConfig",
