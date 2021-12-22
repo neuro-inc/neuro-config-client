@@ -1,7 +1,8 @@
 import enum
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Dict, Optional, Sequence
+from typing import Optional
 
 from yarl import URL
 
@@ -125,8 +126,8 @@ class IdleJobConfig:
     image: str
     resources: Resources
     image_secret: str = ""
-    env: Dict[str, str] = field(default_factory=dict)
-    node_selector: Dict[str, str] = field(default_factory=dict)
+    env: dict[str, str] = field(default_factory=dict)
+    node_selector: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

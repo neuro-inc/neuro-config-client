@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Sequence
 from types import TracebackType
-from typing import Optional, Sequence, Type
+from typing import Optional
 
 import aiohttp
 from aiohttp import ClientResponseError
@@ -34,7 +35,7 @@ class ConfigClient:
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> None:

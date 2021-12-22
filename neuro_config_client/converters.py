@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 from yarl import URL
 
@@ -29,7 +29,7 @@ from .models import (
 
 
 class PrimitiveToClusterConverter:
-    def convert_cluster(self, payload: Dict[str, Any]) -> Cluster:
+    def convert_cluster(self, payload: dict[str, Any]) -> Cluster:
         orchestrator = None
         if payload.get("orchestrator"):
             orchestrator = self.convert_orchestrator(payload["orchestrator"])
@@ -78,7 +78,7 @@ class PrimitiveToClusterConverter:
             dns=dns,
         )
 
-    def convert_orchestrator(self, payload: Dict[str, Any]) -> OrchestratorConfig:
+    def convert_orchestrator(self, payload: dict[str, Any]) -> OrchestratorConfig:
         return OrchestratorConfig(
             job_hostname_template=payload["job_hostname_template"],
             job_internal_hostname_template=payload.get(
@@ -103,7 +103,7 @@ class PrimitiveToClusterConverter:
             ],
         )
 
-    def convert_resource_pool_type(self, payload: Dict[str, Any]) -> ResourcePoolType:
+    def convert_resource_pool_type(self, payload: dict[str, Any]) -> ResourcePoolType:
         tpu = None
         if payload.get("tpu"):
             tpu = self.convert_tpu_resource(payload["tpu"])
@@ -128,14 +128,14 @@ class PrimitiveToClusterConverter:
             ),
         )
 
-    def convert_tpu_resource(self, payload: Dict[str, Any]) -> TPUResource:
+    def convert_tpu_resource(self, payload: dict[str, Any]) -> TPUResource:
         return TPUResource(
             ipv4_cidr_block=payload["ipv4_cidr_block"],
             types=list(payload["types"]),
             software_versions=list(payload["software_versions"]),
         )
 
-    def convert_resource_preset(self, payload: Dict[str, Any]) -> ResourcePreset:
+    def convert_resource_preset(self, payload: dict[str, Any]) -> ResourcePreset:
         tpu = None
         if payload.get("tpu"):
             tpu = self.convert_tpu_preset(payload["tpu"])
@@ -152,12 +152,12 @@ class PrimitiveToClusterConverter:
             resource_affinity=payload.get("resource_affinity", ()),
         )
 
-    def convert_tpu_preset(self, payload: Dict[str, Any]) -> TPUPreset:
+    def convert_tpu_preset(self, payload: dict[str, Any]) -> TPUPreset:
         return TPUPreset(
             type=payload["type"], software_version=payload["software_version"]
         )
 
-    def convert_idle_job(self, payload: Dict[str, Any]) -> IdleJobConfig:
+    def convert_idle_job(self, payload: dict[str, Any]) -> IdleJobConfig:
         return IdleJobConfig(
             count=payload["count"],
             image=payload["image"],
@@ -167,44 +167,44 @@ class PrimitiveToClusterConverter:
             node_selector=payload.get("node_selector") or {},
         )
 
-    def convert_resources(self, payload: Dict[str, Any]) -> Resources:
+    def convert_resources(self, payload: dict[str, Any]) -> Resources:
         return Resources(
             cpu_m=payload["cpu_m"],
             memory_mb=payload["memory_mb"],
             gpu=payload.get("gpu", 0),
         )
 
-    def convert_storage(self, payload: Dict[str, Any]) -> StorageConfig:
+    def convert_storage(self, payload: dict[str, Any]) -> StorageConfig:
         return StorageConfig(
             url=URL(payload["url"]),
             volumes=[self.convert_volume(e) for e in payload.get("volumes", ())],
         )
 
-    def convert_volume(self, payload: Dict[str, Any]) -> VolumeConfig:
+    def convert_volume(self, payload: dict[str, Any]) -> VolumeConfig:
         return VolumeConfig(path=payload.get("path"), size_mb=payload["size_mb"])
 
-    def convert_blob_storage(self, payload: Dict[str, Any]) -> BlobStorageConfig:
+    def convert_blob_storage(self, payload: dict[str, Any]) -> BlobStorageConfig:
         return BlobStorageConfig(url=URL(payload["url"]))
 
-    def convert_registry(self, payload: Dict[str, Any]) -> RegistryConfig:
+    def convert_registry(self, payload: dict[str, Any]) -> RegistryConfig:
         return RegistryConfig(url=URL(payload["url"]))
 
-    def convert_monitoring(self, payload: Dict[str, Any]) -> MonitoringConfig:
+    def convert_monitoring(self, payload: dict[str, Any]) -> MonitoringConfig:
         return MonitoringConfig(url=URL(payload["url"]))
 
-    def convert_secrets(self, payload: Dict[str, Any]) -> SecretsConfig:
+    def convert_secrets(self, payload: dict[str, Any]) -> SecretsConfig:
         return SecretsConfig(url=URL(payload["url"]))
 
-    def convert_metrics(self, payload: Dict[str, Any]) -> MetricsConfig:
+    def convert_metrics(self, payload: dict[str, Any]) -> MetricsConfig:
         return MetricsConfig(url=URL(payload["url"]))
 
-    def convert_dns(self, payload: Dict[str, Any]) -> DNSConfig:
+    def convert_dns(self, payload: dict[str, Any]) -> DNSConfig:
         return DNSConfig(
             name=payload["name"],
             a_records=[self.convert_a_record(r) for r in payload.get("a_records", [])],
         )
 
-    def convert_a_record(self, payload: Dict[str, Any]) -> ARecord:
+    def convert_a_record(self, payload: dict[str, Any]) -> ARecord:
         return ARecord(
             name=payload["name"],
             ips=payload.get("ips", []),
@@ -215,19 +215,19 @@ class PrimitiveToClusterConverter:
             ),
         )
 
-    def convert_disks(self, payload: Dict[str, Any]) -> DisksConfig:
+    def convert_disks(self, payload: dict[str, Any]) -> DisksConfig:
         return DisksConfig(
             url=URL(payload["url"]),
             storage_limit_per_user_gb=payload["storage_limit_per_user_gb"],
         )
 
-    def convert_buckets(self, payload: Dict[str, Any]) -> BucketsConfig:
+    def convert_buckets(self, payload: dict[str, Any]) -> BucketsConfig:
         return BucketsConfig(
             url=URL(payload["url"]),
             disable_creation=payload.get("disable_creation", False),
         )
 
-    def convert_ingress(self, payload: Dict[str, Any]) -> IngressConfig:
+    def convert_ingress(self, payload: dict[str, Any]) -> IngressConfig:
         return IngressConfig(
             acme_environment=ACMEEnvironment(payload["acme_environment"]),
             cors_origins=payload.get("cors_origins", ()),
