@@ -287,8 +287,8 @@ class TestPrimitiveToCLusterConverter:
             {
                 "url": "https://storage-dev.neu.ro",
                 "volumes": [
+                    {},
                     {"path": "/volume", "size_mb": 1024},
-                    {"size_mb": 1025},
                 ],
             }
         )
@@ -296,8 +296,8 @@ class TestPrimitiveToCLusterConverter:
         assert result == StorageConfig(
             url=URL("https://storage-dev.neu.ro"),
             volumes=[
+                VolumeConfig(),
                 VolumeConfig(path="/volume", size_mb=1024),
-                VolumeConfig(size_mb=1025),
             ],
         )
 

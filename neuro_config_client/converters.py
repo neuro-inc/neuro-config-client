@@ -181,7 +181,7 @@ class PrimitiveToClusterConverter:
         )
 
     def convert_volume(self, payload: dict[str, Any]) -> VolumeConfig:
-        return VolumeConfig(path=payload.get("path"), size_mb=payload["size_mb"])
+        return VolumeConfig(path=payload.get("path"), size_mb=payload.get("size_mb"))
 
     def convert_blob_storage(self, payload: dict[str, Any]) -> BlobStorageConfig:
         return BlobStorageConfig(url=URL(payload["url"]))
