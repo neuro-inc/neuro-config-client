@@ -9,7 +9,7 @@ from yarl import URL
 
 @dataclass(frozen=True)
 class VolumeConfig:
-    size_mb: int
+    size_mb: Optional[int] = None
     path: Optional[str] = None
 
 
