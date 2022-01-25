@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import logging
 from collections.abc import Sequence
 from types import TracebackType
-from typing import Optional
+from typing import Any
 
 import aiohttp
-from aiohttp import ClientResponseError
+from aiohttp import ClientResponseError, payload
 from yarl import URL
 
 from .converters import PrimitiveToClusterConverter
@@ -25,7 +27,7 @@ class ConfigClient:
         self._token = token
         self._timeout = timeout
         self._trace_configs = trace_configs
-        self._client: Optional[aiohttp.ClientSession] = None
+        self._client: aiohttp.ClientSession | None = None
         self._primitive_to_cluster_converter = PrimitiveToClusterConverter()
 
     async def __aenter__(self) -> "ConfigClient":
@@ -34,9 +36,9 @@ class ConfigClient:
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         await self.aclose()
 
@@ -89,3 +91,39 @@ class ConfigClient:
         assert self._client
         async with self._client.delete(self._clusters_url / name) as resp:
             resp.raise_for_status()
+
+    async def add_storage(
+        self,
+        cluster_name: str,
+        storage_name: str,
+        size_mb: int | None = None,
+        *,
+        start_deployment: bool = True,
+    ) -> None:
+        assert self._client
+        url = self._clusters_url / cluster_name / "cloud_provider/storages"
+        payload: dict[str, Any] = {"name": storage_name}
+        if size_mb is not None:
+            payload["size_mb"] = size_mb
+        async with self._client.post(
+            url.with_query(start_deployment=str(start_deployment).lower()),
+            json=payload,
+        ) as response:
+            response.raise_for_status()
+
+    async def remove_storage(
+        self,
+        cluster_name: str,
+        storage_name: str,
+        *,
+        start_deployment: bool = True,
+    ) -> None:
+        assert self._client
+        url = (
+            self._clusters_url / cluster_name / "cloud_provider/storages" / storage_name
+        )
+        async with self._client.delete(
+            url.with_query(start_deployment=str(start_deployment).lower()),
+            json=payload,
+        ) as response:
+            response.raise_for_status()
