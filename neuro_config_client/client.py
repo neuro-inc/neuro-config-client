@@ -99,17 +99,22 @@ class ConfigClient:
         size_mb: int | None = None,
         *,
         start_deployment: bool = True,
+        ignore_existing: bool = False,
     ) -> None:
         assert self._client
-        url = self._clusters_url / cluster_name / "cloud_provider/storages"
-        payload: dict[str, Any] = {"name": storage_name}
-        if size_mb is not None:
-            payload["size_mb"] = size_mb
-        async with self._client.post(
-            url.with_query(start_deployment=str(start_deployment).lower()),
-            json=payload,
-        ) as response:
-            response.raise_for_status()
+        try:
+            url = self._clusters_url / cluster_name / "cloud_provider/storages"
+            payload: dict[str, Any] = {"name": storage_name}
+            if size_mb is not None:
+                payload["size_mb"] = size_mb
+            async with self._client.post(
+                url.with_query(start_deployment=str(start_deployment).lower()),
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+        except ClientResponseError as e:
+            if not ignore_existing or e.status != 409:
+                raise
 
     async def remove_storage(
         self,
@@ -117,13 +122,21 @@ class ConfigClient:
         storage_name: str,
         *,
         start_deployment: bool = True,
+        ignore_not_found: bool = False,
     ) -> None:
         assert self._client
-        url = (
-            self._clusters_url / cluster_name / "cloud_provider/storages" / storage_name
-        )
-        async with self._client.delete(
-            url.with_query(start_deployment=str(start_deployment).lower()),
-            json=payload,
-        ) as response:
-            response.raise_for_status()
+        try:
+            url = (
+                self._clusters_url
+                / cluster_name
+                / "cloud_provider/storages"
+                / storage_name
+            )
+            async with self._client.delete(
+                url.with_query(start_deployment=str(start_deployment).lower()),
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+        except ClientResponseError as e:
+            if not ignore_not_found or e.status != 404:
+                raise
