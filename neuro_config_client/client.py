@@ -6,7 +6,7 @@ from types import TracebackType
 from typing import Any
 
 import aiohttp
-from aiohttp import ClientResponseError, payload
+from aiohttp import ClientResponseError
 from yarl import URL
 
 from .converters import PrimitiveToClusterConverter
@@ -133,8 +133,7 @@ class ConfigClient:
                 / storage_name
             )
             async with self._client.delete(
-                url.with_query(start_deployment=str(start_deployment).lower()),
-                json=payload,
+                url.with_query(start_deployment=str(start_deployment).lower())
             ) as response:
                 response.raise_for_status()
         except ClientResponseError as e:
