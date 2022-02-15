@@ -116,6 +116,43 @@ class ConfigClient:
             if not ignore_existing or e.status != 409:
                 raise
 
+    async def patch_storage(
+        self,
+        cluster_name: str,
+        storage_name: str | None,
+        ready: bool | None = None,
+        *,
+        start_deployment: bool = False,
+        ignore_not_found: bool = False,
+    ) -> None:
+        assert self._client
+        try:
+            if storage_name:
+                url = (
+                    self._clusters_url
+                    / cluster_name
+                    / "cloud_provider/storages"
+                    / storage_name
+                )
+            else:
+                url = (
+                    self._clusters_url
+                    / cluster_name
+                    / cluster_name
+                    / "cloud_provider/storages/default/entry"
+                )
+            payload: dict[str, Any] = {}
+            if ready is not None:
+                payload["ready"] = ready
+            async with self._client.patch(
+                url.with_query(start_deployment=str(start_deployment).lower()),
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+        except ClientResponseError as e:
+            if not ignore_not_found or e.status != 404:
+                raise
+
     async def remove_storage(
         self,
         cluster_name: str,
