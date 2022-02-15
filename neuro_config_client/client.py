@@ -122,7 +122,6 @@ class ConfigClient:
         storage_name: str | None,
         ready: bool | None = None,
         *,
-        start_deployment: bool = False,
         ignore_not_found: bool = False,
     ) -> None:
         assert self._client
@@ -145,7 +144,7 @@ class ConfigClient:
             if ready is not None:
                 payload["ready"] = ready
             async with self._client.patch(
-                url.with_query(start_deployment=str(start_deployment).lower()),
+                url,
                 json=payload,
             ) as response:
                 response.raise_for_status()
