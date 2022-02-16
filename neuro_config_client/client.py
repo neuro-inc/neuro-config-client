@@ -137,7 +137,6 @@ class ConfigClient:
                 url = (
                     self._clusters_url
                     / cluster_name
-                    / cluster_name
                     / "cloud_provider/storages/default/entry"
                 )
             payload: dict[str, Any] = {}
