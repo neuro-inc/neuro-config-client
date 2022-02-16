@@ -1,16 +1,247 @@
+from __future__ import annotations
+
+import abc
 import enum
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Optional
 
 from yarl import URL
 
 
+class CloudProviderType(str, enum.Enum):
+    AWS = "aws"
+    GCP = "gcp"
+    AZURE = "azure"
+    ON_PREM = "on_prem"
+    VCD_MTS = "vcd_mts"
+    VCD_SELECTEL = "vcd_selectel"
+
+
+class NodeRole(str, enum.Enum):
+    KUBERNETES = "kubernetes"
+    PLATFORM = "platform"
+    PLATFORM_JOB = "platform_job"
+
+
+@dataclass(frozen=True)
+class NodePool:
+    name: str
+    role: NodeRole = NodeRole.PLATFORM_JOB
+
+    min_size: int = 0
+    max_size: int = 1
+    idle_size: int = 0
+
+    machine_type: str | None = None
+    cpu: float = 1
+    available_cpu: float = 1
+    memory_mb: int = 1024
+    available_memory_mb: int = 1024
+
+    disk_size_gb: int = 20
+    disk_type: str | None = None
+
+    gpu: int | None = None
+    gpu_model: str | None = None
+
+    price: Decimal = Decimal()
+    currency: str | None = None
+
+    is_preemptible: bool = False
+
+    zones: Sequence[str] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class StorageInstance:
+    size_mb: int | None = None
+    name: str | None = None
+    ready: bool = False
+
+
+@dataclass(frozen=True)
+class Storage:
+    instances: list[StorageInstance]
+
+
+# about 'type ignore': see https://github.com/python/mypy/issues/5374
+@dataclass(frozen=True)  # type: ignore
+class CloudProvider(abc.ABC):
+    node_pools: Sequence[NodePool]
+    storage: Storage | None
+
+    @property
+    @abc.abstractmethod
+    def type(self) -> CloudProviderType:
+        pass
+
+
+@dataclass(frozen=True, repr=False)
+class AWSCredentials:
+    access_key_id: str
+    secret_access_key: str
+
+
+class EFSPerformanceMode(str, enum.Enum):
+    GENERAL_PURPOSE = "generalPurpose"
+    MAX_IO = "maxIO"
+
+
+class EFSThroughputMode(str, enum.Enum):
+    BURSTING = "bursting"
+    PROVISIONED = "provisioned"
+
+
+@dataclass(frozen=True)
+class AWSStorage(Storage):
+    id: str
+    description: str
+    performance_mode: EFSPerformanceMode
+    throughput_mode: EFSThroughputMode
+
+
+@dataclass(frozen=True)
+class AWSCloudProvider(CloudProvider):
+    region: str
+    zones: Sequence[str]
+    credentials: AWSCredentials = field(repr=False)
+    storage: AWSStorage | None
+    vpc_id: str | None = None
+
+    @property
+    def type(self) -> CloudProviderType:
+        return CloudProviderType.AWS
+
+
+class ClusterLocationType(str, enum.Enum):
+    ZONAL = "zonal"
+    REGIONAL = "regional"
+
+
+class GoogleStorageBackend(str, enum.Enum):
+    FILESTORE = "filestore"  # Google Cloud Filestore
+    GCS_NFS = "gcs-nfs"  # Google Cloud Storage
+
+
+class GoogleFilestoreTier(str, enum.Enum):
+    STANDARD = "STANDARD"
+    PREMIUM = "PREMIUM"
+
+
+@dataclass(frozen=True)
+class GoogleStorage(Storage):
+    id: str
+    description: str
+    backend: GoogleStorageBackend
+    tier: GoogleFilestoreTier | None = None
+
+
+@dataclass(frozen=True)
+class GoogleCloudProvider(CloudProvider):
+    region: str
+    zones: Sequence[str]
+    project: str
+    credentials: dict[str, str] = field(repr=False)
+    location_type: ClusterLocationType = ClusterLocationType.ZONAL
+    tpu_enabled: bool = False
+
+    @property
+    def type(self) -> CloudProviderType:
+        return CloudProviderType.GCP
+
+
+@dataclass(frozen=True)
+class AzureCredentials:
+    subscription_id: str
+    tenant_id: str
+    client_id: str
+    client_secret: str
+
+
+class AzureStorageTier(str, enum.Enum):
+    STANDARD = "Standard"
+    PREMIUM = "Premium"
+
+
+class AzureReplicationType(str, enum.Enum):
+    LRS = "LRS"
+    ZRS = "ZRS"
+
+
+@dataclass(frozen=True)
+class AzureStorage(Storage):
+    id: str
+    description: str
+    tier: AzureStorageTier
+    replication_type: AzureReplicationType
+
+
+@dataclass(frozen=True)
+class AzureCloudProvider(CloudProvider):
+    region: str
+    resource_group: str
+    credentials: AzureCredentials
+    virtual_network_cidr: str = ""
+
+    @property
+    def type(self) -> CloudProviderType:
+        return CloudProviderType.AZURE
+
+
+@dataclass(frozen=True)
+class KubernetesCredentials:
+    ca_data: str
+    token: str = ""
+    client_key_data: str = ""
+    client_cert_data: str = ""
+
+
+@dataclass(frozen=True)
+class OnPremCloudProvider(CloudProvider):
+    kubernetes_url: URL | None = None
+    credentials: KubernetesCredentials | None = None
+
+    @property
+    def type(self) -> CloudProviderType:
+        return CloudProviderType.ON_PREM
+
+
+@dataclass(frozen=True)
+class VCDCredentials:
+    user: str
+    password: str
+    ssh_password: str
+
+
+@dataclass(frozen=True)
+class VCDStorage(Storage):
+    description: str
+    profile_name: str
+    size_gib: int
+
+
+@dataclass(frozen=True)
+class VCDCloudProvider(CloudProvider):
+    _type: CloudProviderType
+    url: URL
+    organization: str
+    virtual_data_center: str
+    edge_name: str
+    edge_public_ip: str
+    edge_external_network_name: str
+    catalog_name: str
+    credentials: VCDCredentials
+
+    @property
+    def type(self) -> CloudProviderType:
+        return self._type
+
+
 @dataclass(frozen=True)
 class VolumeConfig:
-    size_mb: Optional[int] = None
-    path: Optional[str] = None
+    size_mb: int | None = None
+    path: str | None = None
 
 
 @dataclass(frozen=True)
@@ -86,9 +317,9 @@ class ResourcePreset:
     credits_per_hour: Decimal
     cpu: float
     memory_mb: int
-    gpu: Optional[int] = None
-    gpu_model: Optional[str] = None
-    tpu: Optional[TPUPreset] = None
+    gpu: int | None = None
+    gpu_model: str | None = None
+    tpu: TPUPreset | None = None
     scheduler_enabled: bool = False
     preemptible_node: bool = False
     resource_affinity: Sequence[str] = ()
@@ -105,11 +336,11 @@ class ResourcePoolType:
     memory_mb: int = 1024
     available_memory_mb: int = 1024
     disk_size_gb: int = 150
-    gpu: Optional[int] = None
-    gpu_model: Optional[str] = None
+    gpu: int | None = None
+    gpu_model: str | None = None
     price: Decimal = Decimal()
-    currency: Optional[str] = None
-    tpu: Optional[TPUResource] = None
+    currency: str | None = None
+    tpu: TPUResource | None = None
     is_preemptible: bool = False
 
 
@@ -163,14 +394,15 @@ class DNSConfig:
 @dataclass(frozen=True)
 class Cluster:
     name: str
-    orchestrator: Optional[OrchestratorConfig] = None
-    storage: Optional[StorageConfig] = None
-    blob_storage: Optional[BlobStorageConfig] = None
-    registry: Optional[RegistryConfig] = None
-    monitoring: Optional[MonitoringConfig] = None
-    secrets: Optional[SecretsConfig] = None
-    metrics: Optional[MetricsConfig] = None
-    dns: Optional[DNSConfig] = None
-    disks: Optional[DisksConfig] = None
-    buckets: Optional[BucketsConfig] = None
-    ingress: Optional[IngressConfig] = None
+    orchestrator: OrchestratorConfig | None = None
+    storage: StorageConfig | None = None
+    blob_storage: BlobStorageConfig | None = None
+    registry: RegistryConfig | None = None
+    monitoring: MonitoringConfig | None = None
+    secrets: SecretsConfig | None = None
+    metrics: MetricsConfig | None = None
+    dns: DNSConfig | None = None
+    disks: DisksConfig | None = None
+    buckets: BucketsConfig | None = None
+    ingress: IngressConfig | None = None
+    cloud_provider: CloudProvider | None = None
