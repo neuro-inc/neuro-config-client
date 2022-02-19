@@ -5,8 +5,7 @@ from unittest import mock
 import pytest
 from yarl import URL
 
-from neuro_config_client.converters import PrimitiveToClusterConverter
-from neuro_config_client.models import (
+from neuro_config_client.entities import (
     ACMEEnvironment,
     ARecord,
     AWSCloudProvider,
@@ -52,6 +51,7 @@ from neuro_config_client.models import (
     VCDStorage,
     VolumeConfig,
 )
+from neuro_config_client.factories import PrimitiveToClusterConverter
 
 
 class TestPrimitiveToCLusterConverter:

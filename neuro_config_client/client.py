@@ -9,8 +9,8 @@ import aiohttp
 from aiohttp import ClientResponseError
 from yarl import URL
 
-from .converters import PrimitiveToClusterConverter
-from .models import Cluster
+from .entities import Cluster
+from .factories import PrimitiveToClusterConverter
 
 logger = logging.getLogger(__name__)
 

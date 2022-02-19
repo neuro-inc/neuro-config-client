@@ -2,7 +2,7 @@
 from pkg_resources import get_distribution
 
 from .client import ConfigClient
-from .models import (
+from .entities import (
     ARecord,
     Cluster,
     DNSConfig,

@@ -3,7 +3,7 @@ from typing import Any
 
 from yarl import URL
 
-from .models import (
+from .entities import (
     ACMEEnvironment,
     ARecord,
     AWSCloudProvider,
