@@ -51,27 +51,25 @@ from neuro_config_client.entities import (
     VCDStorage,
     VolumeConfig,
 )
-from neuro_config_client.factories import PrimitiveToClusterConverter
+from neuro_config_client.factories import EntityFactory
 
 
-class TestPrimitiveToCLusterConverter:
+class TestEntityFactory:
     @pytest.fixture
-    def converter(self) -> PrimitiveToClusterConverter:
-        return PrimitiveToClusterConverter()
+    def factory(self) -> EntityFactory:
+        return EntityFactory()
 
-    def test_convert_empty_cluster(
-        self, converter: PrimitiveToClusterConverter
-    ) -> None:
-        result = converter.convert_cluster({"name": "default"})
+    def test_create_empty_cluster(self, factory: EntityFactory) -> None:
+        result = factory.create_cluster({"name": "default"})
 
         assert result == Cluster(name="default")
 
-    def test_convert_cluster(
+    def test_create_cluster(
         self,
-        converter: PrimitiveToClusterConverter,
+        factory: EntityFactory,
         google_cloud_provider_response: dict[str, Any],
     ) -> None:
-        result = converter.convert_cluster(
+        result = factory.create_cluster(
             {
                 "name": "default",
                 "orchestrator": {
@@ -118,8 +116,8 @@ class TestPrimitiveToCLusterConverter:
         assert result.dns
         assert result.cloud_provider
 
-    def test_convert_orchestrator(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_orchestrator(
+    def test_create_orchestrator(self, factory: EntityFactory) -> None:
+        result = factory.create_orchestrator(
             {
                 "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
                 "job_internal_hostname_template": "{job_id}.platform-jobs",
@@ -168,10 +166,8 @@ class TestPrimitiveToCLusterConverter:
             ],
         )
 
-    def test_convert_orchestrator_default(
-        self, converter: PrimitiveToClusterConverter
-    ) -> None:
-        result = converter.convert_orchestrator(
+    def test_create_orchestrator_default(self, factory: EntityFactory) -> None:
+        result = factory.create_orchestrator(
             {
                 "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
                 "job_fallback_hostname": "default.jobs-dev.neu.ro",
@@ -192,10 +188,8 @@ class TestPrimitiveToCLusterConverter:
             allow_privileged_mode=False,
         )
 
-    def test_convert_resource_pool_type(
-        self, converter: PrimitiveToClusterConverter
-    ) -> None:
-        result = converter.convert_resource_pool_type(
+    def test_create_resource_pool_type(self, factory: EntityFactory) -> None:
+        result = factory.create_resource_pool_type(
             {
                 "name": "n1-highmem-4",
                 "min_size": 1,
@@ -236,15 +230,13 @@ class TestPrimitiveToCLusterConverter:
             currency="USD",
         )
 
-    def test_convert_empty_resource_pool_type(
-        self, converter: PrimitiveToClusterConverter
-    ) -> None:
-        result = converter.convert_resource_pool_type({"name": "node-pool"})
+    def test_create_empty_resource_pool_type(self, factory: EntityFactory) -> None:
+        result = factory.create_resource_pool_type({"name": "node-pool"})
 
         assert result == ResourcePoolType(name="node-pool")
 
-    def test_convert_tpu_resource(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_tpu_resource(
+    def test_create_tpu_resource(self, factory: EntityFactory) -> None:
+        result = factory.create_tpu_resource(
             {
                 "ipv4_cidr_block": "10.0.0.0/8",
                 "types": ["tpu"],
@@ -256,10 +248,8 @@ class TestPrimitiveToCLusterConverter:
             ipv4_cidr_block="10.0.0.0/8", types=["tpu"], software_versions=["v1"]
         )
 
-    def test_convert_resource_preset(
-        self, converter: PrimitiveToClusterConverter
-    ) -> None:
-        result = converter.convert_resource_preset(
+    def test_create_resource_preset(self, factory: EntityFactory) -> None:
+        result = factory.create_resource_preset(
             {
                 "name": "cpu-small",
                 "credits_per_hour": "10",
@@ -272,10 +262,10 @@ class TestPrimitiveToCLusterConverter:
             name="cpu-small", credits_per_hour=Decimal("10"), cpu=4.0, memory_mb=1024
         )
 
-    def test_convert_resource_preset_with_memory_gpu_tpu_preemptible_affinity(
-        self, converter: PrimitiveToClusterConverter
+    def test_create_resource_preset_with_memory_gpu_tpu_preemptible_affinity(
+        self, factory: EntityFactory
     ) -> None:
-        result = converter.convert_resource_preset(
+        result = factory.create_resource_preset(
             {
                 "name": "gpu-small",
                 "credits_per_hour": "10",
@@ -303,17 +293,15 @@ class TestPrimitiveToCLusterConverter:
             resource_affinity=["gpu-k80"],
         )
 
-    def test_convert_storage(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_storage({"url": "https://storage-dev.neu.ro"})
+    def test_create_storage(self, factory: EntityFactory) -> None:
+        result = factory.create_storage({"url": "https://storage-dev.neu.ro"})
 
         assert result == StorageConfig(
             url=URL("https://storage-dev.neu.ro"), volumes=[]
         )
 
-    def test_convert_storage_with_volumes(
-        self, converter: PrimitiveToClusterConverter
-    ) -> None:
-        result = converter.convert_storage(
+    def test_create_storage_with_volumes(self, factory: EntityFactory) -> None:
+        result = factory.create_storage(
             {
                 "url": "https://storage-dev.neu.ro",
                 "volumes": [
@@ -331,35 +319,33 @@ class TestPrimitiveToCLusterConverter:
             ],
         )
 
-    def test_convert_blob_storage(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_blob_storage(
-            {"url": "https://blob-storage-dev.neu.ro"}
-        )
+    def test_create_blob_storage(self, factory: EntityFactory) -> None:
+        result = factory.create_blob_storage({"url": "https://blob-storage-dev.neu.ro"})
 
         assert result == BlobStorageConfig(url=URL("https://blob-storage-dev.neu.ro"))
 
-    def test_convert_registry(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_registry({"url": "https://registry-dev.neu.ro"})
+    def test_create_registry(self, factory: EntityFactory) -> None:
+        result = factory.create_registry({"url": "https://registry-dev.neu.ro"})
 
         assert result == RegistryConfig(url=URL("https://registry-dev.neu.ro"))
 
-    def test_convert_monitoring(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_monitoring({"url": "https://monitoring-dev.neu.ro"})
+    def test_create_monitoring(self, factory: EntityFactory) -> None:
+        result = factory.create_monitoring({"url": "https://monitoring-dev.neu.ro"})
 
         assert result == MonitoringConfig(url=URL("https://monitoring-dev.neu.ro"))
 
-    def test_convert_secrets(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_secrets({"url": "https://secrets-dev.neu.ro"})
+    def test_create_secrets(self, factory: EntityFactory) -> None:
+        result = factory.create_secrets({"url": "https://secrets-dev.neu.ro"})
 
         assert result == SecretsConfig(url=URL("https://secrets-dev.neu.ro"))
 
-    def test_convert_metrics(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_metrics({"url": "https://metrics-dev.neu.ro"})
+    def test_create_metrics(self, factory: EntityFactory) -> None:
+        result = factory.create_metrics({"url": "https://metrics-dev.neu.ro"})
 
         assert result == MetricsConfig(url=URL("https://metrics-dev.neu.ro"))
 
-    def test_convert_dns(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_dns(
+    def test_create_dns(self, factory: EntityFactory) -> None:
+        result = factory.create_dns(
             {
                 "name": "neu.ro",
                 "a_records": [{"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}],
@@ -368,19 +354,15 @@ class TestPrimitiveToCLusterConverter:
 
         assert result == DNSConfig(name="neu.ro", a_records=[mock.ANY])
 
-    def test_convert_a_record_with_ips(
-        self, converter: PrimitiveToClusterConverter
-    ) -> None:
-        result = converter.convert_a_record(
+    def test_create_a_record_with_ips(self, factory: EntityFactory) -> None:
+        result = factory.create_a_record(
             {"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}
         )
 
         assert result == ARecord(name="*.jobs-dev.neu.ro.", ips=["192.168.0.2"])
 
-    def test_convert_a_record_dns_name(
-        self, converter: PrimitiveToClusterConverter
-    ) -> None:
-        result = converter.convert_a_record(
+    def test_create_a_record_dns_name(self, factory: EntityFactory) -> None:
+        result = factory.create_a_record(
             {
                 "name": "*.jobs-dev.neu.ro.",
                 "dns_name": "load-balancer",
@@ -396,8 +378,8 @@ class TestPrimitiveToCLusterConverter:
             evaluate_target_health=True,
         )
 
-    def test_convert_disks(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_disks(
+    def test_create_disks(self, factory: EntityFactory) -> None:
+        result = factory.create_disks(
             {"url": "https://metrics-dev.neu.ro", "storage_limit_per_user_gb": 1024}
         )
 
@@ -405,8 +387,8 @@ class TestPrimitiveToCLusterConverter:
             url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user_gb=1024
         )
 
-    def test_convert_buckets(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_buckets(
+    def test_create_buckets(self, factory: EntityFactory) -> None:
+        result = factory.create_buckets(
             {"url": "https://buckets-dev.neu.ro", "disable_creation": True}
         )
 
@@ -414,8 +396,8 @@ class TestPrimitiveToCLusterConverter:
             url=URL("https://buckets-dev.neu.ro"), disable_creation=True
         )
 
-    def test_convert_ingress(self, converter: PrimitiveToClusterConverter) -> None:
-        result = converter.convert_ingress(
+    def test_create_ingress(self, factory: EntityFactory) -> None:
+        result = factory.create_ingress(
             {"acme_environment": "production", "cors_origins": ["https://app.neu.ro"]}
         )
 
@@ -424,10 +406,8 @@ class TestPrimitiveToCLusterConverter:
             cors_origins=["https://app.neu.ro"],
         )
 
-    def test_convert_ingress_defaults(
-        self, converter: PrimitiveToClusterConverter
-    ) -> None:
-        result = converter.convert_ingress({"acme_environment": "production"})
+    def test_create_ingress_defaults(self, factory: EntityFactory) -> None:
+        result = factory.create_ingress({"acme_environment": "production"})
 
         assert result == IngressConfig(acme_environment=ACMEEnvironment.PRODUCTION)
 
@@ -554,13 +534,13 @@ class TestPrimitiveToCLusterConverter:
             ),
         )
 
-    def test_convert_cloud_provider_google(
+    def test_create_cloud_provider_google(
         self,
-        converter: PrimitiveToClusterConverter,
+        factory: EntityFactory,
         google_cloud_provider: GoogleCloudProvider,
         google_cloud_provider_response: dict[str, Any],
     ) -> None:
-        result = converter.convert_cloud_provider(google_cloud_provider_response)
+        result = factory.create_cloud_provider(google_cloud_provider_response)
         assert result == google_cloud_provider
 
     @pytest.fixture
@@ -661,13 +641,13 @@ class TestPrimitiveToCLusterConverter:
             ),
         )
 
-    def test_convert_cloud_provider_aws(
+    def test_create_cloud_provider_aws(
         self,
-        converter: PrimitiveToClusterConverter,
+        factory: EntityFactory,
         aws_cloud_provider: AWSCloudProvider,
         aws_cloud_provider_response: dict[str, Any],
     ) -> None:
-        result = converter.convert_cloud_provider(aws_cloud_provider_response)
+        result = factory.create_cloud_provider(aws_cloud_provider_response)
         assert result == aws_cloud_provider
 
     @pytest.fixture
@@ -777,13 +757,13 @@ class TestPrimitiveToCLusterConverter:
             ),
         )
 
-    def test_convert_cloud_provider_azure(
+    def test_create_cloud_provider_azure(
         self,
-        converter: PrimitiveToClusterConverter,
+        factory: EntityFactory,
         azure_cloud_provider: AzureCloudProvider,
         azure_cloud_provider_response: dict[str, Any],
     ) -> None:
-        result = converter.convert_cloud_provider(azure_cloud_provider_response)
+        result = factory.create_cloud_provider(azure_cloud_provider_response)
         assert result == azure_cloud_provider
 
     @pytest.fixture
@@ -865,13 +845,13 @@ class TestPrimitiveToCLusterConverter:
             storage=None,
         )
 
-    def test_convert_cloud_provider_on_prem(
+    def test_create_cloud_provider_on_prem(
         self,
-        converter: PrimitiveToClusterConverter,
+        factory: EntityFactory,
         on_prem_cloud_provider: OnPremCloudProvider,
         on_prem_cloud_provider_response: dict[str, Any],
     ) -> None:
-        result = converter.convert_cloud_provider(on_prem_cloud_provider_response)
+        result = factory.create_cloud_provider(on_prem_cloud_provider_response)
         assert result == on_prem_cloud_provider
 
     @pytest.fixture
@@ -986,11 +966,11 @@ class TestPrimitiveToCLusterConverter:
             ),
         )
 
-    def test_convert_cloud_provider_vcd(
+    def test_create_cloud_provider_vcd(
         self,
-        converter: PrimitiveToClusterConverter,
+        factory: EntityFactory,
         vcd_cloud_provider: VCDCloudProvider,
         vcd_cloud_provider_response: dict[str, Any],
     ) -> None:
-        result = converter.convert_cloud_provider(vcd_cloud_provider_response)
+        result = factory.create_cloud_provider(vcd_cloud_provider_response)
         assert result == vcd_cloud_provider

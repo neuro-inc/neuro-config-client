@@ -10,7 +10,7 @@ from aiohttp import ClientResponseError
 from yarl import URL
 
 from .entities import Cluster
-from .factories import PrimitiveToClusterConverter
+from .factories import EntityFactory
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ class ConfigClient:
         self._timeout = timeout
         self._trace_configs = trace_configs
         self._client: aiohttp.ClientSession | None = None
-        self._primitive_to_cluster_converter = PrimitiveToClusterConverter()
+        self._entity_factory = EntityFactory()
 
     async def __aenter__(self) -> "ConfigClient":
         self._client = await self._create_http_client()
@@ -61,9 +61,7 @@ class ConfigClient:
         ) as response:
             response.raise_for_status()
             payload = await response.json()
-            return [
-                self._primitive_to_cluster_converter.convert_cluster(p) for p in payload
-            ]
+            return [self._entity_factory.create_cluster(p) for p in payload]
 
     async def get_cluster(self, name: str) -> Cluster:
         assert self._client
@@ -72,7 +70,7 @@ class ConfigClient:
         ) as response:
             response.raise_for_status()
             payload = await response.json()
-            return self._primitive_to_cluster_converter.convert_cluster(payload)
+            return self._entity_factory.create_cluster(payload)
 
     async def create_blank_cluster(
         self, name: str, token: str, ignore_existing: bool = False
