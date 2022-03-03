@@ -9,8 +9,21 @@ import aiohttp
 from aiohttp import ClientResponseError
 from yarl import URL
 
-from .entities import Cluster
-from .factories import EntityFactory
+from .entities import (
+    BucketsConfig,
+    Cluster,
+    CredentialsConfig,
+    DisksConfig,
+    DNSConfig,
+    IngressConfig,
+    MetricsConfig,
+    MonitoringConfig,
+    OrchestratorConfig,
+    RegistryConfig,
+    SecretsConfig,
+    StorageConfig,
+)
+from .factories import EntityFactory, PayloadFactory
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +42,7 @@ class ConfigClient:
         self._trace_configs = trace_configs
         self._client: aiohttp.ClientSession | None = None
         self._entity_factory = EntityFactory()
+        self._payload_factory = PayloadFactory()
 
     async def __aenter__(self) -> "ConfigClient":
         self._client = await self._create_http_client()
@@ -56,34 +70,83 @@ class ConfigClient:
 
     async def get_clusters(self) -> Sequence[Cluster]:
         assert self._client
-        async with self._client.get(
-            self._clusters_url, params={"include": "all"}
-        ) as response:
+        async with self._client.get(self._clusters_url) as response:
             response.raise_for_status()
             payload = await response.json()
             return [self._entity_factory.create_cluster(p) for p in payload]
 
     async def get_cluster(self, name: str) -> Cluster:
         assert self._client
-        async with self._client.get(
-            self._clusters_url / name, params={"include": "all"}
-        ) as response:
+        async with self._client.get(self._clusters_url / name) as response:
             response.raise_for_status()
             payload = await response.json()
             return self._entity_factory.create_cluster(payload)
 
     async def create_blank_cluster(
         self, name: str, token: str, ignore_existing: bool = False
-    ) -> None:
+    ) -> Cluster:
         assert self._client
         payload = {"name": name, "token": token}
         try:
             async with self._client.post(self._clusters_url, json=payload) as resp:
                 resp.raise_for_status()
+                resp_payload = await resp.json()
+                return self._entity_factory.create_cluster(resp_payload)
         except ClientResponseError as e:
             is_existing = e.status == 400 and "already exists" in e.message
             if not ignore_existing or is_existing:
                 raise
+        return await self.get_cluster(name)
+
+    async def update_cluster(
+        self,
+        name: str,
+        *,
+        credentials: CredentialsConfig | None = None,
+        storage: StorageConfig | None = None,
+        registry: RegistryConfig | None = None,
+        orchestrator: OrchestratorConfig | None = None,
+        monitoring: MonitoringConfig | None = None,
+        secrets: SecretsConfig | None = None,
+        metrics: MetricsConfig | None = None,
+        disks: DisksConfig | None = None,
+        buckets: BucketsConfig | None = None,
+        ingress: IngressConfig | None = None,
+        dns: DNSConfig | None = None,
+    ) -> Cluster:
+        assert self._client
+        payload: dict[str, Any] = {}
+        if credentials:
+            payload["credentials"] = self._payload_factory.create_credentials(
+                credentials
+            )
+        if storage:
+            payload["storage"] = self._payload_factory.create_storage(storage)
+        if registry:
+            payload["registry"] = self._payload_factory.create_registry(registry)
+        if orchestrator:
+            payload["orchestrator"] = self._payload_factory.create_orchestrator(
+                orchestrator
+            )
+        if monitoring:
+            payload["monitoring"] = self._payload_factory.create_monitoring(monitoring)
+        if secrets:
+            payload["secrets"] = self._payload_factory.create_secrets(secrets)
+        if metrics:
+            payload["metrics"] = self._payload_factory.create_metrics(metrics)
+        if disks:
+            payload["disks"] = self._payload_factory.create_disks(disks)
+        if buckets:
+            payload["buckets"] = self._payload_factory.create_buckets(buckets)
+        if ingress:
+            payload["ingress"] = self._payload_factory.create_ingress(ingress)
+        if dns:
+            payload["dns"] = self._payload_factory.create_dns(dns)
+        url = self._clusters_url / name
+        async with self._client.patch(url, json=payload) as resp:
+            resp.raise_for_status()
+            resp_payload = await resp.json()
+            return self._entity_factory.create_cluster(resp_payload)
 
     async def delete_cluster(self, name: str) -> None:
         assert self._client
@@ -98,7 +161,7 @@ class ConfigClient:
         *,
         start_deployment: bool = True,
         ignore_existing: bool = False,
-    ) -> None:
+    ) -> Cluster:
         assert self._client
         try:
             url = self._clusters_url / cluster_name / "cloud_provider/storages"
@@ -110,9 +173,12 @@ class ConfigClient:
                 json=payload,
             ) as response:
                 response.raise_for_status()
+                resp_payload = await response.json()
+                return self._entity_factory.create_cluster(resp_payload)
         except ClientResponseError as e:
             if not ignore_existing or e.status != 409:
                 raise
+        return await self.get_cluster(cluster_name)
 
     async def patch_storage(
         self,
@@ -121,7 +187,7 @@ class ConfigClient:
         ready: bool | None = None,
         *,
         ignore_not_found: bool = False,
-    ) -> None:
+    ) -> Cluster:
         assert self._client
         try:
             if storage_name:
@@ -140,14 +206,14 @@ class ConfigClient:
             payload: dict[str, Any] = {}
             if ready is not None:
                 payload["ready"] = ready
-            async with self._client.patch(
-                url,
-                json=payload,
-            ) as response:
+            async with self._client.patch(url, json=payload) as response:
                 response.raise_for_status()
+                resp_payload = await response.json()
+                return self._entity_factory.create_cluster(resp_payload)
         except ClientResponseError as e:
             if not ignore_not_found or e.status != 404:
                 raise
+        return await self.get_cluster(cluster_name)
 
     async def remove_storage(
         self,
@@ -156,7 +222,7 @@ class ConfigClient:
         *,
         start_deployment: bool = True,
         ignore_not_found: bool = False,
-    ) -> None:
+    ) -> Cluster:
         assert self._client
         try:
             url = (
@@ -169,6 +235,9 @@ class ConfigClient:
                 url.with_query(start_deployment=str(start_deployment).lower())
             ) as response:
                 response.raise_for_status()
+                resp_payload = await response.json()
+                return self._entity_factory.create_cluster(resp_payload)
         except ClientResponseError as e:
             if not ignore_not_found or e.status != 404:
                 raise
+        return await self.get_cluster(cluster_name)

@@ -4,6 +4,7 @@ import abc
 import enum
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from datetime import datetime
 from decimal import Decimal
 
 from yarl import URL
@@ -99,6 +100,7 @@ class AWSStorage(Storage):
     description: str
     performance_mode: EFSPerformanceMode
     throughput_mode: EFSThroughputMode
+    provisioned_throughput_mibps: int | None = None
 
 
 @dataclass(frozen=True)
@@ -239,6 +241,81 @@ class VCDCloudProvider(CloudProvider):
 
 
 @dataclass(frozen=True)
+class NeuroAuthConfig:
+    url: URL
+    token: str = field(repr=False)
+
+
+@dataclass(frozen=True)
+class HelmRegistryConfig:
+    url: URL
+    username: str
+    password: str = field(repr=False)
+
+
+@dataclass(frozen=True)
+class DockerRegistryConfig:
+    url: URL
+    username: str
+    password: str = field(repr=False)
+    email: str
+
+
+@dataclass(frozen=True)
+class GrafanaCredentials:
+    username: str
+    password: str = field(repr=False)
+
+
+@dataclass(frozen=True)
+class SentryCredentials:
+    client_key_id: str
+    public_dsn: URL
+    sample_rate: float = 0.01
+
+
+@dataclass(frozen=True)
+class MinioCredentials:
+    username: str
+    password: str = field(repr=False)
+
+
+@dataclass(frozen=True)
+class EMCECSCredentials:
+    """
+    Credentials to EMC ECS (blob storage engine developed by vmware creators)
+    """
+
+    access_key_id: str
+    secret_access_key: str = field(repr=False)
+    s3_endpoint: URL
+    management_endpoint: URL
+    s3_assumable_role: str
+
+
+@dataclass(frozen=True)
+class OpenStackCredentials:
+    account_id: str
+    password: str = field(repr=False)
+    endpoint: URL
+    s3_endpoint: URL
+    region_name: str
+
+
+@dataclass(frozen=True)
+class CredentialsConfig:
+    neuro: NeuroAuthConfig
+    neuro_helm: HelmRegistryConfig
+    neuro_registry: DockerRegistryConfig
+    grafana: GrafanaCredentials | None = None
+    sentry: SentryCredentials | None = None
+    docker_hub: DockerRegistryConfig | None = None
+    minio: MinioCredentials | None = None
+    emc_ecs: EMCECSCredentials | None = None
+    open_stack: OpenStackCredentials | None = None
+
+
+@dataclass(frozen=True)
 class VolumeConfig:
     size_mb: int | None = None
     path: str | None = None
@@ -248,11 +325,6 @@ class VolumeConfig:
 class StorageConfig:
     url: URL
     volumes: Sequence[VolumeConfig] = ()
-
-
-@dataclass(frozen=True)
-class BlobStorageConfig:
-    url: URL
 
 
 @dataclass(frozen=True)
@@ -353,10 +425,11 @@ class Resources:
 
 @dataclass(frozen=True)
 class IdleJobConfig:
+    name: str
     count: int
     image: str
     resources: Resources
-    image_secret: str = ""
+    image_pull_secret: str = ""
     env: dict[str, str] = field(default_factory=dict)
     node_selector: dict[str, str] = field(default_factory=dict)
 
@@ -364,7 +437,7 @@ class IdleJobConfig:
 @dataclass
 class OrchestratorConfig:
     job_hostname_template: str
-    job_internal_hostname_template: str
+    job_internal_hostname_template: str | None
     job_fallback_hostname: str
     job_schedule_timeout_s: float
     job_schedule_scale_up_timeout_s: float
@@ -391,12 +464,26 @@ class DNSConfig:
     a_records: Sequence[ARecord] = field(default_factory=list)
 
 
+class ClusterStatus(str, enum.Enum):
+    BLANK = "blank"
+    DEPLOYING = "deploying"
+    DESTROYING = "destroying"
+    TESTING = "testing"
+    DEPLOYED = "deployed"
+    DESTROYED = "destroyed"
+    FAILED = "failed"
+
+
 @dataclass(frozen=True)
 class Cluster:
     name: str
+    status: ClusterStatus
+    created_at: datetime
+    platform_infra_image_tag: str | None = None
+    cloud_provider: CloudProvider | None = None
+    credentials: CredentialsConfig | None = None
     orchestrator: OrchestratorConfig | None = None
     storage: StorageConfig | None = None
-    blob_storage: BlobStorageConfig | None = None
     registry: RegistryConfig | None = None
     monitoring: MonitoringConfig | None = None
     secrets: SecretsConfig | None = None
@@ -405,4 +492,3 @@ class Cluster:
     disks: DisksConfig | None = None
     buckets: BucketsConfig | None = None
     ingress: IngressConfig | None = None
-    cloud_provider: CloudProvider | None = None
