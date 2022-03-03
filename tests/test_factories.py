@@ -1,3 +1,5 @@
+from dataclasses import replace
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 from unittest import mock
@@ -16,32 +18,41 @@ from neuro_config_client.entities import (
     AzureReplicationType,
     AzureStorage,
     AzureStorageTier,
-    BlobStorageConfig,
     BucketsConfig,
     CloudProviderType,
     Cluster,
     ClusterLocationType,
+    ClusterStatus,
+    CredentialsConfig,
     DisksConfig,
     DNSConfig,
+    DockerRegistryConfig,
     EFSPerformanceMode,
     EFSThroughputMode,
+    EMCECSCredentials,
     GoogleCloudProvider,
     GoogleFilestoreTier,
     GoogleStorage,
     GoogleStorageBackend,
+    GrafanaCredentials,
+    HelmRegistryConfig,
     IdleJobConfig,
     IngressConfig,
     KubernetesCredentials,
     MetricsConfig,
+    MinioCredentials,
     MonitoringConfig,
+    NeuroAuthConfig,
     NodePool,
     OnPremCloudProvider,
+    OpenStackCredentials,
     OrchestratorConfig,
     RegistryConfig,
     ResourcePoolType,
     ResourcePreset,
     Resources,
     SecretsConfig,
+    SentryCredentials,
     StorageConfig,
     StorageInstance,
     TPUPreset,
@@ -51,7 +62,7 @@ from neuro_config_client.entities import (
     VCDStorage,
     VolumeConfig,
 )
-from neuro_config_client.factories import EntityFactory
+from neuro_config_client.factories import EntityFactory, PayloadFactory
 
 
 class TestEntityFactory:
@@ -60,18 +71,24 @@ class TestEntityFactory:
         return EntityFactory()
 
     def test_create_empty_cluster(self, factory: EntityFactory) -> None:
-        result = factory.create_cluster({"name": "default"})
+        result = factory.create_cluster(
+            {"name": "default", "status": "blank", "created_at": str(datetime.now())}
+        )
 
-        assert result == Cluster(name="default")
+        assert result == Cluster(
+            name="default", status=ClusterStatus.BLANK, created_at=mock.ANY
+        )
 
     def test_create_cluster(
         self,
         factory: EntityFactory,
         google_cloud_provider_response: dict[str, Any],
+        credentials: dict[str, Any],
     ) -> None:
         result = factory.create_cluster(
             {
                 "name": "default",
+                "status": "blank",
                 "orchestrator": {
                     "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
                     "job_fallback_hostname": "default.jobs-dev.neu.ro",
@@ -101,10 +118,13 @@ class TestEntityFactory:
                     ],
                 },
                 "cloud_provider": google_cloud_provider_response,
+                "credentials": credentials,
+                "created_at": str(datetime.now()),
             }
         )
 
         assert result.name == "default"
+        assert result.status == ClusterStatus.BLANK
         assert result.orchestrator
         assert result.storage
         assert result.registry
@@ -115,6 +135,8 @@ class TestEntityFactory:
         assert result.ingress
         assert result.dns
         assert result.cloud_provider
+        assert result.credentials
+        assert result.created_at
 
     def test_create_orchestrator(self, factory: EntityFactory) -> None:
         result = factory.create_orchestrator(
@@ -138,6 +160,7 @@ class TestEntityFactory:
                 "pre_pull_images": ["neuromation/base"],
                 "idle_jobs": [
                     {
+                        "name": "idle",
                         "count": 1,
                         "image": "miner",
                         "resources": {"cpu_m": 1000, "memory_mb": 1024},
@@ -159,6 +182,7 @@ class TestEntityFactory:
             pre_pull_images=["neuromation/base"],
             idle_jobs=[
                 IdleJobConfig(
+                    name="idle",
                     count=1,
                     image="miner",
                     resources=Resources(cpu_m=1000, memory_mb=1024),
@@ -180,7 +204,7 @@ class TestEntityFactory:
 
         assert result == OrchestratorConfig(
             job_hostname_template="{job_id}.jobs-dev.neu.ro",
-            job_internal_hostname_template="",
+            job_internal_hostname_template=None,
             job_fallback_hostname="default.jobs-dev.neu.ro",
             job_schedule_timeout_s=1,
             job_schedule_scale_up_timeout_s=2,
@@ -318,11 +342,6 @@ class TestEntityFactory:
                 VolumeConfig(path="/volume", size_mb=1024),
             ],
         )
-
-    def test_create_blob_storage(self, factory: EntityFactory) -> None:
-        result = factory.create_blob_storage({"url": "https://blob-storage-dev.neu.ro"})
-
-        assert result == BlobStorageConfig(url=URL("https://blob-storage-dev.neu.ro"))
 
     def test_create_registry(self, factory: EntityFactory) -> None:
         result = factory.create_registry({"url": "https://registry-dev.neu.ro"})
@@ -974,3 +993,582 @@ class TestEntityFactory:
     ) -> None:
         result = factory.create_cloud_provider(vcd_cloud_provider_response)
         assert result == vcd_cloud_provider
+
+    @pytest.fixture
+    def credentials(self) -> dict[str, Any]:
+        return {
+            "neuro": {
+                "url": "https://neu.ro",
+                "token": "cluster_token",
+            },
+            "neuro_registry": {
+                "url": "https://ghcr.io/neuro-inc",
+                "username": "username",
+                "password": "password",
+                "email": "username@neu.ro",
+            },
+            "neuro_helm": {
+                "url": "oci://neuro-inc.ghcr.io",
+                "username": "username",
+                "password": "password",
+            },
+            "grafana": {
+                "username": "username",
+                "password": "password",
+            },
+            "sentry": {
+                "client_key_id": "key",
+                "public_dsn": "dsn",
+                "sample_rate": 0.2,
+            },
+            "docker_hub": {
+                "url": "https://index.docker.io/v1",
+                "username": "test",
+                "password": "password",
+                "email": "test@neu.ro",
+            },
+            "minio": {
+                "username": "test",
+                "password": "password",
+            },
+            "emc_ecs": {
+                "access_key_id": "key_id",
+                "secret_access_key": "secret_key",
+                "s3_endpoint": "https://emc-ecs.s3",
+                "management_endpoint": "https://emc-ecs.management",
+                "s3_assumable_role": "s3-role",
+            },
+            "open_stack": {
+                "account_id": "id",
+                "password": "password",
+                "s3_endpoint": "https://os.s3",
+                "endpoint": "https://os.management",
+                "region_name": "region",
+            },
+        }
+
+    def test_create_credentials(
+        self, factory: EntityFactory, credentials: dict[str, Any]
+    ) -> None:
+        result = factory.create_credentials(credentials)
+
+        assert result == CredentialsConfig(
+            neuro=NeuroAuthConfig(
+                url=URL("https://neu.ro"),
+                token="cluster_token",
+            ),
+            neuro_registry=DockerRegistryConfig(
+                url=URL("https://ghcr.io/neuro-inc"),
+                username="username",
+                password="password",
+                email="username@neu.ro",
+            ),
+            neuro_helm=HelmRegistryConfig(
+                url=URL("oci://neuro-inc.ghcr.io"),
+                username="username",
+                password="password",
+            ),
+            grafana=GrafanaCredentials(
+                username="username",
+                password="password",
+            ),
+            sentry=SentryCredentials(
+                client_key_id="key", public_dsn=URL("dsn"), sample_rate=0.2
+            ),
+            docker_hub=DockerRegistryConfig(
+                url=URL("https://index.docker.io/v1"),
+                username="test",
+                password="password",
+                email="test@neu.ro",
+            ),
+            minio=MinioCredentials(
+                username="test",
+                password="password",
+            ),
+            emc_ecs=EMCECSCredentials(
+                access_key_id="key_id",
+                secret_access_key="secret_key",
+                s3_endpoint=URL("https://emc-ecs.s3"),
+                management_endpoint=URL("https://emc-ecs.management"),
+                s3_assumable_role="s3-role",
+            ),
+            open_stack=OpenStackCredentials(
+                account_id="id",
+                password="password",
+                s3_endpoint=URL("https://os.s3"),
+                endpoint=URL("https://os.management"),
+                region_name="region",
+            ),
+        )
+
+    def test_create_minimal_credentials(
+        self, factory: EntityFactory, credentials: dict[str, Any]
+    ) -> None:
+        del credentials["grafana"]
+        del credentials["sentry"]
+        del credentials["docker_hub"]
+        del credentials["minio"]
+        del credentials["emc_ecs"]
+        del credentials["open_stack"]
+        result = factory.create_credentials(credentials)
+
+        assert result == CredentialsConfig(
+            neuro=NeuroAuthConfig(
+                url=URL("https://neu.ro"),
+                token="cluster_token",
+            ),
+            neuro_registry=DockerRegistryConfig(
+                url=URL("https://ghcr.io/neuro-inc"),
+                username="username",
+                password="password",
+                email="username@neu.ro",
+            ),
+            neuro_helm=HelmRegistryConfig(
+                url=URL("oci://neuro-inc.ghcr.io"),
+                username="username",
+                password="password",
+            ),
+        )
+
+
+class TestPayloadFactory:
+    @pytest.fixture
+    def factory(self) -> PayloadFactory:
+        return PayloadFactory()
+
+    def test_create_orchestrator(self, factory: PayloadFactory) -> None:
+        result = factory.create_orchestrator(
+            OrchestratorConfig(
+                job_hostname_template="{job_id}.jobs-dev.neu.ro",
+                job_internal_hostname_template="{job_id}.platform-jobs",
+                job_fallback_hostname="default.jobs-dev.neu.ro",
+                job_schedule_timeout_s=1,
+                job_schedule_scale_up_timeout_s=2,
+                is_http_ingress_secure=False,
+                resource_pool_types=[ResourcePoolType(name="cpu")],
+                resource_presets=[
+                    ResourcePreset(
+                        name="cpu-micro",
+                        credits_per_hour=Decimal(10),
+                        cpu=0.1,
+                        memory_mb=100,
+                    )
+                ],
+                allow_privileged_mode=False,
+                pre_pull_images=["neuromation/base"],
+                idle_jobs=[
+                    IdleJobConfig(
+                        name="idle",
+                        count=1,
+                        image="miner",
+                        resources=Resources(cpu_m=1000, memory_mb=1024),
+                    )
+                ],
+            )
+        )
+
+        assert result == {
+            "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
+            "job_internal_hostname_template": "{job_id}.platform-jobs",
+            "job_fallback_hostname": "default.jobs-dev.neu.ro",
+            "job_schedule_timeout_s": 1,
+            "job_schedule_scale_up_timeout_s": 2,
+            "is_http_ingress_secure": False,
+            "resource_pool_types": [mock.ANY],
+            "resource_presets": [mock.ANY],
+            "allow_privileged_mode": False,
+            "pre_pull_images": ["neuromation/base"],
+            "idle_jobs": [
+                {
+                    "name": "idle",
+                    "count": 1,
+                    "image": "miner",
+                    "resources": {"cpu_m": 1000, "memory_mb": 1024},
+                }
+            ],
+        }
+
+    def test_create_orchestrator_default(self, factory: PayloadFactory) -> None:
+        result = factory.create_orchestrator(
+            OrchestratorConfig(
+                job_hostname_template="{job_id}.jobs-dev.neu.ro",
+                job_internal_hostname_template="",
+                job_fallback_hostname="default.jobs-dev.neu.ro",
+                job_schedule_timeout_s=1,
+                job_schedule_scale_up_timeout_s=2,
+                is_http_ingress_secure=False,
+                allow_privileged_mode=False,
+            )
+        )
+
+        assert result == {
+            "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
+            "job_fallback_hostname": "default.jobs-dev.neu.ro",
+            "job_schedule_timeout_s": 1,
+            "job_schedule_scale_up_timeout_s": 2,
+            "is_http_ingress_secure": False,
+            "allow_privileged_mode": False,
+        }
+
+    def test_create_resource_pool_type(self, factory: PayloadFactory) -> None:
+        result = factory.create_resource_pool_type(
+            ResourcePoolType(
+                name="n1-highmem-4",
+                min_size=1,
+                max_size=2,
+                idle_size=1,
+                cpu=4.0,
+                available_cpu=3.0,
+                memory_mb=12 * 1024,
+                available_memory_mb=10 * 1024,
+                disk_size_gb=700,
+                gpu=1,
+                gpu_model="nvidia-tesla-k80",
+                tpu=TPUResource(
+                    ipv4_cidr_block="10.0.0.0/8",
+                    types=["tpu"],
+                    software_versions=["v1"],
+                ),
+                is_preemptible=True,
+                price=Decimal("1.0"),
+                currency="USD",
+            )
+        )
+
+        assert result == {
+            "name": "n1-highmem-4",
+            "min_size": 1,
+            "max_size": 2,
+            "idle_size": 1,
+            "cpu": 4.0,
+            "available_cpu": 3.0,
+            "memory_mb": 12 * 1024,
+            "available_memory_mb": 10 * 1024,
+            "disk_size_gb": 700,
+            "gpu": 1,
+            "gpu_model": "nvidia-tesla-k80",
+            "tpu": {
+                "ipv4_cidr_block": "10.0.0.0/8",
+                "types": ["tpu"],
+                "software_versions": ["v1"],
+            },
+            "is_preemptible": True,
+            "price": "1.0",
+            "currency": "USD",
+        }
+
+    def test_create_empty_resource_pool_type(self, factory: PayloadFactory) -> None:
+        result = factory.create_resource_pool_type(ResourcePoolType(name="node-pool"))
+
+        assert result == {
+            "name": "node-pool",
+            "available_cpu": 1.0,
+            "available_memory_mb": 1024,
+            "cpu": 1.0,
+            "disk_size_gb": 150,
+            "idle_size": 0,
+            "is_preemptible": False,
+            "max_size": 1,
+            "memory_mb": 1024,
+            "min_size": 0,
+        }
+
+    def test_create_tpu_resource(self, factory: PayloadFactory) -> None:
+        result = factory.create_tpu_resource(
+            TPUResource(
+                ipv4_cidr_block="10.0.0.0/8", types=["tpu"], software_versions=["v1"]
+            )
+        )
+
+        assert result == {
+            "ipv4_cidr_block": "10.0.0.0/8",
+            "types": ["tpu"],
+            "software_versions": ["v1"],
+        }
+
+    def test_create_resource_preset(self, factory: PayloadFactory) -> None:
+        result = factory.create_resource_preset(
+            ResourcePreset(
+                name="cpu-small",
+                credits_per_hour=Decimal("10"),
+                cpu=4.0,
+                memory_mb=1024,
+            )
+        )
+
+        assert result == {
+            "name": "cpu-small",
+            "credits_per_hour": "10",
+            "cpu": 4.0,
+            "memory_mb": 1024,
+        }
+
+    def test_create_resource_preset_with_memory_gpu_tpu_preemptible_affinity(
+        self, factory: PayloadFactory
+    ) -> None:
+        result = factory.create_resource_preset(
+            ResourcePreset(
+                name="gpu-small",
+                credits_per_hour=Decimal("10"),
+                cpu=4.0,
+                memory_mb=12288,
+                gpu=1,
+                gpu_model="nvidia-tesla-k80",
+                tpu=TPUPreset(type="tpu", software_version="v1"),
+                scheduler_enabled=True,
+                preemptible_node=True,
+                resource_affinity=["gpu-k80"],
+            )
+        )
+
+        assert result == {
+            "name": "gpu-small",
+            "credits_per_hour": "10",
+            "cpu": 4.0,
+            "memory_mb": 12288,
+            "gpu": 1,
+            "gpu_model": "nvidia-tesla-k80",
+            "tpu": {"type": "tpu", "software_version": "v1"},
+            "scheduler_enabled": True,
+            "preemptible_node": True,
+        }
+
+    def test_create_storage(self, factory: PayloadFactory) -> None:
+        result = factory.create_storage(
+            StorageConfig(url=URL("https://storage-dev.neu.ro"), volumes=[])
+        )
+
+        assert result == {"url": "https://storage-dev.neu.ro"}
+
+    def test_create_storage_with_volumes(self, factory: PayloadFactory) -> None:
+        result = factory.create_storage(
+            StorageConfig(
+                url=URL("https://storage-dev.neu.ro"),
+                volumes=[
+                    VolumeConfig(),
+                    VolumeConfig(path="/volume", size_mb=1024),
+                ],
+            )
+        )
+
+        assert result == {
+            "url": "https://storage-dev.neu.ro",
+            "volumes": [
+                {},
+                {"path": "/volume", "size_mb": 1024},
+            ],
+        }
+
+    def test_create_registry(self, factory: PayloadFactory) -> None:
+        result = factory.create_registry(
+            RegistryConfig(url=URL("https://registry-dev.neu.ro"))
+        )
+
+        assert result == {"url": "https://registry-dev.neu.ro"}
+
+    def test_create_monitoring(self, factory: PayloadFactory) -> None:
+        result = factory.create_monitoring(
+            MonitoringConfig(url=URL("https://monitoring-dev.neu.ro"))
+        )
+
+        assert result == {"url": "https://monitoring-dev.neu.ro"}
+
+    def test_create_secrets(self, factory: PayloadFactory) -> None:
+        result = factory.create_secrets(
+            SecretsConfig(url=URL("https://secrets-dev.neu.ro"))
+        )
+
+        assert result == {"url": "https://secrets-dev.neu.ro"}
+
+    def test_create_metrics(self, factory: PayloadFactory) -> None:
+        result = factory.create_metrics(
+            MetricsConfig(url=URL("https://metrics-dev.neu.ro"))
+        )
+
+        assert result == {"url": "https://metrics-dev.neu.ro"}
+
+    def test_create_dns(self, factory: PayloadFactory) -> None:
+        result = factory.create_dns(
+            DNSConfig(
+                name="neu.ro",
+                a_records=[ARecord(name="*.jobs-dev.neu.ro.", ips=["192.168.0.2"])],
+            )
+        )
+
+        assert result == {
+            "name": "neu.ro",
+            "a_records": [{"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}],
+        }
+
+    def test_create_a_record_with_ips(self, factory: PayloadFactory) -> None:
+        result = factory.create_a_record(
+            ARecord(name="*.jobs-dev.neu.ro.", ips=["192.168.0.2"])
+        )
+
+        assert result == {"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}
+
+    def test_create_a_record_dns_name(self, factory: PayloadFactory) -> None:
+        result = factory.create_a_record(
+            ARecord(
+                name="*.jobs-dev.neu.ro.",
+                dns_name="load-balancer",
+                zone_id="/hostedzone/1",
+                evaluate_target_health=True,
+            )
+        )
+
+        assert result == {
+            "name": "*.jobs-dev.neu.ro.",
+            "dns_name": "load-balancer",
+            "zone_id": "/hostedzone/1",
+            "evaluate_target_health": True,
+        }
+
+    def test_create_disks(self, factory: PayloadFactory) -> None:
+        result = factory.create_disks(
+            DisksConfig(
+                url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user_gb=1024
+            )
+        )
+
+        assert result == {
+            "url": "https://metrics-dev.neu.ro",
+            "storage_limit_per_user_gb": 1024,
+        }
+
+    def test_create_buckets(self, factory: PayloadFactory) -> None:
+        result = factory.create_buckets(
+            BucketsConfig(url=URL("https://buckets-dev.neu.ro"), disable_creation=True)
+        )
+
+        assert result == {"url": "https://buckets-dev.neu.ro", "disable_creation": True}
+
+    def test_create_ingress(self, factory: PayloadFactory) -> None:
+        result = factory.create_ingress(
+            IngressConfig(
+                acme_environment=ACMEEnvironment.PRODUCTION,
+                cors_origins=["https://app.neu.ro"],
+            )
+        )
+
+        assert result == {
+            "acme_environment": "production",
+            "cors_origins": ["https://app.neu.ro"],
+        }
+
+    def test_create_ingress_defaults(self, factory: PayloadFactory) -> None:
+        result = factory.create_ingress(
+            IngressConfig(acme_environment=ACMEEnvironment.PRODUCTION)
+        )
+
+        assert result == {"acme_environment": "production"}
+
+    @pytest.fixture
+    def credentials(self) -> CredentialsConfig:
+        return CredentialsConfig(
+            neuro=NeuroAuthConfig(
+                url=URL("https://neu.ro"),
+                token="cluster_token",
+            ),
+            neuro_registry=DockerRegistryConfig(
+                url=URL("https://ghcr.io/neuro-inc"),
+                username="username",
+                password="password",
+                email="username@neu.ro",
+            ),
+            neuro_helm=HelmRegistryConfig(
+                url=URL("oci://neuro-inc.ghcr.io"),
+                username="username",
+                password="password",
+            ),
+            grafana=GrafanaCredentials(
+                username="username",
+                password="password",
+            ),
+            sentry=SentryCredentials(
+                client_key_id="key", public_dsn=URL("dsn"), sample_rate=0.2
+            ),
+            docker_hub=DockerRegistryConfig(
+                url=URL("https://index.docker.io/v1"),
+                username="test",
+                password="password",
+                email="test@neu.ro",
+            ),
+            minio=MinioCredentials(
+                username="test",
+                password="password",
+            ),
+            emc_ecs=EMCECSCredentials(
+                access_key_id="key_id",
+                secret_access_key="secret_key",
+                s3_endpoint=URL("https://emc-ecs.s3"),
+                management_endpoint=URL("https://emc-ecs.management"),
+                s3_assumable_role="s3-role",
+            ),
+            open_stack=OpenStackCredentials(
+                account_id="id",
+                password="password",
+                s3_endpoint=URL("https://os.s3"),
+                endpoint=URL("https://os.management"),
+                region_name="region",
+            ),
+        )
+
+    def test_create_credentials(
+        self, factory: PayloadFactory, credentials: CredentialsConfig
+    ) -> None:
+        result = factory.create_credentials(credentials)
+
+        assert result == {
+            "neuro": {"token": "cluster_token"},
+            "neuro_registry": {"username": "username", "password": "password"},
+            "neuro_helm": {"username": "username", "password": "password"},
+            "grafana": {
+                "username": "username",
+                "password": "password",
+            },
+            "sentry": {
+                "client_key_id": "key",
+                "public_dsn": "dsn",
+                "sample_rate": 0.2,
+            },
+            "docker_hub": {"username": "test", "password": "password"},
+            "minio": {
+                "username": "test",
+                "password": "password",
+            },
+            "emc_ecs": {
+                "access_key_id": "key_id",
+                "secret_access_key": "secret_key",
+                "s3_endpoint": "https://emc-ecs.s3",
+                "management_endpoint": "https://emc-ecs.management",
+                "s3_assumable_role": "s3-role",
+            },
+            "open_stack": {
+                "account_id": "id",
+                "password": "password",
+                "s3_endpoint": "https://os.s3",
+                "endpoint": "https://os.management",
+                "region_name": "region",
+            },
+        }
+
+    def test_create_minimal_credentials(
+        self, factory: PayloadFactory, credentials: CredentialsConfig
+    ) -> None:
+        credentials = replace(
+            credentials,
+            grafana=None,
+            sentry=None,
+            docker_hub=None,
+            minio=None,
+            emc_ecs=None,
+            open_stack=None,
+        )
+        result = factory.create_credentials(credentials)
+
+        assert result == {
+            "neuro": {"token": "cluster_token"},
+            "neuro_registry": {"username": "username", "password": "password"},
+            "neuro_helm": {"username": "username", "password": "password"},
+        }
