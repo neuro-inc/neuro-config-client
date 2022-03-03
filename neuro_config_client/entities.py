@@ -63,7 +63,7 @@ class StorageInstance:
 
 @dataclass(frozen=True)
 class Storage:
-    instances: list[StorageInstance]
+    instances: Sequence[StorageInstance]
 
 
 # about 'type ignore': see https://github.com/python/mypy/issues/5374
@@ -81,7 +81,7 @@ class CloudProvider(abc.ABC):
 @dataclass(frozen=True, repr=False)
 class AWSCredentials:
     access_key_id: str
-    secret_access_key: str
+    secret_access_key: str = field(repr=False)
 
 
 class EFSPerformanceMode(str, enum.Enum):
@@ -135,8 +135,7 @@ class GoogleFilestoreTier(str, enum.Enum):
 class GoogleStorage(Storage):
     id: str
     description: str
-    backend: GoogleStorageBackend
-    tier: GoogleFilestoreTier | None = None
+    tier: GoogleFilestoreTier
 
 
 @dataclass(frozen=True)
@@ -158,7 +157,7 @@ class AzureCredentials:
     subscription_id: str
     tenant_id: str
     client_id: str
-    client_secret: str
+    client_secret: str = field(repr=False)
 
 
 class AzureStorageTier(str, enum.Enum):
@@ -184,7 +183,7 @@ class AzureCloudProvider(CloudProvider):
     region: str
     resource_group: str
     credentials: AzureCredentials
-    virtual_network_cidr: str = ""
+    virtual_network_cidr: str | None = None
 
     @property
     def type(self) -> CloudProviderType:
@@ -194,9 +193,9 @@ class AzureCloudProvider(CloudProvider):
 @dataclass(frozen=True)
 class KubernetesCredentials:
     ca_data: str
-    token: str = ""
-    client_key_data: str = ""
-    client_cert_data: str = ""
+    token: str | None = field(repr=False, default=None)
+    client_key_data: str | None = field(repr=False, default=None)
+    client_cert_data: str | None = field(repr=False, default=None)
 
 
 @dataclass(frozen=True)
@@ -212,8 +211,8 @@ class OnPremCloudProvider(CloudProvider):
 @dataclass(frozen=True)
 class VCDCredentials:
     user: str
-    password: str
-    ssh_password: str
+    password: str = field(repr=False)
+    ssh_password: str = field(repr=False)
 
 
 @dataclass(frozen=True)
@@ -249,16 +248,16 @@ class NeuroAuthConfig:
 @dataclass(frozen=True)
 class HelmRegistryConfig:
     url: URL
-    username: str
-    password: str = field(repr=False)
+    username: str | None = None
+    password: str | None = field(repr=False, default=None)
 
 
 @dataclass(frozen=True)
 class DockerRegistryConfig:
     url: URL
-    username: str
-    password: str = field(repr=False)
-    email: str
+    username: str | None = None
+    password: str | None = field(repr=False, default=None)
+    email: str | None = None
 
 
 @dataclass(frozen=True)
@@ -373,8 +372,8 @@ class IngressConfig:
 @dataclass(frozen=True)
 class TPUResource:
     ipv4_cidr_block: str
-    types: Sequence[str] = field(default_factory=list)
-    software_versions: Sequence[str] = field(default_factory=list)
+    types: Sequence[str] = ()
+    software_versions: Sequence[str] = ()
 
 
 @dataclass(frozen=True)
@@ -429,7 +428,7 @@ class IdleJobConfig:
     count: int
     image: str
     resources: Resources
-    image_pull_secret: str = ""
+    image_pull_secret: str | None = None
     env: dict[str, str] = field(default_factory=dict)
     node_selector: dict[str, str] = field(default_factory=dict)
 
@@ -442,26 +441,26 @@ class OrchestratorConfig:
     job_schedule_timeout_s: float
     job_schedule_scale_up_timeout_s: float
     is_http_ingress_secure: bool = True
-    resource_pool_types: Sequence[ResourcePoolType] = field(default_factory=list)
-    resource_presets: Sequence[ResourcePreset] = field(default_factory=list)
+    resource_pool_types: Sequence[ResourcePoolType] = ()
+    resource_presets: Sequence[ResourcePreset] = ()
     allow_privileged_mode: bool = False
     pre_pull_images: Sequence[str] = ()
-    idle_jobs: Sequence[IdleJobConfig] = field(default_factory=list)
+    idle_jobs: Sequence[IdleJobConfig] = ()
 
 
 @dataclass
 class ARecord:
     name: str
-    ips: Sequence[str] = field(default_factory=list)
-    dns_name: str = ""
-    zone_id: str = ""
+    ips: Sequence[str] = ()
+    dns_name: str | None = None
+    zone_id: str | None = None
     evaluate_target_health: bool = False
 
 
 @dataclass
 class DNSConfig:
     name: str
-    a_records: Sequence[ARecord] = field(default_factory=list)
+    a_records: Sequence[ARecord] = ()
 
 
 class ClusterStatus(str, enum.Enum):

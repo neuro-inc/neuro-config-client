@@ -33,7 +33,6 @@ from .entities import (
     GoogleCloudProvider,
     GoogleFilestoreTier,
     GoogleStorage,
-    GoogleStorageBackend,
     GrafanaCredentials,
     HelmRegistryConfig,
     IdleJobConfig,
@@ -114,11 +113,11 @@ class EntityFactory:
             is_http_ingress_secure=payload["is_http_ingress_secure"],
             resource_pool_types=[
                 self.create_resource_pool_type(r)
-                for r in payload.get("resource_pool_types", [])
+                for r in payload.get("resource_pool_types", ())
             ],
             resource_presets=[
                 self.create_resource_preset(preset)
-                for preset in payload.get("resource_presets", [])
+                for preset in payload.get("resource_presets", ())
             ],
             allow_privileged_mode=payload["allow_privileged_mode"],
             pre_pull_images=payload.get("pre_pull_images", ()),
@@ -186,7 +185,7 @@ class EntityFactory:
             name=payload["name"],
             count=payload["count"],
             image=payload["image"],
-            image_pull_secret=payload.get("image_pull_secret", ""),
+            image_pull_secret=payload.get("image_pull_secret"),
             resources=self.create_resources(payload["resources"]),
             env=payload.get("env") or {},
             node_selector=payload.get("node_selector") or {},
@@ -223,13 +222,13 @@ class EntityFactory:
     def create_dns(self, payload: dict[str, Any]) -> DNSConfig:
         return DNSConfig(
             name=payload["name"],
-            a_records=[self.create_a_record(r) for r in payload.get("a_records", [])],
+            a_records=[self.create_a_record(r) for r in payload.get("a_records", ())],
         )
 
     def create_a_record(self, payload: dict[str, Any]) -> ARecord:
         return ARecord(
             name=payload["name"],
-            ips=payload.get("ips", []),
+            ips=payload.get("ips", ()),
             dns_name=payload.get("dns_name", ARecord.dns_name),
             zone_id=payload.get("zone_id", ARecord.zone_id),
             evaluate_target_health=payload.get(
@@ -318,7 +317,7 @@ class EntityFactory:
         return GoogleCloudProvider(
             location_type=ClusterLocationType(payload["location_type"]),
             region=payload["region"],
-            zones=payload.get("zones", []),
+            zones=payload.get("zones", ()),
             project=payload["project"],
             credentials=payload["credentials"],
             tpu_enabled=payload.get("tpu_enabled", False),
@@ -330,8 +329,7 @@ class EntityFactory:
         result = GoogleStorage(
             id=payload["id"],
             description=payload["description"],
-            backend=GoogleStorageBackend(payload["backend"]),
-            tier=GoogleFilestoreTier(payload["tier"]) if "tier" in payload else None,
+            tier=GoogleFilestoreTier(payload["tier"]),
             instances=[self._create_storage_instance(p) for p in payload["instances"]],
         )
         return result
@@ -341,7 +339,7 @@ class EntityFactory:
         return AzureCloudProvider(
             region=payload["region"],
             resource_group=payload["resource_group"],
-            virtual_network_cidr=payload.get("virtual_network_cidr", ""),
+            virtual_network_cidr=payload.get("virtual_network_cidr"),
             credentials=AzureCredentials(
                 subscription_id=credentials["subscription_id"],
                 tenant_id=credentials["tenant_id"],
@@ -454,17 +452,17 @@ class EntityFactory:
     def _create_docker_registry(cls, payload: dict[str, Any]) -> DockerRegistryConfig:
         return DockerRegistryConfig(
             url=URL(payload["url"]),
-            username=payload["username"],
-            password=payload["password"],
-            email=payload["email"],
+            username=payload.get("username"),
+            password=payload.get("password"),
+            email=payload.get("email"),
         )
 
     @classmethod
     def _create_helm_registry(cls, payload: dict[str, Any]) -> HelmRegistryConfig:
         return HelmRegistryConfig(
             url=URL(payload["url"]),
-            username=payload["username"],
-            password=payload["password"],
+            username=payload.get("username"),
+            password=payload.get("password"),
         )
 
     @classmethod

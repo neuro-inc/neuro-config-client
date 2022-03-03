@@ -33,7 +33,6 @@ from neuro_config_client.entities import (
     GoogleCloudProvider,
     GoogleFilestoreTier,
     GoogleStorage,
-    GoogleStorageBackend,
     GrafanaCredentials,
     HelmRegistryConfig,
     IdleJobConfig,
@@ -210,6 +209,9 @@ class TestEntityFactory:
             job_schedule_scale_up_timeout_s=2,
             is_http_ingress_secure=False,
             allow_privileged_mode=False,
+            resource_pool_types=[],
+            resource_presets=[],
+            idle_jobs=[],
         )
 
     def test_create_resource_pool_type(self, factory: EntityFactory) -> None:
@@ -544,7 +546,6 @@ class TestEntityFactory:
             storage=GoogleStorage(
                 id="premium",
                 description="GCP Filestore (Premium)",
-                backend=GoogleStorageBackend.FILESTORE,
                 tier=GoogleFilestoreTier.PREMIUM,
                 instances=[
                     StorageInstance(size_mb=5 * 1024 * 1024),
@@ -1335,7 +1336,7 @@ class TestPayloadFactory:
 
     def test_create_storage(self, factory: PayloadFactory) -> None:
         result = factory.create_storage(
-            StorageConfig(url=URL("https://storage-dev.neu.ro"), volumes=[])
+            StorageConfig(url=URL("https://storage-dev.neu.ro"))
         )
 
         assert result == {"url": "https://storage-dev.neu.ro"}
