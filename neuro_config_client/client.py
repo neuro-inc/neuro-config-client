@@ -18,6 +18,7 @@ from .entities import (
     IngressConfig,
     MetricsConfig,
     MonitoringConfig,
+    NotificationType,
     OrchestratorConfig,
     RegistryConfig,
     SecretsConfig,
@@ -98,7 +99,7 @@ class ConfigClient:
                 raise
         return await self.get_cluster(name)
 
-    async def update_cluster(
+    async def patch_cluster(
         self,
         name: str,
         *,
@@ -241,3 +242,17 @@ class ConfigClient:
             if not ignore_not_found or e.status != 404:
                 raise
         return await self.get_cluster(cluster_name)
+
+    async def notify(
+        self,
+        cluster_name: str,
+        notification_type: NotificationType,
+        message: str | None = None,
+    ) -> None:
+        assert self._client
+        url = self._clusters_url / cluster_name / "notifications"
+        payload = {"notification_type": notification_type.value}
+        if message:
+            payload["message"] = message
+        async with self._client.post(url, json=payload) as response:
+            response.raise_for_status()

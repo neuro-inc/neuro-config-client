@@ -10,6 +10,14 @@ from decimal import Decimal
 from yarl import URL
 
 
+class NotificationType(str, enum.Enum):
+    SUCCESS = "success"
+    ERROR = "error"
+    CLUSTER_UPDATING = "cluster_updating"
+    CLUSTER_UPDATE_SUCCEEDED = "cluster_update_succeeded"
+    CLUSTER_UPDATE_FAILED = "cluster_update_failed"
+
+
 class CloudProviderType(str, enum.Enum):
     AWS = "aws"
     GCP = "gcp"
