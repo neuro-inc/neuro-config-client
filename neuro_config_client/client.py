@@ -71,7 +71,7 @@ class ConfigClient:
     def _create_headers(self, *, token: str | None = None) -> dict[str, str]:
         result = {}
         token = token or self._token
-        if self._token:
+        if token:
             result["Authorization"] = f"Bearer {token}"
         return result
 
