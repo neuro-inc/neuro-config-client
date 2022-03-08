@@ -129,11 +129,6 @@ class ClusterLocationType(str, enum.Enum):
     REGIONAL = "regional"
 
 
-class GoogleStorageBackend(str, enum.Enum):
-    FILESTORE = "filestore"  # Google Cloud Filestore
-    GCS_NFS = "gcs-nfs"  # Google Cloud Storage
-
-
 class GoogleFilestoreTier(str, enum.Enum):
     STANDARD = "STANDARD"
     PREMIUM = "PREMIUM"
