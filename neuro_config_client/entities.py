@@ -431,6 +431,8 @@ class IdleJobConfig:
     count: int
     image: str
     resources: Resources
+    command: list[str] = field(default_factory=list)
+    args: list[str] = field(default_factory=list)
     image_pull_secret: str | None = None
     env: dict[str, str] = field(default_factory=dict)
     node_selector: dict[str, str] = field(default_factory=dict)

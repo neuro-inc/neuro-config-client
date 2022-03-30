@@ -185,6 +185,8 @@ class EntityFactory:
             name=payload["name"],
             count=payload["count"],
             image=payload["image"],
+            command=payload.get("command", []),
+            args=payload.get("args", []),
             image_pull_secret=payload.get("image_pull_secret"),
             resources=self.create_resources(payload["resources"]),
             env=payload.get("env") or {},
@@ -735,6 +737,10 @@ class PayloadFactory:
             "image": idle_job.image,
             "resources": cls._create_resources(idle_job.resources),
         }
+        if idle_job.command:
+            result["command"] = idle_job.command
+        if idle_job.args:
+            result["args"] = idle_job.args
         if idle_job.image_pull_secret:
             result["image_pull_secret"] = idle_job.image_pull_secret
         if idle_job.env:

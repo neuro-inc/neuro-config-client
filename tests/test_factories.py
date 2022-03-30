@@ -163,7 +163,18 @@ class TestEntityFactory:
                         "count": 1,
                         "image": "miner",
                         "resources": {"cpu_m": 1000, "memory_mb": 1024},
-                    }
+                    },
+                    {
+                        "name": "idle",
+                        "count": 1,
+                        "image": "miner",
+                        "command": ["bash"],
+                        "args": ["-c", "sleep infinity"],
+                        "resources": {"cpu_m": 1000, "memory_mb": 1024},
+                        "env": {"NAME": "VALUE"},
+                        "node_selector": {"label": "value"},
+                        "image_pull_secret": "secret",
+                    },
                 ],
             }
         )
@@ -185,7 +196,18 @@ class TestEntityFactory:
                     count=1,
                     image="miner",
                     resources=Resources(cpu_m=1000, memory_mb=1024),
-                )
+                ),
+                IdleJobConfig(
+                    name="idle",
+                    count=1,
+                    image="miner",
+                    command=["bash"],
+                    args=["-c", "sleep infinity"],
+                    resources=Resources(cpu_m=1000, memory_mb=1024),
+                    env={"NAME": "VALUE"},
+                    node_selector={"label": "value"},
+                    image_pull_secret="secret",
+                ),
             ],
         )
 
@@ -1163,7 +1185,18 @@ class TestPayloadFactory:
                         count=1,
                         image="miner",
                         resources=Resources(cpu_m=1000, memory_mb=1024),
-                    )
+                    ),
+                    IdleJobConfig(
+                        name="idle",
+                        count=1,
+                        image="miner",
+                        command=["bash"],
+                        args=["-c", "sleep infinity"],
+                        resources=Resources(cpu_m=1000, memory_mb=1024),
+                        env={"NAME": "VALUE"},
+                        node_selector={"label": "value"},
+                        image_pull_secret="secret",
+                    ),
                 ],
             )
         )
@@ -1185,7 +1218,18 @@ class TestPayloadFactory:
                     "count": 1,
                     "image": "miner",
                     "resources": {"cpu_m": 1000, "memory_mb": 1024},
-                }
+                },
+                {
+                    "name": "idle",
+                    "count": 1,
+                    "image": "miner",
+                    "command": ["bash"],
+                    "args": ["-c", "sleep infinity"],
+                    "resources": {"cpu_m": 1000, "memory_mb": 1024},
+                    "env": {"NAME": "VALUE"},
+                    "node_selector": {"label": "value"},
+                    "image_pull_secret": "secret",
+                },
             ],
         }
 
