@@ -95,7 +95,6 @@ class TestEntityFactory:
                     "job_schedule_scale_up_timeout_s": 2,
                     "is_http_ingress_secure": False,
                     "resource_pool_types": [{"name": "node-pool"}],
-                    "allow_privileged_mode": False,
                 },
                 "storage": {"url": "https://storage-dev.neu.ro"},
                 "registry": {
@@ -155,7 +154,8 @@ class TestEntityFactory:
                         "memory_mb": 100,
                     }
                 ],
-                "allow_privileged_mode": False,
+                "allow_privileged_mode": True,
+                "allow_job_priority": True,
                 "pre_pull_images": ["neuromation/base"],
                 "idle_jobs": [
                     {
@@ -188,7 +188,8 @@ class TestEntityFactory:
             is_http_ingress_secure=False,
             resource_pool_types=[mock.ANY],
             resource_presets=[mock.ANY],
-            allow_privileged_mode=False,
+            allow_privileged_mode=True,
+            allow_job_priority=True,
             pre_pull_images=["neuromation/base"],
             idle_jobs=[
                 IdleJobConfig(
@@ -219,7 +220,6 @@ class TestEntityFactory:
                 "job_schedule_timeout_s": 1,
                 "job_schedule_scale_up_timeout_s": 2,
                 "is_http_ingress_secure": False,
-                "allow_privileged_mode": False,
             }
         )
 
@@ -230,7 +230,6 @@ class TestEntityFactory:
             job_schedule_timeout_s=1,
             job_schedule_scale_up_timeout_s=2,
             is_http_ingress_secure=False,
-            allow_privileged_mode=False,
             resource_pool_types=[],
             resource_presets=[],
             idle_jobs=[],
@@ -1168,6 +1167,8 @@ class TestPayloadFactory:
                 job_schedule_timeout_s=1,
                 job_schedule_scale_up_timeout_s=2,
                 is_http_ingress_secure=False,
+                allow_privileged_mode=True,
+                allow_job_priority=True,
                 resource_pool_types=[ResourcePoolType(name="cpu")],
                 resource_presets=[
                     ResourcePreset(
@@ -1177,7 +1178,6 @@ class TestPayloadFactory:
                         memory_mb=100,
                     )
                 ],
-                allow_privileged_mode=False,
                 pre_pull_images=["neuromation/base"],
                 idle_jobs=[
                     IdleJobConfig(
@@ -1210,7 +1210,8 @@ class TestPayloadFactory:
             "is_http_ingress_secure": False,
             "resource_pool_types": [mock.ANY],
             "resource_presets": [mock.ANY],
-            "allow_privileged_mode": False,
+            "allow_privileged_mode": True,
+            "allow_job_priority": True,
             "pre_pull_images": ["neuromation/base"],
             "idle_jobs": [
                 {
@@ -1242,7 +1243,6 @@ class TestPayloadFactory:
                 job_schedule_timeout_s=1,
                 job_schedule_scale_up_timeout_s=2,
                 is_http_ingress_secure=False,
-                allow_privileged_mode=False,
             )
         )
 
@@ -1252,7 +1252,6 @@ class TestPayloadFactory:
             "job_schedule_timeout_s": 1,
             "job_schedule_scale_up_timeout_s": 2,
             "is_http_ingress_secure": False,
-            "allow_privileged_mode": False,
         }
 
     def test_create_resource_pool_type(self, factory: PayloadFactory) -> None:

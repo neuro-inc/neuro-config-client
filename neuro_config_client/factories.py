@@ -119,7 +119,12 @@ class EntityFactory:
                 self.create_resource_preset(preset)
                 for preset in payload.get("resource_presets", ())
             ],
-            allow_privileged_mode=payload["allow_privileged_mode"],
+            allow_privileged_mode=payload.get(
+                "allow_privileged_mode", OrchestratorConfig.allow_privileged_mode
+            ),
+            allow_job_priority=payload.get(
+                "allow_job_priority", OrchestratorConfig.allow_job_priority
+            ),
             pre_pull_images=payload.get("pre_pull_images", ()),
             idle_jobs=[
                 self.create_idle_job(job) for job in payload.get("idle_jobs", ())
@@ -648,8 +653,11 @@ class PayloadFactory:
             "job_schedule_scale_up_timeout_s": (
                 orchestrator.job_schedule_scale_up_timeout_s
             ),
-            "allow_privileged_mode": orchestrator.allow_privileged_mode,
         }
+        if orchestrator.allow_privileged_mode:
+            result["allow_privileged_mode"] = orchestrator.allow_privileged_mode
+        if orchestrator.allow_job_priority:
+            result["allow_job_priority"] = orchestrator.allow_job_priority
         if orchestrator.resource_pool_types:
             result["resource_pool_types"] = [
                 self.create_resource_pool_type(r)
