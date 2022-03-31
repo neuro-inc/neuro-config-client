@@ -449,6 +449,7 @@ class OrchestratorConfig:
     resource_pool_types: Sequence[ResourcePoolType] = ()
     resource_presets: Sequence[ResourcePreset] = ()
     allow_privileged_mode: bool = False
+    allow_job_priority: bool = False
     pre_pull_images: Sequence[str] = ()
     idle_jobs: Sequence[IdleJobConfig] = ()
 
