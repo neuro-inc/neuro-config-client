@@ -285,11 +285,11 @@ class EntityFactory:
                 access_key_id=credentials["access_key_id"],
                 secret_access_key=credentials["secret_access_key"],
             ),
-            node_pools=[self._create_node_pool(p) for p in payload["node_pools"]],
+            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
             storage=self._create_aws_storage(payload["storage"]),
         )
 
-    def _create_node_pool(self, payload: dict[str, Any]) -> NodePool:
+    def create_node_pool(self, payload: dict[str, Any]) -> NodePool:
         return NodePool(
             name=payload["name"],
             role=NodeRole(payload["role"]),
@@ -308,6 +308,7 @@ class EntityFactory:
             machine_type=payload.get("machine_type"),
             idle_size=payload.get("idle_size", NodePool.idle_size),
             is_preemptible=payload.get("is_preemptible", NodePool.is_preemptible),
+            zones=payload.get("zones", ()),
         )
 
     def _create_aws_storage(self, payload: dict[str, Any]) -> AWSStorage:
@@ -328,7 +329,7 @@ class EntityFactory:
             project=payload["project"],
             credentials=payload["credentials"],
             tpu_enabled=payload.get("tpu_enabled", False),
-            node_pools=[self._create_node_pool(p) for p in payload["node_pools"]],
+            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
             storage=self._create_google_storage(payload["storage"]),
         )
 
@@ -353,7 +354,7 @@ class EntityFactory:
                 client_id=credentials["client_id"],
                 client_secret=credentials["client_secret"],
             ),
-            node_pools=[self._create_node_pool(p) for p in payload["node_pools"]],
+            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
             storage=self._create_azure_storage(payload["storage"]),
         )
 
@@ -386,7 +387,7 @@ class EntityFactory:
                 URL(payload["kubernetes_url"]) if "kubernetes_url" in payload else None
             ),
             credentials=credentials,
-            node_pools=[self._create_node_pool(p) for p in payload["node_pools"]],
+            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
             storage=None,
         )
 
@@ -409,7 +410,7 @@ class EntityFactory:
                 password=credentials["password"],
                 ssh_password=credentials.get("ssh_password"),
             ),
-            node_pools=[self._create_node_pool(p) for p in payload["node_pools"]],
+            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
             storage=self._create_vcd_storage(payload["storage"]),
         )
 
@@ -813,4 +814,35 @@ class PayloadFactory:
         result: dict[str, Any] = {"acme_environment": ingress.acme_environment.value}
         if ingress.cors_origins:
             result["cors_origins"] = ingress.cors_origins
+        return result
+
+    @classmethod
+    def create_node_pool(cls, node_pool: NodePool) -> dict[str, Any]:
+        result = {
+            "name": node_pool.name,
+            "role": node_pool.role.value,
+            "min_size": node_pool.min_size,
+            "max_size": node_pool.max_size,
+            "idle_size": node_pool.idle_size,
+            "cpu": node_pool.cpu,
+            "available_cpu": node_pool.available_cpu,
+            "memory_mb": node_pool.memory_mb,
+            "available_memory_mb": node_pool.available_memory_mb,
+            "disk_size_gb": node_pool.disk_size_gb,
+            "price": str(node_pool.price),
+            "is_preemptible": node_pool.is_preemptible,
+            "zones": node_pool.zones,
+        }
+        if node_pool.machine_type:
+            result["machine_type"] = node_pool.machine_type
+        if node_pool.disk_type:
+            result["disk_type"] = node_pool.disk_type
+        if node_pool.gpu:
+            result["gpu"] = node_pool.gpu
+        if node_pool.gpu_model:
+            result["gpu_model"] = node_pool.gpu_model
+        if node_pool.currency:
+            result["currency"] = node_pool.currency
+        if node_pool.zones:
+            result["zones"] = node_pool.zones
         return result
