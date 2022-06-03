@@ -296,9 +296,9 @@ class ConfigClient:
         )
 
         headers = self._create_headers(token=token)
-        async with self._client.get(url=url, headers=headers) as responce:
-            responce.raise_for_status()
-            resp_payload = await responce.json()
+        async with self._client.get(url=url, headers=headers) as response:
+            response.raise_for_status()
+            resp_payload = await response.json()
             return self._entity_factory.create_node_pool(resp_payload)
 
     async def get_node_pools(
@@ -311,9 +311,9 @@ class ConfigClient:
         url = self._clusters_url / cluster_name / "cloud_prodider/node_pools"
 
         headers = self._create_headers(token=token)
-        async with self._client.get(url=url, headers=headers) as responce:
-            responce.raise_for_status()
-            resp_payload = await responce.json()
+        async with self._client.get(url=url, headers=headers) as response:
+            response.raise_for_status()
+            resp_payload = await response.json()
             return [self._entity_factory.create_node_pool(n) for n in resp_payload]
 
     async def add_node_pool(
@@ -339,7 +339,7 @@ class ConfigClient:
             resp_payload = await response.json()
             return self._entity_factory.create_cluster(resp_payload)
 
-    async def patch_node_pool(
+    async def put_node_pool(
         self,
         cluster_name: str,
         node_pool_name: str,
