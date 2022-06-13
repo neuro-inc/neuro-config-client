@@ -367,6 +367,7 @@ class ConfigClient:
         assert self._client
 
         cluster = await self.get_cluster(cluster_name, token=token)
+        assert cluster.cloud_provider
         if cluster.cloud_provider.type == CloudProviderType.ON_PREM:
             return await self._add_onprem_node_pool(
                 cluster,
@@ -389,6 +390,9 @@ class ConfigClient:
         token: str | None = None,
         start_deployment: bool = True,
     ) -> Cluster:
+        assert self._client
+        assert cluster.cloud_provider
+
         url = self._clusters_url / cluster.name / "cloud_provider/node_pools"
         headers = self._create_headers(token=token)
         payload = self._payload_factory.create_node_pool(
@@ -411,6 +415,10 @@ class ConfigClient:
         token: str | None = None,
         start_deployment: bool = True,
     ) -> Cluster:
+        assert self._client
+        assert cluster.cloud_provider
+        assert node_pool.id
+
         np_templates = await self.get_node_pool_templates(
             cluster.cloud_provider.type, token=token
         )
@@ -495,6 +503,7 @@ class ConfigClient:
 
         current_np = await self.get_node_pool(cluster_name, node_pool_name, token=token)
         cluster = await self.get_cluster(cluster_name, token=token)
+        assert cluster.cloud_provider
 
         new_np = NodePool(
             name=node_pool_name,

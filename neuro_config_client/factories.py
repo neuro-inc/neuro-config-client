@@ -875,7 +875,7 @@ class PayloadFactory:
     def _create_public_cloud_node_pool(
         node_pool: NodePool, cloud_provider_type: CloudProviderType
     ) -> dict[str, Any]:
-        result = {
+        result: dict[str, Any] = {
             "id": node_pool.id,
             "name": node_pool.name,
             "role": node_pool.role.value,
