@@ -61,6 +61,49 @@ class NodePool:
 
     zones: Sequence[str] = field(default_factory=tuple)
 
+    @property
+    def id(self) -> str | None:
+        if not self.machine_type:
+            return None
+        return get_node_pool_id(self.machine_type, self.cpu)
+
+
+@dataclass(frozen=True)
+class NodePoolTemplate:
+    machine_type: str
+    cpu: float
+    available_cpu: float
+    memory_mb: int
+    available_memory_mb: int
+    gpu: int | None = None
+    gpu_model: str | None = None
+
+    @property
+    def id(self) -> str:
+        return get_node_pool_id(self.machine_type, self.cpu)
+
+    def to_nodepool(self, name: str | None = None) -> NodePool:
+        return NodePool(
+            name=name or self.id,
+            machine_type=self.machine_type,
+            cpu=self.cpu,
+            available_cpu=self.available_cpu,
+            memory_mb=self.memory_mb,
+            available_memory_mb=self.available_memory_mb,
+            gpu=self.gpu,
+            gpu_model=self.gpu_model,
+        )
+
+
+def get_node_pool_id(machine_type: str, cpu: float) -> str:
+    result = machine_type.replace(" ", "_").replace("-", "_").replace(".", "_").lower()
+    suffix = f"_{int(cpu)}"
+
+    if not result.endswith(suffix):
+        result = f"{result}_{int(cpu)}"
+
+    return result
+
 
 @dataclass(frozen=True)
 class StorageInstance:
@@ -497,3 +540,9 @@ class Cluster:
     disks: DisksConfig | None = None
     buckets: BucketsConfig | None = None
     ingress: IngressConfig | None = None
+
+
+class TemplateNotFoundException(Exception):
+    @classmethod
+    def create(cls, id_: str) -> TemplateNotFoundException:
+        return cls(f"Node pool template {id_!r} not found")

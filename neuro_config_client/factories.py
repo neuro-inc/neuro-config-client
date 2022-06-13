@@ -43,6 +43,7 @@ from .entities import (
     MonitoringConfig,
     NeuroAuthConfig,
     NodePool,
+    NodePoolTemplate,
     NodeRole,
     OnPremCloudProvider,
     OpenStackCredentials,
@@ -309,6 +310,18 @@ class EntityFactory:
             idle_size=payload.get("idle_size", NodePool.idle_size),
             is_preemptible=payload.get("is_preemptible", NodePool.is_preemptible),
             zones=payload.get("zones", ()),
+        )
+
+    @staticmethod
+    def create_node_pool_template(payload: dict[str, Any]) -> NodePoolTemplate:
+        return NodePoolTemplate(
+            machine_type=payload["machine_type"],
+            cpu=payload["cpu"],
+            available_cpu=payload["available_cpu"],
+            memory_mb=payload["memory_mb"],
+            available_memory_mb=payload["available_memory_mb"],
+            gpu=payload.get("gpu"),
+            gpu_model=payload.get("gpu_model"),
         )
 
     def _create_aws_storage(self, payload: dict[str, Any]) -> AWSStorage:
@@ -817,7 +830,18 @@ class PayloadFactory:
         return result
 
     @classmethod
-    def create_node_pool(cls, node_pool: NodePool) -> dict[str, Any]:
+    def create_node_pool(
+        cls, node_pool: NodePool, cloud_provider_type: CloudProviderType
+    ) -> dict[str, Any]:
+        if cloud_provider_type == CloudProviderType.ON_PREM:
+            return cls._create_onprem_node_pool(node_pool)
+        elif cloud_provider_type.value.startswith("vcd_"):
+            return cls._create_vcd_node_pool(node_pool)
+        else:
+            return cls._create_public_cloud_node_pool(node_pool, cloud_provider_type)
+
+    @staticmethod
+    def _create_onprem_node_pool(node_pool: NodePool) -> dict[str, Any]:
         result = {
             "name": node_pool.name,
             "role": node_pool.role.value,
@@ -845,4 +869,51 @@ class PayloadFactory:
             result["currency"] = node_pool.currency
         if node_pool.zones:
             result["zones"] = node_pool.zones
+        return result
+
+    @staticmethod
+    def _create_public_cloud_node_pool(
+        node_pool: NodePool, cloud_provider_type: CloudProviderType
+    ) -> dict[str, Any]:
+        result = {
+            "id": node_pool.id,
+            "name": node_pool.name,
+            "role": node_pool.role.value,
+            "min_size": node_pool.min_size,
+            "max_size": node_pool.max_size,
+            "disk_size_gb": node_pool.disk_size_gb,
+        }
+        if node_pool.idle_size:
+            result["idle_size"] = node_pool.idle_size
+        if node_pool.is_preemptible:
+            result["is_preemptible"] = node_pool.is_preemptible
+        if node_pool.disk_type:
+            result["disk_type"] = node_pool.disk_type
+
+        if cloud_provider_type == CloudProviderType.AWS:
+            if node_pool.zones:
+                result["zones"] = node_pool.zones
+        elif cloud_provider_type == CloudProviderType.GCP:
+            if node_pool.zones:
+                result["zones"] = node_pool.zones
+            if node_pool.gpu:
+                result["gpu"] = node_pool.gpu
+            if node_pool.gpu_model:
+                result["gpu_model"] = node_pool.gpu_model
+        return result
+
+    @staticmethod
+    def _create_vcd_node_pool(node_pool: NodePool) -> dict[str, Any]:
+        result = {
+            "id": node_pool.id,
+            "name": node_pool.name,
+            "role": node_pool.role,
+            "min_size": node_pool.min_size,
+            "max_size": node_pool.max_size,
+            "disk_size_gb": node_pool.disk_size_gb,
+            "disk_type": node_pool.disk_type,
+            "price": node_pool.price,
+        }
+        if node_pool.currency:
+            result["currency"] = node_pool.currency
         return result
