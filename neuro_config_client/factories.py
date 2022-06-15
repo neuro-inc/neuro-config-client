@@ -847,18 +847,13 @@ class PayloadFactory:
             "role": node_pool.role.value,
             "min_size": node_pool.min_size,
             "max_size": node_pool.max_size,
-            "idle_size": node_pool.idle_size,
             "cpu": node_pool.cpu,
             "available_cpu": node_pool.available_cpu,
             "memory_mb": node_pool.memory_mb,
             "available_memory_mb": node_pool.available_memory_mb,
             "disk_size_gb": node_pool.disk_size_gb,
             "price": str(node_pool.price),
-            "is_preemptible": node_pool.is_preemptible,
-            "zones": node_pool.zones,
         }
-        if node_pool.machine_type:
-            result["machine_type"] = node_pool.machine_type
         if node_pool.disk_type:
             result["disk_type"] = node_pool.disk_type
         if node_pool.gpu:
@@ -867,8 +862,6 @@ class PayloadFactory:
             result["gpu_model"] = node_pool.gpu_model
         if node_pool.currency:
             result["currency"] = node_pool.currency
-        if node_pool.zones:
-            result["zones"] = node_pool.zones
         return result
 
     @staticmethod

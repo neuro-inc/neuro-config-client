@@ -327,6 +327,8 @@ class ConfigClient:
         token: str | None = None,
     ) -> list[NodePoolTemplate]:
         assert self._client
+        if cloud_provider_type == CloudProviderType.ON_PREM:
+            raise ValueError("Templates are not supported in onprem clusters.")
 
         url = self._cloud_providers_url / cloud_provider_type.value
         headers = self._create_headers(token=token)
