@@ -43,6 +43,7 @@ from neuro_config_client.entities import (
     MonitoringConfig,
     NeuroAuthConfig,
     NodePool,
+    NodePoolTemplate,
     OnPremCloudProvider,
     OpenStackCredentials,
     OrchestratorConfig,
@@ -1160,6 +1161,42 @@ class TestEntityFactory:
             ),
         )
 
+    @pytest.fixture
+    def node_pool_template_response(self) -> dict[str, Any]:
+        return {
+            "id": "standard_nd24s_24",
+            "machine_type": "Standard_ND24s",
+            "cpu": 24,
+            "available_cpu": 23,
+            "memory_mb": 458752,
+            "available_memory_mb": 452608,
+            "gpu": 4,
+            "gpu_model": "nvidia-tesla-p40",
+            "extra_info": "will be ignored",
+        }
+
+    @pytest.fixture
+    def node_pool_template(self) -> NodePoolTemplate:
+        return NodePoolTemplate(
+            id="standard_nd24s_24",
+            machine_type="Standard_ND24s",
+            cpu=24,
+            available_cpu=23,
+            memory_mb=458752,
+            available_memory_mb=452608,
+            gpu=4,
+            gpu_model="nvidia-tesla-p40",
+        )
+
+    def test_node_pool_template(
+        self,
+        factory: EntityFactory,
+        node_pool_template_response: dict[str, Any],
+        node_pool_template: NodePoolTemplate,
+    ) -> None:
+        created = factory.create_node_pool_template(node_pool_template_response)
+        assert created == node_pool_template
+
 
 class TestPayloadFactory:
     @pytest.fixture
@@ -1623,4 +1660,125 @@ class TestPayloadFactory:
             "neuro": {"token": "cluster_token"},
             "neuro_registry": {"username": "username", "password": "password"},
             "neuro_helm": {"username": "username", "password": "password"},
+        }
+
+    @pytest.fixture
+    def node_pool(self) -> NodePool:
+        return NodePool(
+            name="my-node-pool",
+            id="someid",
+            min_size=0,
+            max_size=10,
+            idle_size=1,
+            machine_type="some-machine-type",
+            cpu=10,
+            available_cpu=9,
+            memory_mb=2048,
+            available_memory_mb=1024,
+            disk_size_gb=100500,
+            disk_type="some-disk-type",
+            gpu=1,
+            gpu_model="some-gpu-model",
+            price=Decimal(180),
+            currency="rabbits",
+            is_preemptible=True,
+            zones=("here", "there"),
+        )
+
+    def test_gcp_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
+        payload = factory.create_node_pool(node_pool, CloudProviderType.GCP)
+        assert payload == {
+            "id": "someid",
+            "name": "my-node-pool",
+            "role": "platform_job",
+            "min_size": 0,
+            "max_size": 10,
+            "idle_size": 1,
+            "disk_size_gb": 100500,
+            "disk_type": "some-disk-type",
+            "gpu": 1,
+            "gpu_model": "some-gpu-model",
+            "zones": ("here", "there"),
+            "is_preemptible": True,
+        }
+
+        new_np = replace(node_pool, gpu=None, gpu_model=None)
+        payload = factory.create_node_pool(new_np, CloudProviderType.GCP)
+        assert payload == {
+            "id": "someid",
+            "name": "my-node-pool",
+            "role": "platform_job",
+            "min_size": 0,
+            "max_size": 10,
+            "idle_size": 1,
+            "disk_size_gb": 100500,
+            "disk_type": "some-disk-type",
+            "zones": ("here", "there"),
+            "is_preemptible": True,
+        }
+
+    def test_azure_node_pool(
+        self, factory: PayloadFactory, node_pool: NodePool
+    ) -> None:
+        payload = factory.create_node_pool(node_pool, CloudProviderType.AZURE)
+        assert payload == {
+            "id": "someid",
+            "name": "my-node-pool",
+            "role": "platform_job",
+            "min_size": 0,
+            "max_size": 10,
+            "idle_size": 1,
+            "disk_size_gb": 100500,
+            "disk_type": "some-disk-type",
+            "is_preemptible": True,
+        }
+
+    def test_aws_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
+        payload = factory.create_node_pool(node_pool, CloudProviderType.AWS)
+        assert payload == {
+            "id": "someid",
+            "name": "my-node-pool",
+            "role": "platform_job",
+            "min_size": 0,
+            "max_size": 10,
+            "idle_size": 1,
+            "disk_size_gb": 100500,
+            "disk_type": "some-disk-type",
+            "is_preemptible": True,
+            "zones": ("here", "there"),
+        }
+
+    def test_vcd_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
+        payload = factory.create_node_pool(node_pool, CloudProviderType.VCD_SELECTEL)
+        assert payload == {
+            "id": "someid",
+            "name": "my-node-pool",
+            "role": "platform_job",
+            "min_size": 0,
+            "max_size": 10,
+            "disk_size_gb": 100500,
+            "disk_type": "some-disk-type",
+            "price": "180",
+            "currency": "rabbits",
+        }
+
+    def test_onprem_node_pool(
+        self, factory: PayloadFactory, node_pool: NodePool
+    ) -> None:
+        payload = factory.create_node_pool(node_pool, CloudProviderType.ON_PREM)
+        assert payload == {
+            "name": "my-node-pool",
+            "role": "platform_job",
+            "min_size": 0,
+            "max_size": 10,
+            "cpu": 10,
+            "available_cpu": 9,
+            "memory_mb": 2048,
+            "available_memory_mb": 1024,
+            "disk_size_gb": 100500,
+            "disk_type": "some-disk-type",
+            "gpu": 1,
+            "gpu_model": "some-gpu-model",
+            "price": "180",
+            "currency": "rabbits",
         }

@@ -907,7 +907,7 @@ class PayloadFactory:
             "max_size": node_pool.max_size,
             "disk_size_gb": node_pool.disk_size_gb,
             "disk_type": node_pool.disk_type,
-            "price": node_pool.price,
+            "price": str(node_pool.price),
         }
         if node_pool.currency:
             result["currency"] = node_pool.currency
