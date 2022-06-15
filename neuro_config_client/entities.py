@@ -36,6 +36,7 @@ class NodeRole(str, enum.Enum):
 @dataclass(frozen=True)
 class NodePool:
     name: str
+    id: str | None = None
     role: NodeRole = NodeRole.PLATFORM_JOB
 
     min_size: int = 0
@@ -61,15 +62,10 @@ class NodePool:
 
     zones: Sequence[str] = field(default_factory=tuple)
 
-    @property
-    def id(self) -> str | None:
-        if not self.machine_type:
-            return None
-        return get_node_pool_id(self.machine_type, self.cpu)
-
 
 @dataclass(frozen=True)
 class NodePoolTemplate:
+    id: str
     machine_type: str
     cpu: float
     available_cpu: float
@@ -78,13 +74,10 @@ class NodePoolTemplate:
     gpu: int | None = None
     gpu_model: str | None = None
 
-    @property
-    def id(self) -> str:
-        return get_node_pool_id(self.machine_type, self.cpu)
-
     def to_nodepool(self, name: str | None = None) -> NodePool:
         return NodePool(
             name=name or self.id,
+            id=self.id,
             machine_type=self.machine_type,
             cpu=self.cpu,
             available_cpu=self.available_cpu,
@@ -93,16 +86,6 @@ class NodePoolTemplate:
             gpu=self.gpu,
             gpu_model=self.gpu_model,
         )
-
-
-def get_node_pool_id(machine_type: str, cpu: float) -> str:
-    result = machine_type.replace(" ", "_").replace("-", "_").replace(".", "_").lower()
-    suffix = f"_{int(cpu)}"
-
-    if not result.endswith(suffix):
-        result = f"{result}_{int(cpu)}"
-
-    return result
 
 
 @dataclass(frozen=True)

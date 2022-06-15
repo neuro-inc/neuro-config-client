@@ -441,6 +441,7 @@ class ConfigClient:
 
         node_pool = NodePool(
             name=node_pool.name or np_template.id,
+            id=np_template.id,
             role=node_pool.role,
             min_size=node_pool.min_size,
             max_size=node_pool.max_size,
@@ -509,6 +510,7 @@ class ConfigClient:
 
         new_np = NodePool(
             name=node_pool_name,
+            id=current_np.id,
             role=role or current_np.role,
             min_size=min_size or current_np.min_size,
             max_size=max_size or current_np.max_size,

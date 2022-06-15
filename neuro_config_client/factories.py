@@ -293,6 +293,7 @@ class EntityFactory:
     def create_node_pool(self, payload: dict[str, Any]) -> NodePool:
         return NodePool(
             name=payload["name"],
+            id=payload.get("id"),
             role=NodeRole(payload["role"]),
             min_size=payload["min_size"],
             max_size=payload["max_size"],
@@ -315,6 +316,7 @@ class EntityFactory:
     @staticmethod
     def create_node_pool_template(payload: dict[str, Any]) -> NodePoolTemplate:
         return NodePoolTemplate(
+            id=payload["id"],
             machine_type=payload["machine_type"],
             cpu=payload["cpu"],
             available_cpu=payload["available_cpu"],

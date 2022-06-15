@@ -539,6 +539,7 @@ class TestEntityFactory:
             node_pools=[
                 NodePool(
                     name="n1-highmem-8",
+                    id="n1_highmem_8",
                     machine_type="n1-highmem-8",
                     min_size=0,
                     max_size=1,
@@ -550,6 +551,7 @@ class TestEntityFactory:
                 ),
                 NodePool(
                     name="n1-highmem-32-1xk80-preemptible",
+                    id="n1_highmem_32",
                     machine_type="n1-highmem-32",
                     min_size=0,
                     max_size=1,
@@ -648,6 +650,7 @@ class TestEntityFactory:
             node_pools=[
                 NodePool(
                     name="m5-2xlarge",
+                    id="m5_2xlarge_8",
                     machine_type="m5.2xlarge",
                     min_size=0,
                     max_size=1,
@@ -659,6 +662,7 @@ class TestEntityFactory:
                 ),
                 NodePool(
                     name="p2-xlarge-1xk80-preemptible",
+                    id="p2_xlarge_4",
                     machine_type="p2.xlarge",
                     min_size=0,
                     max_size=1,
@@ -761,6 +765,7 @@ class TestEntityFactory:
             node_pools=[
                 NodePool(
                     name="Standard_D8s_v3",
+                    id="standard_d8s_v3_8",
                     machine_type="Standard_D8s_v3",
                     min_size=0,
                     max_size=1,
@@ -772,6 +777,7 @@ class TestEntityFactory:
                 ),
                 NodePool(
                     name="Standard_NC6-1xk80-preemptible",
+                    id="standard_nc6_6",
                     machine_type="Standard_NC6",
                     min_size=0,
                     max_size=1,
@@ -973,6 +979,7 @@ class TestEntityFactory:
                     min_size=1,
                     max_size=1,
                     name="Master-neuro",
+                    id="master_neuro_8",
                     machine_type="Master-neuro",
                     cpu=8.0,
                     available_cpu=7.0,
@@ -984,6 +991,7 @@ class TestEntityFactory:
                     min_size=1,
                     max_size=1,
                     name="X16-neuro-1xk80",
+                    id="x16_neuro_16",
                     machine_type="X16-neuro",
                     cpu=16.0,
                     available_cpu=15.0,
