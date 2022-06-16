@@ -837,10 +837,8 @@ class PayloadFactory:
     ) -> dict[str, Any]:
         if cloud_provider_type == CloudProviderType.ON_PREM:
             return cls._create_onprem_node_pool(node_pool)
-        elif cloud_provider_type.value.startswith("vcd_"):
-            return cls._create_vcd_node_pool(node_pool)
         else:
-            return cls._create_public_cloud_node_pool(node_pool, cloud_provider_type)
+            return cls._create_cloud_node_pool(node_pool)
 
     @staticmethod
     def _create_onprem_node_pool(node_pool: NodePool) -> dict[str, Any]:
@@ -867,9 +865,7 @@ class PayloadFactory:
         return result
 
     @staticmethod
-    def _create_public_cloud_node_pool(
-        node_pool: NodePool, cloud_provider_type: CloudProviderType
-    ) -> dict[str, Any]:
+    def _create_cloud_node_pool(node_pool: NodePool) -> dict[str, Any]:
         result: dict[str, Any] = {
             "id": node_pool.id,
             "name": node_pool.name,
@@ -890,20 +886,8 @@ class PayloadFactory:
             result["gpu"] = node_pool.gpu
         if node_pool.gpu_model:
             result["gpu_model"] = node_pool.gpu_model
-        return result
-
-    @staticmethod
-    def _create_vcd_node_pool(node_pool: NodePool) -> dict[str, Any]:
-        result = {
-            "id": node_pool.id,
-            "name": node_pool.name,
-            "role": node_pool.role,
-            "min_size": node_pool.min_size,
-            "max_size": node_pool.max_size,
-            "disk_size_gb": node_pool.disk_size_gb,
-            "disk_type": node_pool.disk_type,
-            "price": str(node_pool.price),
-        }
         if node_pool.currency:
             result["currency"] = node_pool.currency
+        if node_pool.price:
+            result["price"] = str(node_pool.price)
         return result

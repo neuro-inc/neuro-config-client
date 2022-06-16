@@ -1686,7 +1686,12 @@ class TestPayloadFactory:
         )
 
     def test_gcp_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
-        payload = factory.create_node_pool(node_pool, CloudProviderType.GCP)
+        np = replace(
+            node_pool,
+            currency=None,
+            price=None,
+        )
+        payload = factory.create_node_pool(np, CloudProviderType.GCP)
         assert payload == {
             "id": "someid",
             "name": "my-node-pool",
@@ -1702,7 +1707,7 @@ class TestPayloadFactory:
             "is_preemptible": True,
         }
 
-        new_np = replace(node_pool, gpu=None, gpu_model=None)
+        new_np = replace(np, gpu=None, gpu_model=None)
         payload = factory.create_node_pool(new_np, CloudProviderType.GCP)
         assert payload == {
             "id": "someid",
@@ -1720,7 +1725,14 @@ class TestPayloadFactory:
     def test_azure_node_pool(
         self, factory: PayloadFactory, node_pool: NodePool
     ) -> None:
-        np = replace(node_pool, zones=None, gpu=None, gpu_model=None)
+        np = replace(
+            node_pool,
+            zones=None,
+            gpu=None,
+            gpu_model=None,
+            currency=None,
+            price=None,
+        )
         payload = factory.create_node_pool(np, CloudProviderType.AZURE)
         assert payload == {
             "id": "someid",
@@ -1735,7 +1747,13 @@ class TestPayloadFactory:
         }
 
     def test_aws_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
-        np = replace(node_pool, gpu=None, gpu_model=None)
+        np = replace(
+            node_pool,
+            gpu=None,
+            gpu_model=None,
+            currency=None,
+            price=None,
+        )
         payload = factory.create_node_pool(np, CloudProviderType.AWS)
         assert payload == {
             "id": "someid",
@@ -1751,7 +1769,15 @@ class TestPayloadFactory:
         }
 
     def test_vcd_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
-        payload = factory.create_node_pool(node_pool, CloudProviderType.VCD_SELECTEL)
+        np = replace(
+            node_pool,
+            gpu=None,
+            gpu_model=None,
+            zones=None,
+            idle_size=None,
+            is_preemptible=None,
+        )
+        payload = factory.create_node_pool(np, CloudProviderType.VCD_SELECTEL)
         assert payload == {
             "id": "someid",
             "name": "my-node-pool",
