@@ -523,9 +523,3 @@ class Cluster:
     disks: DisksConfig | None = None
     buckets: BucketsConfig | None = None
     ingress: IngressConfig | None = None
-
-
-class TemplateNotFoundException(Exception):
-    @classmethod
-    def create(cls, id_: str) -> TemplateNotFoundException:
-        return cls(f"Node pool template {id_!r} not found")

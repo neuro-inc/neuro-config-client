@@ -884,17 +884,12 @@ class PayloadFactory:
             result["is_preemptible"] = node_pool.is_preemptible
         if node_pool.disk_type:
             result["disk_type"] = node_pool.disk_type
-
-        if cloud_provider_type == CloudProviderType.AWS:
-            if node_pool.zones:
-                result["zones"] = node_pool.zones
-        elif cloud_provider_type == CloudProviderType.GCP:
-            if node_pool.zones:
-                result["zones"] = node_pool.zones
-            if node_pool.gpu:
-                result["gpu"] = node_pool.gpu
-            if node_pool.gpu_model:
-                result["gpu_model"] = node_pool.gpu_model
+        if node_pool.zones:
+            result["zones"] = node_pool.zones
+        if node_pool.gpu:
+            result["gpu"] = node_pool.gpu
+        if node_pool.gpu_model:
+            result["gpu_model"] = node_pool.gpu_model
         return result
 
     @staticmethod

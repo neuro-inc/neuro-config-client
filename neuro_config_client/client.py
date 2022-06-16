@@ -28,7 +28,6 @@ from .entities import (
     RegistryConfig,
     SecretsConfig,
     StorageConfig,
-    TemplateNotFoundException,
 )
 from .factories import EntityFactory, PayloadFactory
 
@@ -352,7 +351,7 @@ class ConfigClient:
         """Add new node pool to the existing cluster.
         Cloud provider should be already set up.
 
-        Make sure you use one of the available node pool templates,
+        Make sure you use one of the available node pool templates by providing its ID,
             if the cluster is deployed in public cloud (AWS / GCP / Azure / VCD).
 
         Args:
@@ -370,104 +369,12 @@ class ConfigClient:
 
         cluster = await self.get_cluster(cluster_name, token=token)
         assert cluster.cloud_provider
-        if cluster.cloud_provider.type == CloudProviderType.ON_PREM:
-            return await self._add_onprem_node_pool(
-                cluster,
-                node_pool,
-                token=token,
-                start_deployment=start_deployment,
-            )
-        else:
-            return await self._add_cloud_node_pool(
-                cluster,
-                node_pool,
-                token=token,
-                start_deployment=start_deployment,
-            )
-
-    async def _add_onprem_node_pool(
-        self,
-        cluster: Cluster,
-        node_pool: NodePool,
-        token: str | None = None,
-        start_deployment: bool = True,
-    ) -> Cluster:
-        assert self._client
-        assert cluster.cloud_provider
 
         url = self._clusters_url / cluster.name / "cloud_provider/node_pools"
         headers = self._create_headers(token=token)
         payload = self._payload_factory.create_node_pool(
             node_pool, cluster.cloud_provider.type
         )
-        async with self._client.post(
-            url.with_query(start_deployment=str(start_deployment).lower()),
-            headers=headers,
-            json=payload,
-        ) as response:
-            response.raise_for_status()
-            resp_payload = await response.json()
-            return self._entity_factory.create_cluster(resp_payload)
-
-    async def _add_cloud_node_pool(
-        self,
-        cluster: Cluster,
-        node_pool: NodePool,
-        *,
-        token: str | None = None,
-        start_deployment: bool = True,
-    ) -> Cluster:
-        assert self._client
-        assert cluster.cloud_provider
-        assert node_pool.id
-
-        np_templates = await self.get_node_pool_templates(
-            cluster.cloud_provider.type, token=token
-        )
-        assert np_templates, f"Node pool templates not found in cluster {cluster.name}"
-
-        for np_template in np_templates:
-            if np_template.id == node_pool.id:
-                logger.info(f"Applying node pool template {np_template}")
-                break
-        else:
-            logger.error(
-                f"Node pool template {node_pool.id} is not available"
-                f" in cluster {cluster.name}. "
-                "Consider using one of the following: "
-                f"{', '.join(np.id for np in np_templates)}"
-            )
-            raise TemplateNotFoundException.create(node_pool.id)
-
-        node_pool = NodePool(
-            name=node_pool.name or np_template.id,
-            id=np_template.id,
-            role=node_pool.role,
-            min_size=node_pool.min_size,
-            max_size=node_pool.max_size,
-            idle_size=node_pool.idle_size,
-            machine_type=np_template.machine_type,
-            cpu=np_template.cpu,
-            available_cpu=np_template.available_cpu,
-            memory_mb=np_template.memory_mb,
-            available_memory_mb=np_template.available_memory_mb,
-            disk_size_gb=node_pool.disk_size_gb,
-            disk_type=node_pool.disk_type,
-            gpu=np_template.gpu or node_pool.gpu,
-            gpu_model=np_template.gpu_model or node_pool.gpu_model,
-            price=node_pool.price,
-            currency=node_pool.currency,
-            is_preemptible=node_pool.is_preemptible,
-            zones=node_pool.zones,
-        )
-
-        url = self._clusters_url / cluster.name / "cloud_provider/node_pools"
-        headers = self._create_headers(token=token)
-        payload = self._payload_factory.create_node_pool(
-            node_pool=node_pool,
-            cloud_provider_type=cluster.cloud_provider.type,
-        )
-
         async with self._client.post(
             url.with_query(start_deployment=str(start_deployment).lower()),
             headers=headers,

@@ -1720,7 +1720,8 @@ class TestPayloadFactory:
     def test_azure_node_pool(
         self, factory: PayloadFactory, node_pool: NodePool
     ) -> None:
-        payload = factory.create_node_pool(node_pool, CloudProviderType.AZURE)
+        np = replace(node_pool, zones=None, gpu=None, gpu_model=None)
+        payload = factory.create_node_pool(np, CloudProviderType.AZURE)
         assert payload == {
             "id": "someid",
             "name": "my-node-pool",
@@ -1734,7 +1735,8 @@ class TestPayloadFactory:
         }
 
     def test_aws_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
-        payload = factory.create_node_pool(node_pool, CloudProviderType.AWS)
+        np = replace(node_pool, gpu=None, gpu_model=None)
+        payload = factory.create_node_pool(np, CloudProviderType.AWS)
         assert payload == {
             "id": "someid",
             "name": "my-node-pool",
