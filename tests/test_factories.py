@@ -1685,13 +1685,8 @@ class TestPayloadFactory:
             zones=("here", "there"),
         )
 
-    def test_gcp_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
-        np = replace(
-            node_pool,
-            currency=None,
-            price=None,
-        )
-        payload = factory.create_node_pool(np, CloudProviderType.GCP)
+    def test_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
+        payload = factory.create_node_pool(node_pool)
         assert payload == {
             "id": "someid",
             "name": "my-node-pool",
@@ -1699,110 +1694,40 @@ class TestPayloadFactory:
             "min_size": 0,
             "max_size": 10,
             "idle_size": 1,
+            "is_preemptible": True,
+            "machine_type": "some-machine-type",
+            "cpu": 10,
+            "available_cpu": 9,
+            "memory_mb": 2048,
+            "available_memory_mb": 1024,
             "disk_size_gb": 100500,
             "disk_type": "some-disk-type",
             "gpu": 1,
             "gpu_model": "some-gpu-model",
             "zones": ("here", "there"),
-            "is_preemptible": True,
-        }
-
-        new_np = replace(np, gpu=None, gpu_model=None)
-        payload = factory.create_node_pool(new_np, CloudProviderType.GCP)
-        assert payload == {
-            "id": "someid",
-            "name": "my-node-pool",
-            "role": "platform_job",
-            "min_size": 0,
-            "max_size": 10,
-            "idle_size": 1,
-            "disk_size_gb": 100500,
-            "disk_type": "some-disk-type",
-            "zones": ("here", "there"),
-            "is_preemptible": True,
-        }
-
-    def test_azure_node_pool(
-        self, factory: PayloadFactory, node_pool: NodePool
-    ) -> None:
-        np = replace(
-            node_pool,
-            zones=None,
-            gpu=None,
-            gpu_model=None,
-            currency=None,
-            price=None,
-        )
-        payload = factory.create_node_pool(np, CloudProviderType.AZURE)
-        assert payload == {
-            "id": "someid",
-            "name": "my-node-pool",
-            "role": "platform_job",
-            "min_size": 0,
-            "max_size": 10,
-            "idle_size": 1,
-            "disk_size_gb": 100500,
-            "disk_type": "some-disk-type",
-            "is_preemptible": True,
-        }
-
-    def test_aws_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
-        np = replace(
-            node_pool,
-            gpu=None,
-            gpu_model=None,
-            currency=None,
-            price=None,
-        )
-        payload = factory.create_node_pool(np, CloudProviderType.AWS)
-        assert payload == {
-            "id": "someid",
-            "name": "my-node-pool",
-            "role": "platform_job",
-            "min_size": 0,
-            "max_size": 10,
-            "idle_size": 1,
-            "disk_size_gb": 100500,
-            "disk_type": "some-disk-type",
-            "is_preemptible": True,
-            "zones": ("here", "there"),
-        }
-
-    def test_vcd_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
-        np = replace(
-            node_pool,
-            gpu=None,
-            gpu_model=None,
-            zones=None,
-            idle_size=None,
-            is_preemptible=None,
-        )
-        payload = factory.create_node_pool(np, CloudProviderType.VCD_SELECTEL)
-        assert payload == {
-            "id": "someid",
-            "name": "my-node-pool",
-            "role": "platform_job",
-            "min_size": 0,
-            "max_size": 10,
-            "disk_size_gb": 100500,
-            "disk_type": "some-disk-type",
             "price": "180",
             "currency": "rabbits",
         }
 
-    def test_onprem_node_pool(
-        self, factory: PayloadFactory, node_pool: NodePool
-    ) -> None:
-        payload = factory.create_node_pool(node_pool, CloudProviderType.ON_PREM)
+        np = replace(
+            node_pool,
+            cpu=None,
+            available_cpu=None,
+            memory_mb=None,
+            available_memory_mb=None,
+            zones=None,
+        )
+
+        payload = factory.create_node_pool(np)
         assert payload == {
+            "id": "someid",
             "name": "my-node-pool",
             "role": "platform_job",
             "min_size": 0,
             "max_size": 10,
-            "cpu": 10,
-            "available_cpu": 9,
-            "memory_mb": 2048,
-            "available_memory_mb": 1024,
+            "idle_size": 1,
+            "is_preemptible": True,
+            "machine_type": "some-machine-type",
             "disk_size_gb": 100500,
             "disk_type": "some-disk-type",
             "gpu": 1,

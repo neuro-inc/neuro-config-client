@@ -41,26 +41,26 @@ class NodePool:
 
     min_size: int = 0
     max_size: int = 1
-    idle_size: int = 0
+    idle_size: int | None = None
 
     machine_type: str | None = None
-    cpu: float = 1
-    available_cpu: float = 1
-    memory_mb: int = 1024
-    available_memory_mb: int = 1024
+    cpu: float | None = None
+    available_cpu: float | None = None
+    memory_mb: int | None = None
+    available_memory_mb: int | None = None
 
-    disk_size_gb: int = 20
+    disk_size_gb: int | None = None
     disk_type: str | None = None
 
     gpu: int | None = None
     gpu_model: str | None = None
 
-    price: Decimal = Decimal()
+    price: Decimal | None = None
     currency: str | None = None
 
-    is_preemptible: bool = False
+    is_preemptible: bool | None = None
 
-    zones: Sequence[str] = field(default_factory=tuple)
+    zones: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -73,19 +73,6 @@ class NodePoolTemplate:
     available_memory_mb: int
     gpu: int | None = None
     gpu_model: str | None = None
-
-    def to_nodepool(self, name: str | None = None) -> NodePool:
-        return NodePool(
-            name=name or self.id,
-            id=self.id,
-            machine_type=self.machine_type,
-            cpu=self.cpu,
-            available_cpu=self.available_cpu,
-            memory_mb=self.memory_mb,
-            available_memory_mb=self.available_memory_mb,
-            gpu=self.gpu,
-            gpu_model=self.gpu_model,
-        )
 
 
 @dataclass(frozen=True)

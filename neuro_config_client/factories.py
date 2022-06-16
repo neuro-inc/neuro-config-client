@@ -291,26 +291,27 @@ class EntityFactory:
         )
 
     def create_node_pool(self, payload: dict[str, Any]) -> NodePool:
+        price = Decimal(payload["price"]) if payload.get("price") else NodePool.price
         return NodePool(
             name=payload["name"],
             id=payload.get("id"),
             role=NodeRole(payload["role"]),
             min_size=payload["min_size"],
             max_size=payload["max_size"],
-            cpu=payload["cpu"],
-            available_cpu=payload["available_cpu"],
-            memory_mb=payload["memory_mb"],
-            available_memory_mb=payload["available_memory_mb"],
+            cpu=payload.get("cpu"),
+            available_cpu=payload.get("available_cpu"),
+            memory_mb=payload.get("memory_mb"),
+            available_memory_mb=payload.get("available_memory_mb"),
             disk_size_gb=payload.get("disk_size_gb", NodePool.disk_size_gb),
             disk_type=payload.get("disk_type", NodePool.disk_type),
             gpu=payload.get("gpu"),
             gpu_model=payload.get("gpu_model"),
-            price=Decimal(payload.get("price", NodePool.price)),
+            price=price,
             currency=payload.get("currency", NodePool.currency),
             machine_type=payload.get("machine_type"),
             idle_size=payload.get("idle_size", NodePool.idle_size),
             is_preemptible=payload.get("is_preemptible", NodePool.is_preemptible),
-            zones=payload.get("zones", ()),
+            zones=payload.get("zones", NodePool.zones),
         )
 
     @staticmethod
@@ -832,62 +833,42 @@ class PayloadFactory:
         return result
 
     @classmethod
-    def create_node_pool(
-        cls, node_pool: NodePool, cloud_provider_type: CloudProviderType
-    ) -> dict[str, Any]:
-        if cloud_provider_type == CloudProviderType.ON_PREM:
-            return cls._create_onprem_node_pool(node_pool)
-        else:
-            return cls._create_cloud_node_pool(node_pool)
-
-    @staticmethod
-    def _create_onprem_node_pool(node_pool: NodePool) -> dict[str, Any]:
+    def create_node_pool(cls, node_pool: NodePool) -> dict[str, Any]:
+        node_pool
         result = {
             "name": node_pool.name,
             "role": node_pool.role.value,
             "min_size": node_pool.min_size,
             "max_size": node_pool.max_size,
-            "cpu": node_pool.cpu,
-            "available_cpu": node_pool.available_cpu,
-            "memory_mb": node_pool.memory_mb,
-            "available_memory_mb": node_pool.available_memory_mb,
-            "disk_size_gb": node_pool.disk_size_gb,
-            "price": str(node_pool.price),
         }
-        if node_pool.disk_type:
-            result["disk_type"] = node_pool.disk_type
-        if node_pool.gpu:
-            result["gpu"] = node_pool.gpu
-        if node_pool.gpu_model:
-            result["gpu_model"] = node_pool.gpu_model
-        if node_pool.currency:
-            result["currency"] = node_pool.currency
-        return result
-
-    @staticmethod
-    def _create_cloud_node_pool(node_pool: NodePool) -> dict[str, Any]:
-        result: dict[str, Any] = {
-            "id": node_pool.id,
-            "name": node_pool.name,
-            "role": node_pool.role.value,
-            "min_size": node_pool.min_size,
-            "max_size": node_pool.max_size,
-            "disk_size_gb": node_pool.disk_size_gb,
-        }
+        if node_pool.id:
+            result["id"] = node_pool.id
         if node_pool.idle_size:
             result["idle_size"] = node_pool.idle_size
-        if node_pool.is_preemptible:
-            result["is_preemptible"] = node_pool.is_preemptible
+        if node_pool.machine_type:
+            result["machine_type"] = node_pool.machine_type
+        if node_pool.cpu:
+            result["cpu"] = node_pool.cpu
+        if node_pool.available_cpu:
+            result["available_cpu"] = node_pool.available_cpu
+        if node_pool.memory_mb:
+            result["memory_mb"] = node_pool.memory_mb
+        if node_pool.available_memory_mb:
+            result["available_memory_mb"] = node_pool.available_memory_mb
+        if node_pool.disk_size_gb:
+            result["disk_size_gb"] = node_pool.disk_size_gb
         if node_pool.disk_type:
             result["disk_type"] = node_pool.disk_type
-        if node_pool.zones:
-            result["zones"] = node_pool.zones
         if node_pool.gpu:
             result["gpu"] = node_pool.gpu
         if node_pool.gpu_model:
             result["gpu_model"] = node_pool.gpu_model
-        if node_pool.currency:
-            result["currency"] = node_pool.currency
         if node_pool.price:
             result["price"] = str(node_pool.price)
+        if node_pool.currency:
+            result["currency"] = node_pool.currency
+        if node_pool.is_preemptible:
+            result["is_preemptible"] = node_pool.is_preemptible
+        if node_pool.zones:
+            result["zones"] = node_pool.zones
         return result

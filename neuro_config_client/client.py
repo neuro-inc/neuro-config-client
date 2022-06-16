@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
-from decimal import Decimal
 from types import TracebackType
 from typing import Any
 
@@ -22,7 +21,6 @@ from .entities import (
     MonitoringConfig,
     NodePool,
     NodePoolTemplate,
-    NodeRole,
     NotificationType,
     OrchestratorConfig,
     RegistryConfig,
@@ -367,14 +365,9 @@ class ConfigClient:
         """
         assert self._client
 
-        cluster = await self.get_cluster(cluster_name, token=token)
-        assert cluster.cloud_provider
-
-        url = self._clusters_url / cluster.name / "cloud_provider/node_pools"
+        url = self._clusters_url / cluster_name / "cloud_provider/node_pools"
         headers = self._create_headers(token=token)
-        payload = self._payload_factory.create_node_pool(
-            node_pool, cluster.cloud_provider.type
-        )
+        payload = self._payload_factory.create_node_pool(node_pool)
         async with self._client.post(
             url.with_query(start_deployment=str(start_deployment).lower()),
             headers=headers,
@@ -387,68 +380,23 @@ class ConfigClient:
     async def put_node_pool(
         self,
         cluster_name: str,
-        node_pool_name: str,
+        node_pool: NodePool,
         *,
-        role: NodeRole | None = None,
-        min_size: int | None = None,
-        max_size: int | None = None,
-        idle_size: int | None = None,
-        machine_type: str | None = None,
-        cpu: float | None = None,
-        available_cpu: float | None = None,
-        memory_mb: int | None = None,
-        available_memorty_mb: int | None = None,
-        disk_size_gb: int | None = None,
-        disk_type: str | None = None,
-        gpu: int | None = None,
-        gpu_model: str | None = None,
-        price: Decimal | None = None,
-        currency: str | None = None,
-        is_preemptible: bool | None = None,
-        zones: tuple[str] | None = None,
         token: str | None = None,
         start_deployment: bool = True,
     ) -> Cluster:
         assert self._client
-
-        current_np = await self.get_node_pool(cluster_name, node_pool_name, token=token)
-        cluster = await self.get_cluster(cluster_name, token=token)
-        assert cluster.cloud_provider
-
-        new_np = NodePool(
-            name=node_pool_name,
-            id=current_np.id,
-            role=role or current_np.role,
-            min_size=min_size or current_np.min_size,
-            max_size=max_size or current_np.max_size,
-            idle_size=idle_size or current_np.idle_size,
-            machine_type=machine_type or current_np.machine_type,
-            cpu=cpu or current_np.cpu,
-            available_cpu=available_cpu or current_np.available_cpu,
-            memory_mb=memory_mb or current_np.memory_mb,
-            available_memory_mb=available_memorty_mb or current_np.available_memory_mb,
-            disk_size_gb=disk_size_gb or current_np.disk_size_gb,
-            disk_type=disk_type or current_np.disk_type,
-            gpu=gpu or current_np.gpu,
-            gpu_model=gpu_model or current_np.gpu_model,
-            price=price or current_np.price,
-            currency=currency or current_np.currency,
-            is_preemptible=is_preemptible or current_np.is_preemptible,
-            zones=zones or current_np.zones,
-        )
 
         url = (
             self._clusters_url
             / cluster_name
             / "cloud_provider"
             / "node_pools"
-            / node_pool_name
+            / node_pool.name
         )
         headers = self._create_headers(token=token)
-        payload = self._payload_factory.create_node_pool(
-            new_np,
-            cloud_provider_type=cluster.cloud_provider.type,
-        )
+        payload = self._payload_factory.create_node_pool(node_pool)
+
         async with self._client.put(
             url.with_query(start_deployment=str(start_deployment).lower()),
             headers=headers,
