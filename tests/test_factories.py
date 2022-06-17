@@ -43,6 +43,7 @@ from neuro_config_client.entities import (
     MonitoringConfig,
     NeuroAuthConfig,
     NodePool,
+    NodePoolTemplate,
     OnPremCloudProvider,
     OpenStackCredentials,
     OrchestratorConfig,
@@ -539,6 +540,7 @@ class TestEntityFactory:
             node_pools=[
                 NodePool(
                     name="n1-highmem-8",
+                    id="n1_highmem_8",
                     machine_type="n1-highmem-8",
                     min_size=0,
                     max_size=1,
@@ -550,6 +552,7 @@ class TestEntityFactory:
                 ),
                 NodePool(
                     name="n1-highmem-32-1xk80-preemptible",
+                    id="n1_highmem_32",
                     machine_type="n1-highmem-32",
                     min_size=0,
                     max_size=1,
@@ -648,6 +651,7 @@ class TestEntityFactory:
             node_pools=[
                 NodePool(
                     name="m5-2xlarge",
+                    id="m5_2xlarge_8",
                     machine_type="m5.2xlarge",
                     min_size=0,
                     max_size=1,
@@ -659,6 +663,7 @@ class TestEntityFactory:
                 ),
                 NodePool(
                     name="p2-xlarge-1xk80-preemptible",
+                    id="p2_xlarge_4",
                     machine_type="p2.xlarge",
                     min_size=0,
                     max_size=1,
@@ -761,6 +766,7 @@ class TestEntityFactory:
             node_pools=[
                 NodePool(
                     name="Standard_D8s_v3",
+                    id="standard_d8s_v3_8",
                     machine_type="Standard_D8s_v3",
                     min_size=0,
                     max_size=1,
@@ -772,6 +778,7 @@ class TestEntityFactory:
                 ),
                 NodePool(
                     name="Standard_NC6-1xk80-preemptible",
+                    id="standard_nc6_6",
                     machine_type="Standard_NC6",
                     min_size=0,
                     max_size=1,
@@ -973,6 +980,7 @@ class TestEntityFactory:
                     min_size=1,
                     max_size=1,
                     name="Master-neuro",
+                    id="master_neuro_8",
                     machine_type="Master-neuro",
                     cpu=8.0,
                     available_cpu=7.0,
@@ -984,6 +992,7 @@ class TestEntityFactory:
                     min_size=1,
                     max_size=1,
                     name="X16-neuro-1xk80",
+                    id="x16_neuro_16",
                     machine_type="X16-neuro",
                     cpu=16.0,
                     available_cpu=15.0,
@@ -1151,6 +1160,42 @@ class TestEntityFactory:
                 password="password",
             ),
         )
+
+    @pytest.fixture
+    def node_pool_template_response(self) -> dict[str, Any]:
+        return {
+            "id": "standard_nd24s_24",
+            "machine_type": "Standard_ND24s",
+            "cpu": 24,
+            "available_cpu": 23,
+            "memory_mb": 458752,
+            "available_memory_mb": 452608,
+            "gpu": 4,
+            "gpu_model": "nvidia-tesla-p40",
+            "extra_info": "will be ignored",
+        }
+
+    @pytest.fixture
+    def node_pool_template(self) -> NodePoolTemplate:
+        return NodePoolTemplate(
+            id="standard_nd24s_24",
+            machine_type="Standard_ND24s",
+            cpu=24,
+            available_cpu=23,
+            memory_mb=458752,
+            available_memory_mb=452608,
+            gpu=4,
+            gpu_model="nvidia-tesla-p40",
+        )
+
+    def test_node_pool_template(
+        self,
+        factory: EntityFactory,
+        node_pool_template_response: dict[str, Any],
+        node_pool_template: NodePoolTemplate,
+    ) -> None:
+        created = factory.create_node_pool_template(node_pool_template_response)
+        assert created == node_pool_template
 
 
 class TestPayloadFactory:
@@ -1615,4 +1660,78 @@ class TestPayloadFactory:
             "neuro": {"token": "cluster_token"},
             "neuro_registry": {"username": "username", "password": "password"},
             "neuro_helm": {"username": "username", "password": "password"},
+        }
+
+    @pytest.fixture
+    def node_pool(self) -> NodePool:
+        return NodePool(
+            name="my-node-pool",
+            id="someid",
+            min_size=0,
+            max_size=10,
+            idle_size=1,
+            machine_type="some-machine-type",
+            cpu=10,
+            available_cpu=9,
+            memory_mb=2048,
+            available_memory_mb=1024,
+            disk_size_gb=100500,
+            disk_type="some-disk-type",
+            gpu=1,
+            gpu_model="some-gpu-model",
+            price=Decimal(180),
+            currency="rabbits",
+            is_preemptible=True,
+            zones=("here", "there"),
+        )
+
+    def test_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
+        payload = factory.create_node_pool(node_pool)
+        assert payload == {
+            "id": "someid",
+            "name": "my-node-pool",
+            "role": "platform_job",
+            "min_size": 0,
+            "max_size": 10,
+            "idle_size": 1,
+            "is_preemptible": True,
+            "machine_type": "some-machine-type",
+            "cpu": 10,
+            "available_cpu": 9,
+            "memory_mb": 2048,
+            "available_memory_mb": 1024,
+            "disk_size_gb": 100500,
+            "disk_type": "some-disk-type",
+            "gpu": 1,
+            "gpu_model": "some-gpu-model",
+            "zones": ("here", "there"),
+            "price": "180",
+            "currency": "rabbits",
+        }
+
+        np = replace(
+            node_pool,
+            cpu=None,
+            available_cpu=None,
+            memory_mb=None,
+            available_memory_mb=None,
+            zones=None,
+        )
+
+        payload = factory.create_node_pool(np)
+        assert payload == {
+            "id": "someid",
+            "name": "my-node-pool",
+            "role": "platform_job",
+            "min_size": 0,
+            "max_size": 10,
+            "idle_size": 1,
+            "is_preemptible": True,
+            "machine_type": "some-machine-type",
+            "disk_size_gb": 100500,
+            "disk_type": "some-disk-type",
+            "gpu": 1,
+            "gpu_model": "some-gpu-model",
+            "price": "180",
+            "currency": "rabbits",
         }

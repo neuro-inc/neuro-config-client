@@ -43,6 +43,7 @@ from .entities import (
     MonitoringConfig,
     NeuroAuthConfig,
     NodePool,
+    NodePoolTemplate,
     NodeRole,
     OnPremCloudProvider,
     OpenStackCredentials,
@@ -285,29 +286,45 @@ class EntityFactory:
                 access_key_id=credentials["access_key_id"],
                 secret_access_key=credentials["secret_access_key"],
             ),
-            node_pools=[self._create_node_pool(p) for p in payload["node_pools"]],
+            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
             storage=self._create_aws_storage(payload["storage"]),
         )
 
-    def _create_node_pool(self, payload: dict[str, Any]) -> NodePool:
+    def create_node_pool(self, payload: dict[str, Any]) -> NodePool:
+        price = Decimal(payload["price"]) if payload.get("price") else NodePool.price
         return NodePool(
             name=payload["name"],
+            id=payload.get("id"),
             role=NodeRole(payload["role"]),
             min_size=payload["min_size"],
             max_size=payload["max_size"],
-            cpu=payload["cpu"],
-            available_cpu=payload["available_cpu"],
-            memory_mb=payload["memory_mb"],
-            available_memory_mb=payload["available_memory_mb"],
+            cpu=payload.get("cpu"),
+            available_cpu=payload.get("available_cpu"),
+            memory_mb=payload.get("memory_mb"),
+            available_memory_mb=payload.get("available_memory_mb"),
             disk_size_gb=payload.get("disk_size_gb", NodePool.disk_size_gb),
             disk_type=payload.get("disk_type", NodePool.disk_type),
             gpu=payload.get("gpu"),
             gpu_model=payload.get("gpu_model"),
-            price=Decimal(payload.get("price", NodePool.price)),
+            price=price,
             currency=payload.get("currency", NodePool.currency),
             machine_type=payload.get("machine_type"),
             idle_size=payload.get("idle_size", NodePool.idle_size),
             is_preemptible=payload.get("is_preemptible", NodePool.is_preemptible),
+            zones=payload.get("zones", NodePool.zones),
+        )
+
+    @staticmethod
+    def create_node_pool_template(payload: dict[str, Any]) -> NodePoolTemplate:
+        return NodePoolTemplate(
+            id=payload["id"],
+            machine_type=payload["machine_type"],
+            cpu=payload["cpu"],
+            available_cpu=payload["available_cpu"],
+            memory_mb=payload["memory_mb"],
+            available_memory_mb=payload["available_memory_mb"],
+            gpu=payload.get("gpu"),
+            gpu_model=payload.get("gpu_model"),
         )
 
     def _create_aws_storage(self, payload: dict[str, Any]) -> AWSStorage:
@@ -328,7 +345,7 @@ class EntityFactory:
             project=payload["project"],
             credentials=payload["credentials"],
             tpu_enabled=payload.get("tpu_enabled", False),
-            node_pools=[self._create_node_pool(p) for p in payload["node_pools"]],
+            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
             storage=self._create_google_storage(payload["storage"]),
         )
 
@@ -353,7 +370,7 @@ class EntityFactory:
                 client_id=credentials["client_id"],
                 client_secret=credentials["client_secret"],
             ),
-            node_pools=[self._create_node_pool(p) for p in payload["node_pools"]],
+            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
             storage=self._create_azure_storage(payload["storage"]),
         )
 
@@ -386,7 +403,7 @@ class EntityFactory:
                 URL(payload["kubernetes_url"]) if "kubernetes_url" in payload else None
             ),
             credentials=credentials,
-            node_pools=[self._create_node_pool(p) for p in payload["node_pools"]],
+            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
             storage=None,
         )
 
@@ -409,7 +426,7 @@ class EntityFactory:
                 password=credentials["password"],
                 ssh_password=credentials.get("ssh_password"),
             ),
-            node_pools=[self._create_node_pool(p) for p in payload["node_pools"]],
+            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
             storage=self._create_vcd_storage(payload["storage"]),
         )
 
@@ -813,4 +830,45 @@ class PayloadFactory:
         result: dict[str, Any] = {"acme_environment": ingress.acme_environment.value}
         if ingress.cors_origins:
             result["cors_origins"] = ingress.cors_origins
+        return result
+
+    @classmethod
+    def create_node_pool(cls, node_pool: NodePool) -> dict[str, Any]:
+        node_pool
+        result = {
+            "name": node_pool.name,
+            "role": node_pool.role.value,
+            "min_size": node_pool.min_size,
+            "max_size": node_pool.max_size,
+        }
+        if node_pool.id:
+            result["id"] = node_pool.id
+        if node_pool.idle_size:
+            result["idle_size"] = node_pool.idle_size
+        if node_pool.machine_type:
+            result["machine_type"] = node_pool.machine_type
+        if node_pool.cpu:
+            result["cpu"] = node_pool.cpu
+        if node_pool.available_cpu:
+            result["available_cpu"] = node_pool.available_cpu
+        if node_pool.memory_mb:
+            result["memory_mb"] = node_pool.memory_mb
+        if node_pool.available_memory_mb:
+            result["available_memory_mb"] = node_pool.available_memory_mb
+        if node_pool.disk_size_gb:
+            result["disk_size_gb"] = node_pool.disk_size_gb
+        if node_pool.disk_type:
+            result["disk_type"] = node_pool.disk_type
+        if node_pool.gpu:
+            result["gpu"] = node_pool.gpu
+        if node_pool.gpu_model:
+            result["gpu_model"] = node_pool.gpu_model
+        if node_pool.price:
+            result["price"] = str(node_pool.price)
+        if node_pool.currency:
+            result["currency"] = node_pool.currency
+        if node_pool.is_preemptible:
+            result["is_preemptible"] = node_pool.is_preemptible
+        if node_pool.zones:
+            result["zones"] = node_pool.zones
         return result

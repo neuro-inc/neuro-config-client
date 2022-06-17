@@ -11,6 +11,7 @@ from yarl import URL
 
 from .entities import (
     BucketsConfig,
+    CloudProviderType,
     Cluster,
     CredentialsConfig,
     DisksConfig,
@@ -18,6 +19,8 @@ from .entities import (
     IngressConfig,
     MetricsConfig,
     MonitoringConfig,
+    NodePool,
+    NodePoolTemplate,
     NotificationType,
     OrchestratorConfig,
     RegistryConfig,
@@ -38,6 +41,7 @@ class ConfigClient:
         trace_configs: Sequence[aiohttp.TraceConfig] = (),
     ):
         self._clusters_url = url / "api/v1/clusters"
+        self._cloud_providers_url = url / "api/v1/cloud_providers"
         self._token = token
         self._timeout = timeout
         self._trace_configs = trace_configs
@@ -275,6 +279,157 @@ class ConfigClient:
             if not ignore_not_found or e.status != 404:
                 raise
         return await self.get_cluster(cluster_name)
+
+    async def get_node_pool(
+        self,
+        cluster_name: str,
+        node_pool_name: str,
+        *,
+        token: str | None = None,
+    ) -> NodePool:
+        assert self._client
+        url = (
+            self._clusters_url
+            / cluster_name
+            / "cloud_provider"
+            / "node_pools"
+            / node_pool_name
+        )
+
+        headers = self._create_headers(token=token)
+        async with self._client.get(url=url, headers=headers) as response:
+            response.raise_for_status()
+            resp_payload = await response.json()
+            return self._entity_factory.create_node_pool(resp_payload)
+
+    async def get_node_pools(
+        self,
+        cluster_name: str,
+        *,
+        token: str | None = None,
+    ) -> list[NodePool]:
+        assert self._client
+        url = self._clusters_url / cluster_name / "cloud_provider/node_pools"
+
+        headers = self._create_headers(token=token)
+        async with self._client.get(url=url, headers=headers) as response:
+            response.raise_for_status()
+            resp_payload = await response.json()
+            return [self._entity_factory.create_node_pool(n) for n in resp_payload]
+
+    async def get_node_pool_templates(
+        self,
+        cloud_provider_type: CloudProviderType,
+        *,
+        token: str | None = None,
+    ) -> list[NodePoolTemplate]:
+        assert self._client
+        if cloud_provider_type == CloudProviderType.ON_PREM:
+            raise ValueError("Templates are not supported in onprem clusters.")
+
+        url = self._cloud_providers_url / cloud_provider_type.value
+        headers = self._create_headers(token=token)
+        async with self._client.get(url=url, headers=headers) as response:
+            response.raise_for_status()
+            resp_payload = await response.json()
+            np_templates = [
+                self._entity_factory.create_node_pool_template(npt)
+                for npt in resp_payload["node_pools"]
+            ]
+            return np_templates
+
+    async def add_node_pool(
+        self,
+        cluster_name: str,
+        node_pool: NodePool,
+        *,
+        token: str | None = None,
+        start_deployment: bool = True,
+    ) -> Cluster:
+        """Add new node pool to the existing cluster.
+        Cloud provider should be already set up.
+
+        Make sure you use one of the available node pool templates by providing its ID,
+            if the cluster is deployed in public cloud (AWS / GCP / Azure / VCD).
+
+        Args:
+            cluster_name (str): Name of the cluster within the platform.
+            node_pool (NodePool): Node pool instance.
+                For templates, you could use template.to_node_pool() method
+            token (str | None, optional): User token to perform changes.
+                Should has write access to cluster://{cluster_name}/cloud_provider role.
+            start_deployment (bool, optional): Start applying changes. Defaults to True.
+
+        Returns:
+            Cluster: Cluster instance with applied changes
+        """
+        assert self._client
+
+        url = self._clusters_url / cluster_name / "cloud_provider/node_pools"
+        headers = self._create_headers(token=token)
+        payload = self._payload_factory.create_node_pool(node_pool)
+        async with self._client.post(
+            url.with_query(start_deployment=str(start_deployment).lower()),
+            headers=headers,
+            json=payload,
+        ) as response:
+            response.raise_for_status()
+            resp_payload = await response.json()
+            return self._entity_factory.create_cluster(resp_payload)
+
+    async def put_node_pool(
+        self,
+        cluster_name: str,
+        node_pool: NodePool,
+        *,
+        token: str | None = None,
+        start_deployment: bool = True,
+    ) -> Cluster:
+        assert self._client
+
+        url = (
+            self._clusters_url
+            / cluster_name
+            / "cloud_provider"
+            / "node_pools"
+            / node_pool.name
+        )
+        headers = self._create_headers(token=token)
+        payload = self._payload_factory.create_node_pool(node_pool)
+
+        async with self._client.put(
+            url.with_query(start_deployment=str(start_deployment).lower()),
+            headers=headers,
+            json=payload,
+        ) as response:
+            response.raise_for_status()
+            resp_payload = await response.json()
+            return self._entity_factory.create_cluster(resp_payload)
+
+    async def delete_node_pool(
+        self,
+        cluster_name: str,
+        node_pool_name: str,
+        *,
+        token: str | None = None,
+        start_deployment: bool = True,
+    ) -> Cluster:
+        assert self._client
+
+        url = (
+            self._clusters_url
+            / cluster_name
+            / "cloud_provider/node_pools"
+            / node_pool_name
+        )
+        headers = self._create_headers(token=token)
+        async with self._client.delete(
+            url.with_query(start_deployment=str(start_deployment).lower()),
+            headers=headers,
+        ) as response:
+            response.raise_for_status()
+            resp_payload = await response.json()
+            return self._entity_factory.create_cluster(resp_payload)
 
     async def notify(
         self,

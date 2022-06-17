@@ -36,30 +36,43 @@ class NodeRole(str, enum.Enum):
 @dataclass(frozen=True)
 class NodePool:
     name: str
+    id: str | None = None
     role: NodeRole = NodeRole.PLATFORM_JOB
 
     min_size: int = 0
     max_size: int = 1
-    idle_size: int = 0
+    idle_size: int | None = None
 
     machine_type: str | None = None
-    cpu: float = 1
-    available_cpu: float = 1
-    memory_mb: int = 1024
-    available_memory_mb: int = 1024
+    cpu: float | None = None
+    available_cpu: float | None = None
+    memory_mb: int | None = None
+    available_memory_mb: int | None = None
 
-    disk_size_gb: int = 20
+    disk_size_gb: int | None = None
     disk_type: str | None = None
 
     gpu: int | None = None
     gpu_model: str | None = None
 
-    price: Decimal = Decimal()
+    price: Decimal | None = None
     currency: str | None = None
 
-    is_preemptible: bool = False
+    is_preemptible: bool | None = None
 
-    zones: Sequence[str] = field(default_factory=tuple)
+    zones: tuple[str, ...] | None = None
+
+
+@dataclass(frozen=True)
+class NodePoolTemplate:
+    id: str
+    machine_type: str
+    cpu: float
+    available_cpu: float
+    memory_mb: int
+    available_memory_mb: int
+    gpu: int | None = None
+    gpu_model: str | None = None
 
 
 @dataclass(frozen=True)
