@@ -107,7 +107,7 @@ class TestEntityFactory:
                 "metrics": {"url": "https://secrets-dev.neu.ro"},
                 "disks": {
                     "url": "https://secrets-dev.neu.ro",
-                    "storage_limit_per_user_gb": 1024,
+                    "storage_limit_per_user": 1024,
                 },
                 "ingress": {"acme_environment": "production"},
                 "dns": {
@@ -152,7 +152,7 @@ class TestEntityFactory:
                         "name": "cpu-micro",
                         "credits_per_hour": "10",
                         "cpu": 0.1,
-                        "memory_mb": 100,
+                        "memory": 100,
                     }
                 ],
                 "allow_privileged_mode": True,
@@ -163,7 +163,7 @@ class TestEntityFactory:
                         "name": "idle",
                         "count": 1,
                         "image": "miner",
-                        "resources": {"cpu_m": 1000, "memory_mb": 1024},
+                        "resources": {"cpu_m": 1000, "memory": 1024},
                     },
                     {
                         "name": "idle",
@@ -171,7 +171,7 @@ class TestEntityFactory:
                         "image": "miner",
                         "command": ["bash"],
                         "args": ["-c", "sleep infinity"],
-                        "resources": {"cpu_m": 1000, "memory_mb": 1024},
+                        "resources": {"cpu_m": 1000, "memory": 1024},
                         "env": {"NAME": "VALUE"},
                         "node_selector": {"label": "value"},
                         "image_pull_secret": "secret",
@@ -197,7 +197,7 @@ class TestEntityFactory:
                     name="idle",
                     count=1,
                     image="miner",
-                    resources=Resources(cpu_m=1000, memory_mb=1024),
+                    resources=Resources(cpu_m=1000, memory=1024),
                 ),
                 IdleJobConfig(
                     name="idle",
@@ -205,7 +205,7 @@ class TestEntityFactory:
                     image="miner",
                     command=["bash"],
                     args=["-c", "sleep infinity"],
-                    resources=Resources(cpu_m=1000, memory_mb=1024),
+                    resources=Resources(cpu_m=1000, memory=1024),
                     env={"NAME": "VALUE"},
                     node_selector={"label": "value"},
                     image_pull_secret="secret",
@@ -245,9 +245,9 @@ class TestEntityFactory:
                 "idle_size": 1,
                 "cpu": 4.0,
                 "available_cpu": 3.0,
-                "memory_mb": 12 * 1024,
-                "available_memory_mb": 10 * 1024,
-                "disk_size_gb": 700,
+                "memory": 12 * 1024,
+                "available_memory": 10 * 1024,
+                "disk_size": 700,
                 "gpu": 1,
                 "gpu_model": "nvidia-tesla-k80",
                 "tpu": {
@@ -268,8 +268,8 @@ class TestEntityFactory:
             idle_size=1,
             cpu=4.0,
             available_cpu=3.0,
-            memory_mb=12 * 1024,
-            available_memory_mb=10 * 1024,
+            memory=12 * 1024,
+            available_memory=10 * 1024,
             gpu=1,
             gpu_model="nvidia-tesla-k80",
             tpu=mock.ANY,
@@ -302,12 +302,12 @@ class TestEntityFactory:
                 "name": "cpu-small",
                 "credits_per_hour": "10",
                 "cpu": 4.0,
-                "memory_mb": 1024,
+                "memory": 1024,
             }
         )
 
         assert result == ResourcePreset(
-            name="cpu-small", credits_per_hour=Decimal("10"), cpu=4.0, memory_mb=1024
+            name="cpu-small", credits_per_hour=Decimal("10"), cpu=4.0, memory=1024
         )
 
     def test_create_resource_preset_with_memory_gpu_tpu_preemptible_affinity(
@@ -318,7 +318,7 @@ class TestEntityFactory:
                 "name": "gpu-small",
                 "credits_per_hour": "10",
                 "cpu": 4.0,
-                "memory_mb": 12288,
+                "memory": 12288,
                 "gpu": 1,
                 "gpu_model": "nvidia-tesla-k80",
                 "tpu": {"type": "tpu", "software_version": "v1"},
@@ -332,7 +332,7 @@ class TestEntityFactory:
             name="gpu-small",
             credits_per_hour=Decimal("10"),
             cpu=4.0,
-            memory_mb=12288,
+            memory=12288,
             gpu=1,
             gpu_model="nvidia-tesla-k80",
             tpu=TPUPreset(type="tpu", software_version="v1"),
@@ -354,7 +354,7 @@ class TestEntityFactory:
                 "url": "https://storage-dev.neu.ro",
                 "volumes": [
                     {},
-                    {"path": "/volume", "size_mb": 1024},
+                    {"path": "/volume", "size": 1024},
                 ],
             }
         )
@@ -363,7 +363,7 @@ class TestEntityFactory:
             url=URL("https://storage-dev.neu.ro"),
             volumes=[
                 VolumeConfig(),
-                VolumeConfig(path="/volume", size_mb=1024),
+                VolumeConfig(path="/volume", size=1024),
             ],
         )
 
@@ -423,11 +423,11 @@ class TestEntityFactory:
 
     def test_create_disks(self, factory: EntityFactory) -> None:
         result = factory.create_disks(
-            {"url": "https://metrics-dev.neu.ro", "storage_limit_per_user_gb": 1024}
+            {"url": "https://metrics-dev.neu.ro", "storage_limit_per_user": 1024}
         )
 
         assert result == DisksConfig(
-            url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user_gb=1024
+            url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user=1024
         )
 
     def test_create_buckets(self, factory: EntityFactory) -> None:
@@ -484,9 +484,9 @@ class TestEntityFactory:
                     "max_size": 1,
                     "cpu": 8.0,
                     "available_cpu": 7.0,
-                    "memory_mb": 52 * 1024,
-                    "available_memory_mb": 45 * 1024,
-                    "disk_size_gb": 700,
+                    "memory": 52 * 1024,
+                    "available_memory": 45 * 1024,
+                    "disk_size": 700,
                 },
                 {
                     "id": "n1_highmem_32",
@@ -498,9 +498,9 @@ class TestEntityFactory:
                     "idle_size": 1,
                     "cpu": 32.0,
                     "available_cpu": 31.0,
-                    "memory_mb": 208 * 1024,
-                    "available_memory_mb": 201 * 1024,
-                    "disk_size_gb": 700,
+                    "memory": 208 * 1024,
+                    "available_memory": 201 * 1024,
+                    "disk_size": 700,
                     "gpu": 1,
                     "gpu_model": "nvidia-tesla-k80",
                     "is_preemptible": True,
@@ -512,8 +512,8 @@ class TestEntityFactory:
                 "backend": "filestore",
                 "tier": "PREMIUM",
                 "instances": [
-                    {"size_mb": 5 * 1024 * 1024, "ready": False},
-                    {"name": "org", "size_mb": 3 * 1024 * 1024, "ready": True},
+                    {"size": 5 * 1024 * 1024, "ready": False},
+                    {"name": "org", "size": 3 * 1024 * 1024, "ready": True},
                 ],
             },
         }
@@ -546,9 +546,9 @@ class TestEntityFactory:
                     max_size=1,
                     cpu=8.0,
                     available_cpu=7.0,
-                    memory_mb=52 * 1024,
-                    available_memory_mb=45 * 1024,
-                    disk_size_gb=700,
+                    memory=52 * 1024,
+                    available_memory=45 * 1024,
+                    disk_size=700,
                 ),
                 NodePool(
                     name="n1-highmem-32-1xk80-preemptible",
@@ -559,9 +559,9 @@ class TestEntityFactory:
                     idle_size=1,
                     cpu=32.0,
                     available_cpu=31.0,
-                    memory_mb=208 * 1024,
-                    available_memory_mb=201 * 1024,
-                    disk_size_gb=700,
+                    memory=208 * 1024,
+                    available_memory=201 * 1024,
+                    disk_size=700,
                     gpu=1,
                     gpu_model="nvidia-tesla-k80",
                     is_preemptible=True,
@@ -572,8 +572,8 @@ class TestEntityFactory:
                 description="GCP Filestore (Premium)",
                 tier=GoogleFilestoreTier.PREMIUM,
                 instances=[
-                    StorageInstance(size_mb=5 * 1024 * 1024),
-                    StorageInstance(name="org", size_mb=3 * 1024 * 1024, ready=True),
+                    StorageInstance(size=5 * 1024 * 1024),
+                    StorageInstance(name="org", size=3 * 1024 * 1024, ready=True),
                 ],
             ),
         )
@@ -608,9 +608,9 @@ class TestEntityFactory:
                     "max_size": 1,
                     "cpu": 8.0,
                     "available_cpu": 7.0,
-                    "memory_mb": 32 * 1024,
-                    "available_memory_mb": 28 * 1024,
-                    "disk_size_gb": 700,
+                    "memory": 32 * 1024,
+                    "available_memory": 28 * 1024,
+                    "disk_size": 700,
                 },
                 {
                     "id": "p2_xlarge_4",
@@ -622,9 +622,9 @@ class TestEntityFactory:
                     "idle_size": 1,
                     "cpu": 4.0,
                     "available_cpu": 3.0,
-                    "memory_mb": 61 * 1024,
-                    "available_memory_mb": 57 * 1024,
-                    "disk_size_gb": 700,
+                    "memory": 61 * 1024,
+                    "available_memory": 57 * 1024,
+                    "disk_size": 700,
                     "gpu": 1,
                     "gpu_model": "nvidia-tesla-k80",
                     "is_preemptible": True,
@@ -657,9 +657,9 @@ class TestEntityFactory:
                     max_size=1,
                     cpu=8.0,
                     available_cpu=7.0,
-                    memory_mb=32 * 1024,
-                    available_memory_mb=28 * 1024,
-                    disk_size_gb=700,
+                    memory=32 * 1024,
+                    available_memory=28 * 1024,
+                    disk_size=700,
                 ),
                 NodePool(
                     name="p2-xlarge-1xk80-preemptible",
@@ -670,9 +670,9 @@ class TestEntityFactory:
                     idle_size=1,
                     cpu=4.0,
                     available_cpu=3.0,
-                    memory_mb=61 * 1024,
-                    available_memory_mb=57 * 1024,
-                    disk_size_gb=700,
+                    memory=61 * 1024,
+                    available_memory=57 * 1024,
+                    disk_size=700,
                     gpu=1,
                     gpu_model="nvidia-tesla-k80",
                     is_preemptible=True,
@@ -718,9 +718,9 @@ class TestEntityFactory:
                     "max_size": 1,
                     "cpu": 8.0,
                     "available_cpu": 7.0,
-                    "memory_mb": 32 * 1024,
-                    "available_memory_mb": 28 * 1024,
-                    "disk_size_gb": 700,
+                    "memory": 32 * 1024,
+                    "available_memory": 28 * 1024,
+                    "disk_size": 700,
                 },
                 {
                     "id": "standard_nc6_6",
@@ -732,9 +732,9 @@ class TestEntityFactory:
                     "idle_size": 1,
                     "cpu": 6.0,
                     "available_cpu": 5.0,
-                    "memory_mb": 56 * 1024,
-                    "available_memory_mb": 50 * 1024,
-                    "disk_size_gb": 700,
+                    "memory": 56 * 1024,
+                    "available_memory": 50 * 1024,
+                    "disk_size": 700,
                     "gpu": 1,
                     "gpu_model": "nvidia-tesla-k80",
                     "is_preemptible": True,
@@ -746,8 +746,8 @@ class TestEntityFactory:
                 "tier": "Premium",
                 "replication_type": "LRS",
                 "instances": [
-                    {"size_mb": 100 * 1024, "ready": False},
-                    {"name": "org", "size_mb": 200 * 1024, "ready": True},
+                    {"size": 100 * 1024, "ready": False},
+                    {"name": "org", "size": 200 * 1024, "ready": True},
                 ],
             },
         }
@@ -772,9 +772,9 @@ class TestEntityFactory:
                     max_size=1,
                     cpu=8.0,
                     available_cpu=7.0,
-                    memory_mb=32 * 1024,
-                    available_memory_mb=28 * 1024,
-                    disk_size_gb=700,
+                    memory=32 * 1024,
+                    available_memory=28 * 1024,
+                    disk_size=700,
                 ),
                 NodePool(
                     name="Standard_NC6-1xk80-preemptible",
@@ -785,9 +785,9 @@ class TestEntityFactory:
                     idle_size=1,
                     cpu=6.0,
                     available_cpu=5.0,
-                    memory_mb=56 * 1024,
-                    available_memory_mb=50 * 1024,
-                    disk_size_gb=700,
+                    memory=56 * 1024,
+                    available_memory=50 * 1024,
+                    disk_size=700,
                     gpu=1,
                     gpu_model="nvidia-tesla-k80",
                     is_preemptible=True,
@@ -799,8 +799,8 @@ class TestEntityFactory:
                 tier=AzureStorageTier.PREMIUM,
                 replication_type=AzureReplicationType.LRS,
                 instances=[
-                    StorageInstance(size_mb=100 * 1024),
-                    StorageInstance(name="org", size_mb=200 * 1024, ready=True),
+                    StorageInstance(size=100 * 1024),
+                    StorageInstance(name="org", size=200 * 1024, ready=True),
                 ],
             ),
         )
@@ -832,9 +832,9 @@ class TestEntityFactory:
                     "machine_type": "cpu-machine",
                     "cpu": 1.0,
                     "available_cpu": 1.0,
-                    "memory_mb": 1024,
-                    "available_memory_mb": 1024,
-                    "disk_size_gb": 700,
+                    "memory": 1024,
+                    "available_memory": 1024,
+                    "disk_size": 700,
                 },
                 {
                     "role": "platform_job",
@@ -844,9 +844,9 @@ class TestEntityFactory:
                     "machine_type": "gpu-machine-1xk80",
                     "cpu": 1.0,
                     "available_cpu": 1.0,
-                    "memory_mb": 1024,
-                    "available_memory_mb": 1024,
-                    "disk_size_gb": 700,
+                    "memory": 1024,
+                    "available_memory": 1024,
+                    "disk_size": 700,
                     "gpu": 1,
                     "gpu_model": "nvidia-tesla-k80",
                     "price": "0.9",
@@ -869,9 +869,9 @@ class TestEntityFactory:
                     name="cpu-machine",
                     cpu=1.0,
                     available_cpu=1.0,
-                    memory_mb=1024,
-                    available_memory_mb=1024,
-                    disk_size_gb=700,
+                    memory=1024,
+                    available_memory=1024,
+                    disk_size=700,
                     machine_type="cpu-machine",
                 ),
                 NodePool(
@@ -880,9 +880,9 @@ class TestEntityFactory:
                     name="gpu-machine-1xk80",
                     cpu=1.0,
                     available_cpu=1.0,
-                    memory_mb=1024,
-                    available_memory_mb=1024,
-                    disk_size_gb=700,
+                    memory=1024,
+                    available_memory=1024,
+                    disk_size=700,
                     gpu=1,
                     gpu_model="nvidia-tesla-k80",
                     price=Decimal("0.9"),
@@ -928,9 +928,9 @@ class TestEntityFactory:
                     "machine_type": "Master-neuro",
                     "cpu": 8.0,
                     "available_cpu": 7.0,
-                    "memory_mb": 32 * 1024,
-                    "available_memory_mb": 29 * 1024,
-                    "disk_size_gb": 700,
+                    "memory": 32 * 1024,
+                    "available_memory": 29 * 1024,
+                    "disk_size": 700,
                 },
                 {
                     "id": "x16_neuro_16",
@@ -941,9 +941,9 @@ class TestEntityFactory:
                     "machine_type": "X16-neuro",
                     "cpu": 16.0,
                     "available_cpu": 15.0,
-                    "memory_mb": 40 * 1024,
-                    "available_memory_mb": 37 * 1024,
-                    "disk_size_gb": 700,
+                    "memory": 40 * 1024,
+                    "available_memory": 37 * 1024,
+                    "disk_size": 700,
                     "gpu": 1,
                     "gpu_model": "nvidia-tesla-k80",
                     "price": "0.9",
@@ -952,10 +952,10 @@ class TestEntityFactory:
             ],
             "storage": {
                 "profile_name": "profile",
-                "size_gib": 10,
+                "size": 10,
                 "instances": [
-                    {"size_mb": 7 * 1024, "ready": False},
-                    {"name": "org", "size_mb": 3 * 1024, "ready": True},
+                    {"size": 7 * 1024, "ready": False},
+                    {"name": "org", "size": 3 * 1024, "ready": True},
                 ],
                 "description": "profile",
             },
@@ -984,9 +984,9 @@ class TestEntityFactory:
                     machine_type="Master-neuro",
                     cpu=8.0,
                     available_cpu=7.0,
-                    memory_mb=32 * 1024,
-                    available_memory_mb=29 * 1024,
-                    disk_size_gb=700,
+                    memory=32 * 1024,
+                    available_memory=29 * 1024,
+                    disk_size=700,
                 ),
                 NodePool(
                     min_size=1,
@@ -996,9 +996,9 @@ class TestEntityFactory:
                     machine_type="X16-neuro",
                     cpu=16.0,
                     available_cpu=15.0,
-                    memory_mb=40 * 1024,
-                    available_memory_mb=37 * 1024,
-                    disk_size_gb=700,
+                    memory=40 * 1024,
+                    available_memory=37 * 1024,
+                    disk_size=700,
                     gpu=1,
                     gpu_model="nvidia-tesla-k80",
                     price=Decimal("0.9"),
@@ -1008,10 +1008,10 @@ class TestEntityFactory:
             storage=VCDStorage(
                 description="profile",
                 profile_name="profile",
-                size_gib=10,
+                size=10,
                 instances=[
-                    StorageInstance(size_mb=7 * 1024),
-                    StorageInstance(name="org", size_mb=3 * 1024, ready=True),
+                    StorageInstance(size=7 * 1024),
+                    StorageInstance(name="org", size=3 * 1024, ready=True),
                 ],
             ),
         )
@@ -1168,8 +1168,8 @@ class TestEntityFactory:
             "machine_type": "Standard_ND24s",
             "cpu": 24,
             "available_cpu": 23,
-            "memory_mb": 458752,
-            "available_memory_mb": 452608,
+            "memory": 458752,
+            "available_memory": 452608,
             "gpu": 4,
             "gpu_model": "nvidia-tesla-p40",
             "extra_info": "will be ignored",
@@ -1182,8 +1182,8 @@ class TestEntityFactory:
             machine_type="Standard_ND24s",
             cpu=24,
             available_cpu=23,
-            memory_mb=458752,
-            available_memory_mb=452608,
+            memory=458752,
+            available_memory=452608,
             gpu=4,
             gpu_model="nvidia-tesla-p40",
         )
@@ -1220,7 +1220,7 @@ class TestPayloadFactory:
                         name="cpu-micro",
                         credits_per_hour=Decimal(10),
                         cpu=0.1,
-                        memory_mb=100,
+                        memory=100,
                     )
                 ],
                 pre_pull_images=["neuromation/base"],
@@ -1229,7 +1229,7 @@ class TestPayloadFactory:
                         name="idle",
                         count=1,
                         image="miner",
-                        resources=Resources(cpu_m=1000, memory_mb=1024),
+                        resources=Resources(cpu_m=1000, memory=1024),
                     ),
                     IdleJobConfig(
                         name="idle",
@@ -1237,7 +1237,7 @@ class TestPayloadFactory:
                         image="miner",
                         command=["bash"],
                         args=["-c", "sleep infinity"],
-                        resources=Resources(cpu_m=1000, memory_mb=1024),
+                        resources=Resources(cpu_m=1000, memory=1024),
                         env={"NAME": "VALUE"},
                         node_selector={"label": "value"},
                         image_pull_secret="secret",
@@ -1263,7 +1263,7 @@ class TestPayloadFactory:
                     "name": "idle",
                     "count": 1,
                     "image": "miner",
-                    "resources": {"cpu_m": 1000, "memory_mb": 1024},
+                    "resources": {"cpu_m": 1000, "memory": 1024},
                 },
                 {
                     "name": "idle",
@@ -1271,7 +1271,7 @@ class TestPayloadFactory:
                     "image": "miner",
                     "command": ["bash"],
                     "args": ["-c", "sleep infinity"],
-                    "resources": {"cpu_m": 1000, "memory_mb": 1024},
+                    "resources": {"cpu_m": 1000, "memory": 1024},
                     "env": {"NAME": "VALUE"},
                     "node_selector": {"label": "value"},
                     "image_pull_secret": "secret",
@@ -1308,9 +1308,9 @@ class TestPayloadFactory:
                 idle_size=1,
                 cpu=4.0,
                 available_cpu=3.0,
-                memory_mb=12 * 1024,
-                available_memory_mb=10 * 1024,
-                disk_size_gb=700,
+                memory=12 * 1024,
+                available_memory=10 * 1024,
+                disk_size=700,
                 gpu=1,
                 gpu_model="nvidia-tesla-k80",
                 tpu=TPUResource(
@@ -1331,9 +1331,9 @@ class TestPayloadFactory:
             "idle_size": 1,
             "cpu": 4.0,
             "available_cpu": 3.0,
-            "memory_mb": 12 * 1024,
-            "available_memory_mb": 10 * 1024,
-            "disk_size_gb": 700,
+            "memory": 12 * 1024,
+            "available_memory": 10 * 1024,
+            "disk_size": 700,
             "gpu": 1,
             "gpu_model": "nvidia-tesla-k80",
             "tpu": {
@@ -1352,13 +1352,13 @@ class TestPayloadFactory:
         assert result == {
             "name": "node-pool",
             "available_cpu": 1.0,
-            "available_memory_mb": 1024,
+            "available_memory": 2**30,
             "cpu": 1.0,
-            "disk_size_gb": 150,
+            "disk_size": 150 * 2**30,
             "idle_size": 0,
             "is_preemptible": False,
             "max_size": 1,
-            "memory_mb": 1024,
+            "memory": 2**30,
             "min_size": 0,
         }
 
@@ -1381,7 +1381,7 @@ class TestPayloadFactory:
                 name="cpu-small",
                 credits_per_hour=Decimal("10"),
                 cpu=4.0,
-                memory_mb=1024,
+                memory=1024,
             )
         )
 
@@ -1389,7 +1389,7 @@ class TestPayloadFactory:
             "name": "cpu-small",
             "credits_per_hour": "10",
             "cpu": 4.0,
-            "memory_mb": 1024,
+            "memory": 1024,
         }
 
     def test_create_resource_preset_with_memory_gpu_tpu_preemptible_affinity(
@@ -1400,7 +1400,7 @@ class TestPayloadFactory:
                 name="gpu-small",
                 credits_per_hour=Decimal("10"),
                 cpu=4.0,
-                memory_mb=12288,
+                memory=12288,
                 gpu=1,
                 gpu_model="nvidia-tesla-k80",
                 tpu=TPUPreset(type="tpu", software_version="v1"),
@@ -1414,7 +1414,7 @@ class TestPayloadFactory:
             "name": "gpu-small",
             "credits_per_hour": "10",
             "cpu": 4.0,
-            "memory_mb": 12288,
+            "memory": 12288,
             "gpu": 1,
             "gpu_model": "nvidia-tesla-k80",
             "tpu": {"type": "tpu", "software_version": "v1"},
@@ -1435,7 +1435,7 @@ class TestPayloadFactory:
                 url=URL("https://storage-dev.neu.ro"),
                 volumes=[
                     VolumeConfig(),
-                    VolumeConfig(path="/volume", size_mb=1024),
+                    VolumeConfig(path="/volume", size=1024),
                 ],
             )
         )
@@ -1444,7 +1444,7 @@ class TestPayloadFactory:
             "url": "https://storage-dev.neu.ro",
             "volumes": [
                 {},
-                {"path": "/volume", "size_mb": 1024},
+                {"path": "/volume", "size": 1024},
             ],
         }
 
@@ -1516,13 +1516,13 @@ class TestPayloadFactory:
     def test_create_disks(self, factory: PayloadFactory) -> None:
         result = factory.create_disks(
             DisksConfig(
-                url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user_gb=1024
+                url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user=1024
             )
         )
 
         assert result == {
             "url": "https://metrics-dev.neu.ro",
-            "storage_limit_per_user_gb": 1024,
+            "storage_limit_per_user": 1024,
         }
 
     def test_create_buckets(self, factory: PayloadFactory) -> None:
@@ -1673,9 +1673,9 @@ class TestPayloadFactory:
             machine_type="some-machine-type",
             cpu=10,
             available_cpu=9,
-            memory_mb=2048,
-            available_memory_mb=1024,
-            disk_size_gb=100500,
+            memory=2048,
+            available_memory=1024,
+            disk_size=100500,
             disk_type="some-disk-type",
             gpu=1,
             gpu_model="some-gpu-model",
@@ -1698,9 +1698,9 @@ class TestPayloadFactory:
             "machine_type": "some-machine-type",
             "cpu": 10,
             "available_cpu": 9,
-            "memory_mb": 2048,
-            "available_memory_mb": 1024,
-            "disk_size_gb": 100500,
+            "memory": 2048,
+            "available_memory": 1024,
+            "disk_size": 100500,
             "disk_type": "some-disk-type",
             "gpu": 1,
             "gpu_model": "some-gpu-model",
@@ -1713,8 +1713,8 @@ class TestPayloadFactory:
             node_pool,
             cpu=None,
             available_cpu=None,
-            memory_mb=None,
-            available_memory_mb=None,
+            memory=None,
+            available_memory=None,
             zones=None,
         )
 
@@ -1728,7 +1728,7 @@ class TestPayloadFactory:
             "idle_size": 1,
             "is_preemptible": True,
             "machine_type": "some-machine-type",
-            "disk_size_gb": 100500,
+            "disk_size": 100500,
             "disk_type": "some-disk-type",
             "gpu": 1,
             "gpu_model": "some-gpu-model",

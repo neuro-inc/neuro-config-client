@@ -46,10 +46,10 @@ class NodePool:
     machine_type: str | None = None
     cpu: float | None = None
     available_cpu: float | None = None
-    memory_mb: int | None = None
-    available_memory_mb: int | None = None
+    memory: int | None = None
+    available_memory: int | None = None
 
-    disk_size_gb: int | None = None
+    disk_size: int | None = None
     disk_type: str | None = None
 
     gpu: int | None = None
@@ -69,15 +69,15 @@ class NodePoolTemplate:
     machine_type: str
     cpu: float
     available_cpu: float
-    memory_mb: int
-    available_memory_mb: int
+    memory: int
+    available_memory: int
     gpu: int | None = None
     gpu_model: str | None = None
 
 
 @dataclass(frozen=True)
 class StorageInstance:
-    size_mb: int | None = None
+    size: int | None = None
     name: str | None = None
     ready: bool = False
 
@@ -235,7 +235,7 @@ class VCDCredentials:
 class VCDStorage(Storage):
     description: str
     profile_name: str
-    size_gib: int
+    size: int
 
 
 @dataclass(frozen=True)
@@ -332,7 +332,7 @@ class CredentialsConfig:
 
 @dataclass(frozen=True)
 class VolumeConfig:
-    size_mb: int | None = None
+    size: int | None = None
     path: str | None = None
 
 
@@ -365,7 +365,7 @@ class SecretsConfig:
 @dataclass(frozen=True)
 class DisksConfig:
     url: URL
-    storage_limit_per_user_gb: int
+    storage_limit_per_user: int
 
 
 @dataclass(frozen=True)
@@ -403,7 +403,7 @@ class ResourcePreset:
     name: str
     credits_per_hour: Decimal
     cpu: float
-    memory_mb: int
+    memory: int
     gpu: int | None = None
     gpu_model: str | None = None
     tpu: TPUPreset | None = None
@@ -420,9 +420,9 @@ class ResourcePoolType:
     idle_size: int = 0
     cpu: float = 1.0
     available_cpu: float = 1.0
-    memory_mb: int = 1024
-    available_memory_mb: int = 1024
-    disk_size_gb: int = 150
+    memory: int = 2**30  # 1gb
+    available_memory: int = 2**30  # 1gb
+    disk_size: int = 150 * 2**30  # 150gb
     gpu: int | None = None
     gpu_model: str | None = None
     price: Decimal = Decimal()
@@ -434,7 +434,7 @@ class ResourcePoolType:
 @dataclass(frozen=True)
 class Resources:
     cpu_m: int
-    memory_mb: int
+    memory: int
     gpu: int = 0
 
 
