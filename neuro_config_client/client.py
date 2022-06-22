@@ -185,7 +185,7 @@ class ConfigClient:
         self,
         cluster_name: str,
         storage_name: str,
-        size_mb: int | None = None,
+        size: int | None = None,
         *,
         token: str | None = None,
         start_deployment: bool = True,
@@ -196,8 +196,8 @@ class ConfigClient:
             url = self._clusters_url / cluster_name / "cloud_provider/storages"
             headers = self._create_headers(token=token)
             payload: dict[str, Any] = {"name": storage_name}
-            if size_mb is not None:
-                payload["size_mb"] = size_mb
+            if size is not None:
+                payload["size"] = size
             async with self._client.post(
                 url.with_query(start_deployment=str(start_deployment).lower()),
                 headers=headers,
