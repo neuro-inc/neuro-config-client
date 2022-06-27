@@ -143,9 +143,9 @@ class EntityFactory:
             idle_size=payload.get("idle_size", ResourcePoolType.idle_size),
             cpu=payload.get("cpu", ResourcePoolType.cpu),
             available_cpu=payload.get("available_cpu", ResourcePoolType.available_cpu),
-            memory_mb=payload.get("memory_mb", ResourcePoolType.memory_mb),
-            available_memory_mb=payload.get(
-                "available_memory_mb", ResourcePoolType.available_memory_mb
+            memory=payload.get("memory", ResourcePoolType.memory),
+            available_memory=payload.get(
+                "available_memory", ResourcePoolType.available_memory
             ),
             gpu=payload.get("gpu"),
             gpu_model=payload.get("gpu_model"),
@@ -172,7 +172,7 @@ class EntityFactory:
             name=payload["name"],
             credits_per_hour=Decimal(payload["credits_per_hour"]),
             cpu=payload["cpu"],
-            memory_mb=payload["memory_mb"],
+            memory=payload["memory"],
             gpu=payload.get("gpu"),
             gpu_model=payload.get("gpu_model"),
             tpu=tpu,
@@ -202,7 +202,7 @@ class EntityFactory:
     def create_resources(self, payload: dict[str, Any]) -> Resources:
         return Resources(
             cpu_m=payload["cpu_m"],
-            memory_mb=payload["memory_mb"],
+            memory=payload["memory"],
             gpu=payload.get("gpu", 0),
         )
 
@@ -213,7 +213,7 @@ class EntityFactory:
         )
 
     def create_volume(self, payload: dict[str, Any]) -> VolumeConfig:
-        return VolumeConfig(path=payload.get("path"), size_mb=payload.get("size_mb"))
+        return VolumeConfig(path=payload.get("path"), size=payload.get("size"))
 
     def create_registry(self, payload: dict[str, Any]) -> RegistryConfig:
         return RegistryConfig(url=URL(payload["url"]))
@@ -247,7 +247,7 @@ class EntityFactory:
     def create_disks(self, payload: dict[str, Any]) -> DisksConfig:
         return DisksConfig(
             url=URL(payload["url"]),
-            storage_limit_per_user_gb=payload["storage_limit_per_user_gb"],
+            storage_limit_per_user=payload["storage_limit_per_user"],
         )
 
     def create_buckets(self, payload: dict[str, Any]) -> BucketsConfig:
@@ -300,9 +300,9 @@ class EntityFactory:
             max_size=payload["max_size"],
             cpu=payload.get("cpu"),
             available_cpu=payload.get("available_cpu"),
-            memory_mb=payload.get("memory_mb"),
-            available_memory_mb=payload.get("available_memory_mb"),
-            disk_size_gb=payload.get("disk_size_gb", NodePool.disk_size_gb),
+            memory=payload.get("memory"),
+            available_memory=payload.get("available_memory"),
+            disk_size=payload.get("disk_size", NodePool.disk_size),
             disk_type=payload.get("disk_type", NodePool.disk_type),
             gpu=payload.get("gpu"),
             gpu_model=payload.get("gpu_model"),
@@ -321,8 +321,8 @@ class EntityFactory:
             machine_type=payload["machine_type"],
             cpu=payload["cpu"],
             available_cpu=payload["available_cpu"],
-            memory_mb=payload["memory_mb"],
-            available_memory_mb=payload["available_memory_mb"],
+            memory=payload["memory"],
+            available_memory=payload["available_memory"],
             gpu=payload.get("gpu"),
             gpu_model=payload.get("gpu_model"),
         )
@@ -434,7 +434,7 @@ class EntityFactory:
         result = VCDStorage(
             description=payload["description"],
             profile_name=payload["profile_name"],
-            size_gib=payload["size_gib"],
+            size=payload["size"],
             instances=[self._create_storage_instance(p) for p in payload["instances"]],
         )
         return result
@@ -442,7 +442,7 @@ class EntityFactory:
     def _create_storage_instance(self, payload: dict[str, Any]) -> StorageInstance:
         return StorageInstance(
             name=payload.get("name"),
-            size_mb=payload.get("size_mb"),
+            size=payload.get("size"),
             ready=payload["ready"],
         )
 
@@ -653,8 +653,8 @@ class PayloadFactory:
         result: dict[str, Any] = {}
         if volume.path:
             result["path"] = volume.path
-        if volume.size_mb is not None:
-            result["size_mb"] = volume.size_mb
+        if volume.size is not None:
+            result["size"] = volume.size
         return result
 
     @classmethod
@@ -709,9 +709,9 @@ class PayloadFactory:
             "idle_size": resource_pool_type.idle_size,
             "cpu": resource_pool_type.cpu,
             "available_cpu": resource_pool_type.available_cpu,
-            "memory_mb": resource_pool_type.memory_mb,
-            "available_memory_mb": resource_pool_type.available_memory_mb,
-            "disk_size_gb": resource_pool_type.disk_size_gb,
+            "memory": resource_pool_type.memory,
+            "available_memory": resource_pool_type.available_memory,
+            "disk_size": resource_pool_type.disk_size,
         }
         if resource_pool_type.gpu:
             result["gpu"] = resource_pool_type.gpu
@@ -737,7 +737,7 @@ class PayloadFactory:
             "name": preset.name,
             "credits_per_hour": str(preset.credits_per_hour),
             "cpu": preset.cpu,
-            "memory_mb": preset.memory_mb,
+            "memory": preset.memory,
         }
         if preset.gpu:
             result["gpu"] = preset.gpu
@@ -776,7 +776,7 @@ class PayloadFactory:
 
     @classmethod
     def _create_resources(cls, resources: Resources) -> dict[str, Any]:
-        result = {"cpu_m": resources.cpu_m, "memory_mb": resources.memory_mb}
+        result = {"cpu_m": resources.cpu_m, "memory": resources.memory}
         if resources.gpu:
             result["gpu"] = resources.gpu
         return result
@@ -822,7 +822,7 @@ class PayloadFactory:
     def create_disks(cls, disks: DisksConfig) -> dict[str, Any]:
         return {
             "url": str(disks.url),
-            "storage_limit_per_user_gb": disks.storage_limit_per_user_gb,
+            "storage_limit_per_user": disks.storage_limit_per_user,
         }
 
     @classmethod
@@ -851,12 +851,12 @@ class PayloadFactory:
             result["cpu"] = node_pool.cpu
         if node_pool.available_cpu:
             result["available_cpu"] = node_pool.available_cpu
-        if node_pool.memory_mb:
-            result["memory_mb"] = node_pool.memory_mb
-        if node_pool.available_memory_mb:
-            result["available_memory_mb"] = node_pool.available_memory_mb
-        if node_pool.disk_size_gb:
-            result["disk_size_gb"] = node_pool.disk_size_gb
+        if node_pool.memory:
+            result["memory"] = node_pool.memory
+        if node_pool.available_memory:
+            result["available_memory"] = node_pool.available_memory
+        if node_pool.disk_size:
+            result["disk_size"] = node_pool.disk_size
         if node_pool.disk_type:
             result["disk_type"] = node_pool.disk_type
         if node_pool.gpu:
