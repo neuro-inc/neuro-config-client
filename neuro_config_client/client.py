@@ -406,6 +406,33 @@ class ConfigClient:
             resp_payload = await response.json()
             return self._entity_factory.create_cluster(resp_payload)
 
+    async def patch_node_pool(
+        self,
+        cluster_name: str,
+        node_pool_name: str,
+        *,
+        idle_size: int | None = None,
+        token: str | None = None,
+    ) -> Cluster:
+        assert self._client
+
+        url = (
+            self._clusters_url
+            / cluster_name
+            / "cloud_provider"
+            / "node_pools"
+            / node_pool_name
+        )
+        headers = self._create_headers(token=token)
+        payload: dict[str, Any] = {}
+        if idle_size is not None:
+            payload["idle_size"] = idle_size
+
+        async with self._client.patch(url, headers=headers, json=payload) as response:
+            response.raise_for_status()
+            resp_payload = await response.json()
+            return self._entity_factory.create_cluster(resp_payload)
+
     async def delete_node_pool(
         self,
         cluster_name: str,
