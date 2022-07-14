@@ -13,12 +13,15 @@ from neuro_config_client.entities import (
     AWSCloudProvider,
     AWSCredentials,
     AWSStorage,
+    AWSStorageOptions,
     AzureCloudProvider,
     AzureCredentials,
     AzureReplicationType,
     AzureStorage,
+    AzureStorageOptions,
     AzureStorageTier,
     BucketsConfig,
+    CloudProviderOptions,
     CloudProviderType,
     Cluster,
     ClusterLocationType,
@@ -33,6 +36,7 @@ from neuro_config_client.entities import (
     GoogleCloudProvider,
     GoogleFilestoreTier,
     GoogleStorage,
+    GoogleStorageOptions,
     GrafanaCredentials,
     HelmRegistryConfig,
     IdleJobConfig,
@@ -43,7 +47,7 @@ from neuro_config_client.entities import (
     MonitoringConfig,
     NeuroAuthConfig,
     NodePool,
-    NodePoolTemplate,
+    NodePoolOptions,
     OnPremCloudProvider,
     OpenStackCredentials,
     OrchestratorConfig,
@@ -1162,7 +1166,7 @@ class TestEntityFactory:
         )
 
     @pytest.fixture
-    def node_pool_template_response(self) -> dict[str, Any]:
+    def node_pool_options_response(self) -> dict[str, Any]:
         return {
             "id": "standard_nd24s_24",
             "machine_type": "Standard_ND24s",
@@ -1176,8 +1180,8 @@ class TestEntityFactory:
         }
 
     @pytest.fixture
-    def node_pool_template(self) -> NodePoolTemplate:
-        return NodePoolTemplate(
+    def node_pool_options(self) -> NodePoolOptions:
+        return NodePoolOptions(
             id="standard_nd24s_24",
             machine_type="Standard_ND24s",
             cpu=24,
@@ -1188,14 +1192,103 @@ class TestEntityFactory:
             gpu_model="nvidia-tesla-p40",
         )
 
-    def test_node_pool_template(
+    def test_aws_cloud_provider_options(
         self,
         factory: EntityFactory,
-        node_pool_template_response: dict[str, Any],
-        node_pool_template: NodePoolTemplate,
+        node_pool_options_response: dict[str, Any],
+        node_pool_options: NodePoolOptions,
     ) -> None:
-        created = factory.create_node_pool_template(node_pool_template_response)
-        assert created == node_pool_template
+        response = {
+            "node_pools": [node_pool_options_response],
+            "storages": [
+                {
+                    "id": "generalpurpose_bursting",
+                    "performance_mode": "generalPurpose",
+                    "throughput_mode": "bursting",
+                }
+            ],
+        }
+        result = factory.create_cloud_provider_options(CloudProviderType.AWS, response)
+
+        assert result == CloudProviderOptions(
+            type=CloudProviderType.AWS,
+            node_pools=[node_pool_options],
+            storages=[
+                AWSStorageOptions(
+                    id="generalpurpose_bursting",
+                    performance_mode=EFSPerformanceMode.GENERAL_PURPOSE,
+                    throughput_mode=EFSThroughputMode.BURSTING,
+                )
+            ],
+        )
+
+    def test_google_cloud_provider_options(
+        self,
+        factory: EntityFactory,
+        node_pool_options_response: dict[str, Any],
+        node_pool_options: NodePoolOptions,
+    ) -> None:
+        response = {
+            "node_pools": [node_pool_options_response],
+            "storages": [
+                {
+                    "id": "standard",
+                    "tier": "STANDARD",
+                    "min_capacity": 1099511627776,
+                    "max_capacity": 70258793014886,
+                }
+            ],
+        }
+        result = factory.create_cloud_provider_options(CloudProviderType.GCP, response)
+
+        assert result == CloudProviderOptions(
+            type=CloudProviderType.GCP,
+            node_pools=[node_pool_options],
+            storages=[
+                GoogleStorageOptions(
+                    id="standard",
+                    tier=GoogleFilestoreTier.STANDARD,
+                    min_capacity=1099511627776,
+                    max_capacity=70258793014886,
+                )
+            ],
+        )
+
+    def test_azure_cloud_provider_options(
+        self,
+        factory: EntityFactory,
+        node_pool_options_response: dict[str, Any],
+        node_pool_options: NodePoolOptions,
+    ) -> None:
+        response = {
+            "node_pools": [node_pool_options_response],
+            "storages": [
+                {
+                    "id": "standard_lrs",
+                    "tier": "Standard",
+                    "replication_type": "LRS",
+                    "min_file_share_size": 1073741824,
+                    "max_file_share_size": 5497558138880,
+                }
+            ],
+        }
+        result = factory.create_cloud_provider_options(
+            CloudProviderType.AZURE, response
+        )
+
+        assert result == CloudProviderOptions(
+            type=CloudProviderType.AZURE,
+            node_pools=[node_pool_options],
+            storages=[
+                AzureStorageOptions(
+                    id="standard_lrs",
+                    tier=AzureStorageTier.STANDARD,
+                    replication_type=AzureReplicationType.LRS,
+                    min_file_share_size=1073741824,
+                    max_file_share_size=5497558138880,
+                )
+            ],
+        )
 
 
 class TestPayloadFactory:
