@@ -1,7 +1,7 @@
 """Platform config client."""
 from pkg_resources import get_distribution
 
-from .client import ConfigClient
+from .client import ConfigClient, ConfigClientBase
 from .entities import (
     ACMEEnvironment,
     ARecord,
@@ -67,6 +67,7 @@ from .entities import (
 
 __all__ = [
     "ConfigClient",
+    "ConfigClientBase",
     "ACMEEnvironment",
     "ARecord",
     "AWSCloudProvider",
