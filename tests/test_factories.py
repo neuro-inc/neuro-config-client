@@ -1223,8 +1223,7 @@ class TestEntityFactory:
         )
 
     def test_aws_cloud_provider_options_defaults(self, factory: EntityFactory) -> None:
-        response = {}
-        result = factory.create_cloud_provider_options(CloudProviderType.AWS, response)
+        result = factory.create_cloud_provider_options(CloudProviderType.AWS, {})
 
         assert result == CloudProviderOptions(
             type=CloudProviderType.AWS, node_pools=[], storages=[]
