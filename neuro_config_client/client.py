@@ -417,6 +417,8 @@ class ConfigClient(ConfigClientBase):
         timeout: aiohttp.ClientTimeout = aiohttp.client.DEFAULT_TIMEOUT,
         trace_configs: Sequence[aiohttp.TraceConfig] = (),
     ):
+        super().__init__()
+
         self._base_url = url / "api/v1"
         self._token = token
         self._timeout = timeout
