@@ -1222,6 +1222,14 @@ class TestEntityFactory:
             ],
         )
 
+    def test_aws_cloud_provider_options_defaults(self, factory: EntityFactory) -> None:
+        response = {}
+        result = factory.create_cloud_provider_options(CloudProviderType.AWS, response)
+
+        assert result == CloudProviderOptions(
+            type=CloudProviderType.AWS, node_pools=[], storages=[]
+        )
+
     def test_google_cloud_provider_options(
         self,
         factory: EntityFactory,

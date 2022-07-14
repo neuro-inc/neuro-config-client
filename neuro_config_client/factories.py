@@ -77,8 +77,12 @@ class EntityFactory:
     ) -> CloudProviderOptions:
         return CloudProviderOptions(
             type=type,
-            node_pools=[cls.create_node_pool_options(p) for p in payload["node_pools"]],
-            storages=[cls.create_storage_options(type, p) for p in payload["storages"]],
+            node_pools=[
+                cls.create_node_pool_options(p) for p in payload.get("node_pools", ())
+            ],
+            storages=[
+                cls.create_storage_options(type, p) for p in payload.get("storages", ())
+            ],
         )
 
     @staticmethod
