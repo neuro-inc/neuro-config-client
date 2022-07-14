@@ -104,7 +104,6 @@ class ConfigClientBase:
             async with self._request(
                 "POST", self._endpoints.clusters, json=payload
             ) as resp:
-                resp.raise_for_status()
                 resp_payload = await resp.json()
                 return self._entity_factory.create_cluster(resp_payload)
         except ClientResponseError as e:
@@ -158,13 +157,12 @@ class ConfigClientBase:
         if dns:
             payload["dns"] = self._payload_factory.create_dns(dns)
         async with self._request("PATCH", path, json=payload) as resp:
-            resp.raise_for_status()
             resp_payload = await resp.json()
             return self._entity_factory.create_cluster(resp_payload)
 
     async def delete_cluster(self, name: str) -> None:
-        async with self._request("DELETE", self._endpoints.cluster(name)) as resp:
-            resp.raise_for_status()
+        async with self._request("DELETE", self._endpoints.cluster(name)):
+            pass
 
     async def add_storage(
         self,
@@ -186,7 +184,6 @@ class ConfigClientBase:
                 params={"start_deployment": str(start_deployment).lower()},
                 json=payload,
             ) as response:
-                response.raise_for_status()
                 resp_payload = await response.json()
                 return self._entity_factory.create_cluster(resp_payload)
         except ClientResponseError as e:
@@ -211,7 +208,6 @@ class ConfigClientBase:
             if ready is not None:
                 payload["ready"] = ready
             async with self._request("PATCH", path, json=payload) as response:
-                response.raise_for_status()
                 resp_payload = await response.json()
                 return self._entity_factory.create_cluster(resp_payload)
         except ClientResponseError as e:
@@ -234,7 +230,6 @@ class ConfigClientBase:
                 path,
                 params={"start_deployment": str(start_deployment).lower()},
             ) as response:
-                response.raise_for_status()
                 resp_payload = await response.json()
                 return self._entity_factory.create_cluster(resp_payload)
         except ClientResponseError as e:
