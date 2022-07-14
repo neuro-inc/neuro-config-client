@@ -14,6 +14,7 @@ from yarl import URL
 
 from .entities import (
     BucketsConfig,
+    CloudProviderOptions,
     CloudProviderType,
     Cluster,
     CredentialsConfig,
@@ -23,7 +24,6 @@ from .entities import (
     MetricsConfig,
     MonitoringConfig,
     NodePool,
-    NodePoolTemplate,
     NotificationType,
     OrchestratorConfig,
     RegistryConfig,
@@ -40,6 +40,9 @@ logger = logging.getLogger(__name__)
 class _Endpoints:
     clusters: str = "clusters"
     cloud_providers: str = "cloud_providers"
+
+    def cloud_provider_options(self, type: CloudProviderType) -> str:
+        return f"{self.cloud_providers}/{type.value}"
 
     def cluster(self, cluster_name: str) -> str:
         return f"{self.clusters}/{cluster_name}"
@@ -82,7 +85,30 @@ class ConfigClientBase:
     ) -> AbstractAsyncContextManager[aiohttp.ClientResponse]:
         pass
 
-    async def get_clusters(self) -> Sequence[Cluster]:
+    async def list_cloud_provider_options(self) -> list[CloudProviderOptions]:
+        path = self._endpoints.cloud_providers
+        async with self._request("GET", path) as response:
+            resp_payload = await response.json()
+            result: list[CloudProviderOptions] = []
+            for k, v in resp_payload.items():
+                result.append(
+                    self._entity_factory.create_cloud_provider_options(
+                        CloudProviderType(k), v
+                    )
+                )
+            return result
+
+    async def get_cloud_provider_options(
+        self, type: CloudProviderType
+    ) -> CloudProviderOptions:
+        path = self._endpoints.cloud_provider_options(type)
+        async with self._request("GET", path) as response:
+            resp_payload = await response.json()
+            return self._entity_factory.create_cloud_provider_options(
+                type, resp_payload
+            )
+
+    async def list_clusters(self) -> Sequence[Cluster]:
         async with self._request("GET", self._endpoints.clusters) as response:
             payload = await response.json()
             return [self._entity_factory.create_cluster(p) for p in payload]
@@ -237,36 +263,17 @@ class ConfigClientBase:
                 raise
         return await self.get_cluster(cluster_name)
 
-    async def get_node_pool(
-        self,
-        cluster_name: str,
-        node_pool_name: str,
-    ) -> NodePool:
+    async def get_node_pool(self, cluster_name: str, node_pool_name: str) -> NodePool:
         path = self._endpoints.node_pool(cluster_name, node_pool_name)
         async with self._request("GET", path) as response:
             resp_payload = await response.json()
             return self._entity_factory.create_node_pool(resp_payload)
 
-    async def get_node_pools(self, cluster_name: str) -> list[NodePool]:
+    async def list_node_pools(self, cluster_name: str) -> list[NodePool]:
         path = self._endpoints.node_pools(cluster_name)
         async with self._request("GET", path) as response:
             resp_payload = await response.json()
             return [self._entity_factory.create_node_pool(n) for n in resp_payload]
-
-    async def get_node_pool_templates(
-        self,
-        cloud_provider_type: CloudProviderType,
-    ) -> list[NodePoolTemplate]:
-        if cloud_provider_type == CloudProviderType.ON_PREM:
-            raise ValueError("Templates are not supported in onprem clusters.")
-        path = f"{self._endpoints.cloud_providers}/{cloud_provider_type.value}"
-        async with self._request("GET", path) as response:
-            resp_payload = await response.json()
-            np_templates = [
-                self._entity_factory.create_node_pool_template(npt)
-                for npt in resp_payload["node_pools"]
-            ]
-            return np_templates
 
     async def add_node_pool(
         self,
@@ -361,7 +368,7 @@ class ConfigClientBase:
         async with self._request("POST", path, json=payload):
             pass
 
-    async def get_resource_presets(self, cluster_name: str) -> list[ResourcePreset]:
+    async def list_resource_presets(self, cluster_name: str) -> list[ResourcePreset]:
         path = self._endpoints.resource_presets(cluster_name)
         async with self._request("GET", path) as response:
             resp_payload = await response.json()

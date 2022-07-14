@@ -12,13 +12,16 @@ from .entities import (
     AWSCloudProvider,
     AWSCredentials,
     AWSStorage,
+    AWSStorageOptions,
     AzureCloudProvider,
     AzureCredentials,
     AzureReplicationType,
     AzureStorage,
+    AzureStorageOptions,
     AzureStorageTier,
     BucketsConfig,
     CloudProvider,
+    CloudProviderOptions,
     CloudProviderType,
     Cluster,
     ClusterLocationType,
@@ -33,6 +36,7 @@ from .entities import (
     GoogleCloudProvider,
     GoogleFilestoreTier,
     GoogleStorage,
+    GoogleStorageOptions,
     GrafanaCredentials,
     HelmRegistryConfig,
     IdleJobConfig,
@@ -43,7 +47,7 @@ from .entities import (
     MonitoringConfig,
     NeuroAuthConfig,
     NodePool,
-    NodePoolTemplate,
+    NodePoolOptions,
     NodeRole,
     OnPremCloudProvider,
     OpenStackCredentials,
@@ -56,6 +60,7 @@ from .entities import (
     SentryCredentials,
     StorageConfig,
     StorageInstance,
+    StorageOptions,
     TPUPreset,
     TPUResource,
     VCDCloudProvider,
@@ -66,6 +71,72 @@ from .entities import (
 
 
 class EntityFactory:
+    @classmethod
+    def create_cloud_provider_options(
+        cls, type: CloudProviderType, payload: dict[str, Any]
+    ) -> CloudProviderOptions:
+        return CloudProviderOptions(
+            type=type,
+            node_pools=[cls.create_node_pool_options(p) for p in payload["node_pools"]],
+            storages=[cls.create_storage_options(type, p) for p in payload["storages"]],
+        )
+
+    @staticmethod
+    def create_node_pool_options(payload: dict[str, Any]) -> NodePoolOptions:
+        return NodePoolOptions(
+            id=payload["id"],
+            machine_type=payload["machine_type"],
+            cpu=payload["cpu"],
+            available_cpu=payload["available_cpu"],
+            memory=payload["memory"],
+            available_memory=payload["available_memory"],
+            gpu=payload.get("gpu"),
+            gpu_model=payload.get("gpu_model"),
+        )
+
+    @classmethod
+    def create_storage_options(
+        cls, type: CloudProviderType, payload: dict[str, Any]
+    ) -> StorageOptions:
+        if type == CloudProviderType.AWS:
+            return cls.create_aws_storage_options(payload)
+        elif type == CloudProviderType.GCP:
+            return cls.create_google_storage_options(payload)
+        elif type == CloudProviderType.AZURE:
+            return cls.create_azure_storage_options(payload)
+        else:
+            raise ValueError(
+                f"Storage options are not supported for {type.value!r} cloud provider"
+            )
+
+    @staticmethod
+    def create_aws_storage_options(payload: dict[str, Any]) -> AWSStorageOptions:
+        return AWSStorageOptions(
+            id=payload["id"],
+            performance_mode=EFSPerformanceMode(payload["performance_mode"]),
+            throughput_mode=EFSThroughputMode(payload["throughput_mode"]),
+            provisioned_throughput_mibps=payload.get("provisioned_throughput_mibps"),
+        )
+
+    @staticmethod
+    def create_google_storage_options(payload: dict[str, Any]) -> GoogleStorageOptions:
+        return GoogleStorageOptions(
+            id=payload["id"],
+            tier=GoogleFilestoreTier(payload["tier"]),
+            min_capacity=payload["min_capacity"],
+            max_capacity=payload["max_capacity"],
+        )
+
+    @staticmethod
+    def create_azure_storage_options(payload: dict[str, Any]) -> AzureStorageOptions:
+        return AzureStorageOptions(
+            id=payload["id"],
+            tier=AzureStorageTier(payload["tier"]),
+            replication_type=AzureReplicationType(payload["replication_type"]),
+            min_file_share_size=payload["min_file_share_size"],
+            max_file_share_size=payload["max_file_share_size"],
+        )
+
     def create_cluster(self, payload: dict[str, Any]) -> Cluster:
         orchestrator = payload.get("orchestrator")
         storage = payload.get("storage")
@@ -312,19 +383,6 @@ class EntityFactory:
             idle_size=payload.get("idle_size", NodePool.idle_size),
             is_preemptible=payload.get("is_preemptible", NodePool.is_preemptible),
             zones=payload.get("zones", NodePool.zones),
-        )
-
-    @staticmethod
-    def create_node_pool_template(payload: dict[str, Any]) -> NodePoolTemplate:
-        return NodePoolTemplate(
-            id=payload["id"],
-            machine_type=payload["machine_type"],
-            cpu=payload["cpu"],
-            available_cpu=payload["available_cpu"],
-            memory=payload["memory"],
-            available_memory=payload["available_memory"],
-            gpu=payload.get("gpu"),
-            gpu_model=payload.get("gpu_model"),
         )
 
     def _create_aws_storage(self, payload: dict[str, Any]) -> AWSStorage:

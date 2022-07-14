@@ -27,6 +27,52 @@ class CloudProviderType(str, enum.Enum):
     VCD_SELECTEL = "vcd_selectel"
 
 
+@dataclass(frozen=True)
+class CloudProviderOptions:
+    type: CloudProviderType
+    node_pools: list[NodePoolOptions]
+    storages: list[StorageOptions]
+
+
+@dataclass(frozen=True)
+class NodePoolOptions:
+    id: str
+    machine_type: str
+    cpu: float
+    available_cpu: float
+    memory: int
+    available_memory: int
+    gpu: int | None = None
+    gpu_model: str | None = None
+
+
+@dataclass(frozen=True)
+class StorageOptions:
+    id: str
+
+
+@dataclass(frozen=True)
+class GoogleStorageOptions(StorageOptions):
+    tier: GoogleFilestoreTier
+    min_capacity: int
+    max_capacity: int
+
+
+@dataclass(frozen=True)
+class AWSStorageOptions(StorageOptions):
+    performance_mode: EFSPerformanceMode
+    throughput_mode: EFSThroughputMode
+    provisioned_throughput_mibps: int | None = None
+
+
+@dataclass(frozen=True)
+class AzureStorageOptions(StorageOptions):
+    tier: AzureStorageTier
+    replication_type: AzureReplicationType
+    min_file_share_size: int
+    max_file_share_size: int
+
+
 class NodeRole(str, enum.Enum):
     KUBERNETES = "kubernetes"
     PLATFORM = "platform"
@@ -61,18 +107,6 @@ class NodePool:
     is_preemptible: bool | None = None
 
     zones: tuple[str, ...] | None = None
-
-
-@dataclass(frozen=True)
-class NodePoolTemplate:
-    id: str
-    machine_type: str
-    cpu: float
-    available_cpu: float
-    memory: int
-    available_memory: int
-    gpu: int | None = None
-    gpu_model: str | None = None
 
 
 @dataclass(frozen=True)
