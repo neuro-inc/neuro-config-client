@@ -82,12 +82,23 @@ class ConfigClientBase:
         path: str,
         json: dict[str, Any] | None = None,
         params: Mapping[str, str] | None = None,
+        headers: Mapping[str, str] | None = None,
     ) -> AbstractAsyncContextManager[aiohttp.ClientResponse]:
         pass
 
-    async def list_cloud_provider_options(self) -> list[CloudProviderOptions]:
+    def _create_headers(self, *, token: str | None = None) -> dict[str, str]:
+        result = {}
+        if token:
+            result["Authorization"] = f"Bearer {token}"
+        return result
+
+    async def list_cloud_provider_options(
+        self, *, token: str | None = None
+    ) -> list[CloudProviderOptions]:
         path = self._endpoints.cloud_providers
-        async with self._request("GET", path) as response:
+        async with self._request(
+            "GET", path, headers=self._create_headers(token=token)
+        ) as response:
             resp_payload = await response.json()
             result: list[CloudProviderOptions] = []
             for k, v in resp_payload.items():
@@ -99,22 +110,30 @@ class ConfigClientBase:
             return result
 
     async def get_cloud_provider_options(
-        self, type: CloudProviderType
+        self, type: CloudProviderType, *, token: str | None = None
     ) -> CloudProviderOptions:
         path = self._endpoints.cloud_provider_options(type)
-        async with self._request("GET", path) as response:
+        async with self._request(
+            "GET", path, headers=self._create_headers(token=token)
+        ) as response:
             resp_payload = await response.json()
             return self._entity_factory.create_cloud_provider_options(
                 type, resp_payload
             )
 
-    async def list_clusters(self) -> Sequence[Cluster]:
-        async with self._request("GET", self._endpoints.clusters) as response:
+    async def list_clusters(self, *, token: str | None = None) -> Sequence[Cluster]:
+        async with self._request(
+            "GET", self._endpoints.clusters, headers=self._create_headers(token=token)
+        ) as response:
             payload = await response.json()
             return [self._entity_factory.create_cluster(p) for p in payload]
 
-    async def get_cluster(self, name: str) -> Cluster:
-        async with self._request("GET", self._endpoints.cluster(name)) as response:
+    async def get_cluster(self, name: str, *, token: str | None = None) -> Cluster:
+        async with self._request(
+            "GET",
+            self._endpoints.cluster(name),
+            headers=self._create_headers(token=token),
+        ) as response:
             payload = await response.json()
             return self._entity_factory.create_cluster(payload)
 
@@ -124,11 +143,15 @@ class ConfigClientBase:
         service_token: str,
         *,
         ignore_existing: bool = False,
+        token: str | None = None,
     ) -> Cluster:
         payload = {"name": name, "token": service_token}
         try:
             async with self._request(
-                "POST", self._endpoints.clusters, json=payload
+                "POST",
+                self._endpoints.clusters,
+                headers=self._create_headers(token=token),
+                json=payload,
             ) as resp:
                 resp_payload = await resp.json()
                 return self._entity_factory.create_cluster(resp_payload)
@@ -153,6 +176,7 @@ class ConfigClientBase:
         buckets: BucketsConfig | None = None,
         ingress: IngressConfig | None = None,
         dns: DNSConfig | None = None,
+        token: str | None = None,
     ) -> Cluster:
         path = self._endpoints.cluster(name)
         payload: dict[str, Any] = {}
@@ -182,12 +206,18 @@ class ConfigClientBase:
             payload["ingress"] = self._payload_factory.create_ingress(ingress)
         if dns:
             payload["dns"] = self._payload_factory.create_dns(dns)
-        async with self._request("PATCH", path, json=payload) as resp:
+        async with self._request(
+            "PATCH", path, headers=self._create_headers(token=token), json=payload
+        ) as resp:
             resp_payload = await resp.json()
             return self._entity_factory.create_cluster(resp_payload)
 
-    async def delete_cluster(self, name: str) -> None:
-        async with self._request("DELETE", self._endpoints.cluster(name)):
+    async def delete_cluster(self, name: str, *, token: str | None = None) -> None:
+        async with self._request(
+            "DELETE",
+            self._endpoints.cluster(name),
+            headers=self._create_headers(token=token),
+        ):
             pass
 
     async def add_storage(
@@ -198,6 +228,7 @@ class ConfigClientBase:
         *,
         start_deployment: bool = True,
         ignore_existing: bool = False,
+        token: str | None = None,
     ) -> Cluster:
         try:
             path = self._endpoints.storages(cluster_name)
@@ -208,6 +239,7 @@ class ConfigClientBase:
                 "POST",
                 path,
                 params={"start_deployment": str(start_deployment).lower()},
+                headers=self._create_headers(token=token),
                 json=payload,
             ) as response:
                 resp_payload = await response.json()
@@ -224,6 +256,7 @@ class ConfigClientBase:
         ready: bool | None = None,
         *,
         ignore_not_found: bool = False,
+        token: str | None = None,
     ) -> Cluster:
         try:
             if storage_name:
@@ -233,7 +266,9 @@ class ConfigClientBase:
             payload: dict[str, Any] = {}
             if ready is not None:
                 payload["ready"] = ready
-            async with self._request("PATCH", path, json=payload) as response:
+            async with self._request(
+                "PATCH", path, headers=self._create_headers(token=token), json=payload
+            ) as response:
                 resp_payload = await response.json()
                 return self._entity_factory.create_cluster(resp_payload)
         except ClientResponseError as e:
@@ -248,6 +283,7 @@ class ConfigClientBase:
         *,
         start_deployment: bool = True,
         ignore_not_found: bool = False,
+        token: str | None = None,
     ) -> Cluster:
         try:
             path = self._endpoints.storage(cluster_name, storage_name)
@@ -255,6 +291,7 @@ class ConfigClientBase:
                 "DELETE",
                 path,
                 params={"start_deployment": str(start_deployment).lower()},
+                headers=self._create_headers(token=token),
             ) as response:
                 resp_payload = await response.json()
                 return self._entity_factory.create_cluster(resp_payload)
@@ -263,15 +300,23 @@ class ConfigClientBase:
                 raise
         return await self.get_cluster(cluster_name)
 
-    async def get_node_pool(self, cluster_name: str, node_pool_name: str) -> NodePool:
+    async def get_node_pool(
+        self, cluster_name: str, node_pool_name: str, *, token: str | None = None
+    ) -> NodePool:
         path = self._endpoints.node_pool(cluster_name, node_pool_name)
-        async with self._request("GET", path) as response:
+        async with self._request(
+            "GET", path, headers=self._create_headers(token=token)
+        ) as response:
             resp_payload = await response.json()
             return self._entity_factory.create_node_pool(resp_payload)
 
-    async def list_node_pools(self, cluster_name: str) -> list[NodePool]:
+    async def list_node_pools(
+        self, cluster_name: str, *, token: str | None = None
+    ) -> list[NodePool]:
         path = self._endpoints.node_pools(cluster_name)
-        async with self._request("GET", path) as response:
+        async with self._request(
+            "GET", path, headers=self._create_headers(token=token)
+        ) as response:
             resp_payload = await response.json()
             return [self._entity_factory.create_node_pool(n) for n in resp_payload]
 
@@ -281,6 +326,7 @@ class ConfigClientBase:
         node_pool: NodePool,
         *,
         start_deployment: bool = True,
+        token: str | None = None,
     ) -> Cluster:
         """Add new node pool to the existing cluster.
         Cloud provider should be already set up.
@@ -303,6 +349,7 @@ class ConfigClientBase:
             "POST",
             path,
             params={"start_deployment": str(start_deployment).lower()},
+            headers=self._create_headers(token=token),
             json=payload,
         ) as response:
             resp_payload = await response.json()
@@ -314,6 +361,7 @@ class ConfigClientBase:
         node_pool: NodePool,
         *,
         start_deployment: bool = True,
+        token: str | None = None,
     ) -> Cluster:
         path = self._endpoints.node_pool(cluster_name, node_pool.name)
         payload = self._payload_factory.create_node_pool(node_pool)
@@ -321,6 +369,7 @@ class ConfigClientBase:
             "PUT",
             path,
             params={"start_deployment": str(start_deployment).lower()},
+            headers=self._create_headers(token=token),
             json=payload,
         ) as response:
             resp_payload = await response.json()
@@ -332,12 +381,15 @@ class ConfigClientBase:
         node_pool_name: str,
         *,
         idle_size: int | None = None,
+        token: str | None = None,
     ) -> Cluster:
         path = self._endpoints.node_pool(cluster_name, node_pool_name)
         payload: dict[str, Any] = {}
         if idle_size is not None:
             payload["idle_size"] = idle_size
-        async with self._request("PATCH", path, json=payload) as response:
+        async with self._request(
+            "PATCH", path, headers=self._create_headers(token=token), json=payload
+        ) as response:
             resp_payload = await response.json()
             return self._entity_factory.create_cluster(resp_payload)
 
@@ -347,10 +399,14 @@ class ConfigClientBase:
         node_pool_name: str,
         *,
         start_deployment: bool = True,
+        token: str | None = None,
     ) -> Cluster:
         path = self._endpoints.node_pool(cluster_name, node_pool_name)
         async with self._request(
-            "DELETE", path, params={"start_deployment": str(start_deployment).lower()}
+            "DELETE",
+            path,
+            params={"start_deployment": str(start_deployment).lower()},
+            headers=self._create_headers(token=token),
         ) as response:
             resp_payload = await response.json()
             return self._entity_factory.create_cluster(resp_payload)
@@ -360,53 +416,69 @@ class ConfigClientBase:
         cluster_name: str,
         notification_type: NotificationType,
         message: str | None = None,
+        *,
+        token: str | None = None,
     ) -> None:
         path = self._endpoints.notifications(cluster_name)
         payload = {"notification_type": notification_type.value}
         if message:
             payload["message"] = message
-        async with self._request("POST", path, json=payload):
+        async with self._request(
+            "POST", path, headers=self._create_headers(token=token), json=payload
+        ):
             pass
 
-    async def list_resource_presets(self, cluster_name: str) -> list[ResourcePreset]:
+    async def list_resource_presets(
+        self, cluster_name: str, *, token: str | None = None
+    ) -> list[ResourcePreset]:
         path = self._endpoints.resource_presets(cluster_name)
-        async with self._request("GET", path) as response:
+        async with self._request(
+            "GET", path, headers=self._create_headers(token=token)
+        ) as response:
             resp_payload = await response.json()
             return [
                 self._entity_factory.create_resource_preset(p) for p in resp_payload
             ]
 
     async def get_resource_preset(
-        self, cluster_name: str, preset_name: str
+        self, cluster_name: str, preset_name: str, *, token: str | None = None
     ) -> ResourcePreset:
         path = self._endpoints.resource_preset(cluster_name, preset_name)
-        async with self._request("GET", path) as response:
+        async with self._request(
+            "GET", path, headers=self._create_headers(token=token)
+        ) as response:
             resp_payload = await response.json()
             return self._entity_factory.create_resource_preset(resp_payload)
 
     async def add_resource_preset(
-        self, cluster_name: str, preset: ResourcePreset
+        self, cluster_name: str, preset: ResourcePreset, *, token: str | None = None
     ) -> Cluster:
         path = self._endpoints.resource_presets(cluster_name)
         payload = self._payload_factory.create_resource_preset(preset)
-        async with self._request("POST", path, json=payload) as response:
+        async with self._request(
+            "POST", path, headers=self._create_headers(token=token), json=payload
+        ) as response:
             resp_payload = await response.json()
             return self._entity_factory.create_cluster(resp_payload)
 
     async def put_resource_preset(
-        self, cluster_name: str, preset: ResourcePreset
+        self, cluster_name: str, preset: ResourcePreset, *, token: str | None = None
     ) -> Cluster:
         path = self._endpoints.resource_preset(cluster_name, preset.name)
         payload = self._payload_factory.create_resource_preset(preset)
-        async with self._request("PUT", path, json=payload) as response:
+        async with self._request(
+            "PUT", path, headers=self._create_headers(token=token), json=payload
+        ) as response:
             resp_payload = await response.json()
             return self._entity_factory.create_cluster(resp_payload)
 
     async def delete_resource_preset(
-        self, cluster_name: str, preset_name: str
+        self, cluster_name: str, preset_name: str, *, token: str | None = None
     ) -> Cluster:
         path = self._endpoints.resource_preset(cluster_name, preset_name)
-        async with self._request("DELETE", path) as response:
+        async with self._request(
+            "DELETE", path, headers=self._create_headers(token=token)
+        ) as response:
             resp_payload = await response.json()
             return self._entity_factory.create_cluster(resp_payload)
 
@@ -445,17 +517,16 @@ class ConfigClient(ConfigClientBase):
 
     async def _create_http_client(self) -> aiohttp.ClientSession:
         client = aiohttp.ClientSession(
-            headers=self._create_headers(token=self._token),
+            headers=self._create_default_headers(),
             timeout=self._timeout,
             trace_configs=list(self._trace_configs),
         )
         return await client.__aenter__()
 
-    def _create_headers(self, *, token: str | None = None) -> dict[str, str]:
+    def _create_default_headers(self) -> dict[str, str]:
         result = {}
-        token = token or self._token
-        if token:
-            result["Authorization"] = f"Bearer {token}"
+        if self._token:
+            result["Authorization"] = f"Bearer {self._token}"
         return result
 
     @asynccontextmanager
