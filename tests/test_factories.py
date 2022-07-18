@@ -62,6 +62,7 @@ from neuro_config_client.entities import (
     TPUPreset,
     TPUResource,
     VCDCloudProvider,
+    VCDCloudProviderOptions,
     VCDCredentials,
     VCDStorage,
     VolumeConfig,
@@ -1295,6 +1296,64 @@ class TestEntityFactory:
                     max_file_share_size=5497558138880,
                 )
             ],
+        )
+
+    def test_vcd_cloud_provider_options_defaults(
+        self,
+        factory: EntityFactory,
+        node_pool_options_response: dict[str, Any],
+        node_pool_options: NodePoolOptions,
+    ) -> None:
+        response = {
+            "node_pools": [node_pool_options_response],
+            "kubernetes_node_pool_id": "master_neuro_2",
+            "platform_node_pool_id": "master_neuro_2",
+        }
+        result = factory.create_cloud_provider_options(
+            CloudProviderType.VCD_MTS, response
+        )
+
+        assert result == VCDCloudProviderOptions(
+            type=CloudProviderType.VCD_MTS,
+            node_pools=[node_pool_options],
+            storages=[],
+            kubernetes_node_pool_id="master_neuro_2",
+            platform_node_pool_id="master_neuro_2",
+        )
+
+    def test_vcd_cloud_provider_options(
+        self,
+        factory: EntityFactory,
+        node_pool_options_response: dict[str, Any],
+        node_pool_options: NodePoolOptions,
+    ) -> None:
+        response = {
+            "node_pools": [node_pool_options_response],
+            "kubernetes_node_pool_id": "master_neuro_2",
+            "platform_node_pool_id": "master_neuro_2",
+            "url": "https://vcd",
+            "organization": "neuro-org",
+            "edge_name_template": "neuro-edge",
+            "edge_external_network_name": "neuro-edge-external",
+            "catalog_name": "neuro",
+            "storage_profile_names": ["neuro-storage"],
+        }
+        result = factory.create_cloud_provider_options(
+            CloudProviderType.VCD_MTS, response
+        )
+
+        assert result == VCDCloudProviderOptions(
+            type=CloudProviderType.VCD_MTS,
+            node_pools=[node_pool_options],
+            storages=[],
+            kubernetes_node_pool_id="master_neuro_2",
+            platform_node_pool_id="master_neuro_2",
+            url=URL("https://vcd"),
+            organization="neuro-org",
+            edge_name_template="neuro-edge",
+            edge_external_network_name="neuro-edge-external",
+            catalog_name="neuro",
+            storage_profile_names=["neuro-storage"],
         )
 
 
