@@ -64,6 +64,7 @@ from .entities import (
     TPUPreset,
     TPUResource,
     VCDCloudProvider,
+    VCDCloudProviderOptions,
     VCDCredentials,
     VCDStorage,
     VolumeConfig,
@@ -75,6 +76,8 @@ class EntityFactory:
     def create_cloud_provider_options(
         cls, type: CloudProviderType, payload: dict[str, Any]
     ) -> CloudProviderOptions:
+        if type.is_vcd:
+            return cls._create_vcd_cloud_provider_options(type, payload)
         return CloudProviderOptions(
             type=type,
             node_pools=[
@@ -83,6 +86,29 @@ class EntityFactory:
             storages=[
                 cls.create_storage_options(type, p) for p in payload.get("storages", ())
             ],
+        )
+
+    @classmethod
+    def _create_vcd_cloud_provider_options(
+        cls, type: CloudProviderType, payload: dict[str, Any]
+    ) -> VCDCloudProviderOptions:
+        url = payload.get("url")
+        return VCDCloudProviderOptions(
+            type=type,
+            node_pools=[
+                cls.create_node_pool_options(p) for p in payload.get("node_pools", ())
+            ],
+            storages=[
+                cls.create_storage_options(type, p) for p in payload.get("storages", ())
+            ],
+            kubernetes_node_pool_id=payload["kubernetes_node_pool_id"],
+            platform_node_pool_id=payload["platform_node_pool_id"],
+            url=URL(url) if url else None,
+            organization=payload.get("organization"),
+            edge_name_template=payload.get("edge_name_template"),
+            edge_external_network_name=payload.get("edge_external_network_name"),
+            catalog_name=payload.get("catalog_name"),
+            storage_profile_names=payload.get("storage_profile_names"),
         )
 
     @staticmethod
@@ -347,7 +373,7 @@ class EntityFactory:
             return self._create_azure_cloud_provider(payload)
         elif cp_type == CloudProviderType.ON_PREM:
             return self._create_on_prem_cloud_provider(payload)
-        elif cp_type.startswith("vcd_"):
+        elif cp_type.is_vcd:
             return self._create_vcd_cloud_provider(payload)
         raise ValueError(f"Cloud provider '{cp_type}' is not supported")
 

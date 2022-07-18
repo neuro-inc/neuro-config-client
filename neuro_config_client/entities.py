@@ -26,12 +26,28 @@ class CloudProviderType(str, enum.Enum):
     VCD_MTS = "vcd_mts"
     VCD_SELECTEL = "vcd_selectel"
 
+    @property
+    def is_vcd(self) -> bool:
+        return self.startswith("vcd_")
+
 
 @dataclass(frozen=True)
 class CloudProviderOptions:
     type: CloudProviderType
     node_pools: list[NodePoolOptions]
     storages: list[StorageOptions]
+
+
+@dataclass(frozen=True)
+class VCDCloudProviderOptions(CloudProviderOptions):
+    kubernetes_node_pool_id: str
+    platform_node_pool_id: str
+    url: URL | None = None
+    organization: str | None = None
+    edge_name_template: str | None = None
+    edge_external_network_name: str | None = None
+    catalog_name: str | None = None
+    storage_profile_names: list[str] | None = None
 
 
 @dataclass(frozen=True)
