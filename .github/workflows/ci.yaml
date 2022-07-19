@@ -13,19 +13,21 @@ jobs:
   test:
     name: Run client tests
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        py_version: ['3.7', '3.8', '3.9', '3.10']
     steps:
     - name: Checkout commit
       uses: actions/checkout@v2
     - name: Install python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9.9'
+        python-version: ${{ matrix.py_version }}
     - name: Cache packages
       uses: actions/cache@v2.1.6
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-py-3.9-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py')
-          }}
+        key: ${{ runner.os }}-py-${{ matrix.py_version }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
     - name: Install dependencies
       uses: py-actions/py-dependency-install@v2
       with:
@@ -44,6 +46,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: .coverage.xml
         name: client-codecov
+        flags: py${{ matrix.py_version }}
   release:
     name: Release client
     runs-on: ubuntu-latest
@@ -58,7 +61,7 @@ jobs:
     - name: Install python
       uses: actions/setup-python@v2
       with:
-        python-version: 3.9.9
+        python-version: 3.9
     - name: Install dependencies
       run: |
         python -m pip install twine build
