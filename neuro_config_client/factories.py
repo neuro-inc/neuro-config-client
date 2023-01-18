@@ -413,6 +413,11 @@ class EntityFactory:
             idle_size=payload.get("idle_size", NodePool.idle_size),
             is_preemptible=payload.get("is_preemptible", NodePool.is_preemptible),
             zones=payload.get("zones", NodePool.zones),
+            co2_grams_eq_per_kwh=payload.get(
+                "co2_grams_eq_per_kwh", NodePool.co2_grams_eq_per_kwh
+            ),
+            cpu_min_watts=payload.get("cpu_min_watts", NodePool.cpu_min_watts),
+            cpu_max_watts=payload.get("cpu_max_watts", NodePool.cpu_max_watts),
         )
 
     def _create_aws_storage(self, payload: dict[str, Any]) -> AWSStorage:
@@ -959,4 +964,10 @@ class PayloadFactory:
             result["is_preemptible"] = node_pool.is_preemptible
         if node_pool.zones:
             result["zones"] = node_pool.zones
+        if node_pool.co2_grams_eq_per_kwh:
+            result["co2_grams_eq_per_kwh"] = node_pool.co2_grams_eq_per_kwh
+        if node_pool.cpu_min_watts:
+            result["cpu_min_watts"] = node_pool.cpu_min_watts
+        if node_pool.cpu_max_watts:
+            result["cpu_max_watts"] = node_pool.cpu_max_watts
         return result

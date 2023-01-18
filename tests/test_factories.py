@@ -858,6 +858,9 @@ class TestEntityFactory:
                     "gpu_model": "nvidia-tesla-k80",
                     "price": "0.9",
                     "currency": "USD",
+                    "co2_grams_eq_per_kwh": 100,
+                    "cpu_min_watts": 0.1,
+                    "cpu_max_watts": 100,
                 },
             ],
         }
@@ -895,6 +898,9 @@ class TestEntityFactory:
                     price=Decimal("0.9"),
                     currency="USD",
                     machine_type="gpu-machine-1xk80",
+                    co2_grams_eq_per_kwh=100,
+                    cpu_min_watts=0.1,
+                    cpu_max_watts=100,
                 ),
             ],
             storage=None,
@@ -955,6 +961,9 @@ class TestEntityFactory:
                     "gpu_model": "nvidia-tesla-k80",
                     "price": "0.9",
                     "currency": "USD",
+                    "co2_grams_eq_per_kwh": 100,
+                    "cpu_min_watts": 0.1,
+                    "cpu_max_watts": 100,
                 },
             ],
             "storage": {
@@ -1010,6 +1019,9 @@ class TestEntityFactory:
                     gpu_model="nvidia-tesla-k80",
                     price=Decimal("0.9"),
                     currency="USD",
+                    co2_grams_eq_per_kwh=100,
+                    cpu_min_watts=0.1,
+                    cpu_max_watts=100,
                 ),
             ],
             storage=VCDStorage(
@@ -1844,6 +1856,9 @@ class TestPayloadFactory:
             currency="rabbits",
             is_preemptible=True,
             zones=("here", "there"),
+            co2_grams_eq_per_kwh=123,
+            cpu_min_watts=0.01,
+            cpu_max_watts=1000,
         )
 
     def test_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
@@ -1868,6 +1883,9 @@ class TestPayloadFactory:
             "zones": ("here", "there"),
             "price": "180",
             "currency": "rabbits",
+            "co2_grams_eq_per_kwh": 123,
+            "cpu_min_watts": 0.01,
+            "cpu_max_watts": 1000,
         }
 
         np = replace(
@@ -1895,4 +1913,7 @@ class TestPayloadFactory:
             "gpu_model": "some-gpu-model",
             "price": "180",
             "currency": "rabbits",
+            "co2_grams_eq_per_kwh": 123,
+            "cpu_min_watts": 0.01,
+            "cpu_max_watts": 1000,
         }
