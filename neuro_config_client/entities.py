@@ -124,6 +124,10 @@ class NodePool:
 
     zones: tuple[str, ...] | None = None
 
+    co2_grams_eq_per_kwh: float = 0.0
+    cpu_min_watts: float = 0.0
+    cpu_max_watts: float = 0.0
+
 
 @dataclass(frozen=True)
 class StorageInstance:
