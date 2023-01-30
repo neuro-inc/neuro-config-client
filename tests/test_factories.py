@@ -861,6 +861,7 @@ class TestEntityFactory:
                     "co2_grams_eq_per_kwh": 100,
                     "cpu_min_watts": 0.1,
                     "cpu_max_watts": 100,
+                    "price_per_kwh": 13.2,
                 },
             ],
         }
@@ -901,6 +902,7 @@ class TestEntityFactory:
                     co2_grams_eq_per_kwh=100,
                     cpu_min_watts=0.1,
                     cpu_max_watts=100,
+                    price_per_kwh=13.2,
                 ),
             ],
             storage=None,
@@ -964,6 +966,7 @@ class TestEntityFactory:
                     "co2_grams_eq_per_kwh": 100,
                     "cpu_min_watts": 0.1,
                     "cpu_max_watts": 100,
+                    "price_per_kwh": 13.2,
                 },
             ],
             "storage": {
@@ -1022,6 +1025,7 @@ class TestEntityFactory:
                     co2_grams_eq_per_kwh=100,
                     cpu_min_watts=0.1,
                     cpu_max_watts=100,
+                    price_per_kwh=13.2,
                 ),
             ],
             storage=VCDStorage(
@@ -1859,6 +1863,7 @@ class TestPayloadFactory:
             co2_grams_eq_per_kwh=123,
             cpu_min_watts=0.01,
             cpu_max_watts=1000,
+            price_per_kwh=13.2,
         )
 
     def test_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
@@ -1886,6 +1891,7 @@ class TestPayloadFactory:
             "co2_grams_eq_per_kwh": 123,
             "cpu_min_watts": 0.01,
             "cpu_max_watts": 1000,
+            "price_per_kwh": 13.2,
         }
 
         np = replace(
@@ -1916,4 +1922,5 @@ class TestPayloadFactory:
             "co2_grams_eq_per_kwh": 123,
             "cpu_min_watts": 0.01,
             "cpu_max_watts": 1000,
+            "price_per_kwh": 13.2,
         }

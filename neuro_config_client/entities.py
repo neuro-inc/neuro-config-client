@@ -127,6 +127,7 @@ class NodePool:
     co2_grams_eq_per_kwh: float = 0.0
     cpu_min_watts: float = 0.0
     cpu_max_watts: float = 0.0
+    price_per_kwh: float = 0.0
 
 
 @dataclass(frozen=True)

@@ -418,6 +418,7 @@ class EntityFactory:
             ),
             cpu_min_watts=payload.get("cpu_min_watts", NodePool.cpu_min_watts),
             cpu_max_watts=payload.get("cpu_max_watts", NodePool.cpu_max_watts),
+            price_per_kwh=payload.get("price_per_kwh", NodePool.price_per_kwh),
         )
 
     def _create_aws_storage(self, payload: dict[str, Any]) -> AWSStorage:
@@ -970,4 +971,6 @@ class PayloadFactory:
             result["cpu_min_watts"] = node_pool.cpu_min_watts
         if node_pool.cpu_max_watts:
             result["cpu_max_watts"] = node_pool.cpu_max_watts
+        if node_pool.price_per_kwh:
+            result["price_per_kwh"] = node_pool.price_per_kwh
         return result
