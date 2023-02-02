@@ -6,9 +6,13 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, time, tzinfo
 from decimal import Decimal
-from zoneinfo import ZoneInfo
 
 from yarl import URL
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 
 
 class NotificationType(str, enum.Enum):

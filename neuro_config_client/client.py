@@ -7,7 +7,6 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
 from types import TracebackType
 from typing import Any
-from zoneinfo import ZoneInfo
 
 import aiohttp
 from aiohttp import ClientResponseError
@@ -34,6 +33,11 @@ from .entities import (
     StorageConfig,
 )
 from .factories import EntityFactory, PayloadFactory
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 

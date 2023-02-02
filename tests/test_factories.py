@@ -5,7 +5,6 @@ from datetime import datetime, time
 from decimal import Decimal
 from typing import Any
 from unittest import mock
-from zoneinfo import ZoneInfo
 
 import pytest
 from yarl import URL
@@ -74,6 +73,11 @@ from neuro_config_client.entities import (
     VolumeConfig,
 )
 from neuro_config_client.factories import EntityFactory, PayloadFactory
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 
 
 class TestEntityFactory:

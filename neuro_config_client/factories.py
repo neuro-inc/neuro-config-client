@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime, time, tzinfo
 from decimal import Decimal
 from typing import Any
-from zoneinfo import ZoneInfo
 
 from yarl import URL
 
@@ -73,6 +72,11 @@ from .entities import (
     VCDStorage,
     VolumeConfig,
 )
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
 
 
 class EntityFactory:
