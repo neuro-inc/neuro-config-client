@@ -4,8 +4,9 @@ import abc
 import enum
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, time, tzinfo
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
 from yarl import URL
 
@@ -124,7 +125,6 @@ class NodePool:
 
     zones: tuple[str, ...] | None = None
 
-    co2_grams_eq_per_kwh: float = 0.0
     cpu_min_watts: float = 0.0
     cpu_max_watts: float = 0.0
 
@@ -141,8 +141,7 @@ class Storage:
     instances: Sequence[StorageInstance]
 
 
-# about 'type ignore': see https://github.com/python/mypy/issues/5374
-@dataclass(frozen=True)  # type: ignore
+@dataclass(frozen=True)
 class CloudProvider(abc.ABC):
     node_pools: Sequence[NodePool]
     storage: Storage | None
@@ -547,10 +546,32 @@ class ClusterStatus(str, enum.Enum):
 
 
 @dataclass(frozen=True)
+class EnergySchedulePeriod:
+    # ISO 8601 weekday number (1-7)
+    weekday: int
+    start_time: time
+    end_time: time
+
+
+@dataclass(frozen=True)
+class EnergySchedule:
+    name: str
+    periods: Sequence[EnergySchedulePeriod] = ()
+    price_kwh: Decimal = Decimal("0")
+
+
+@dataclass(frozen=True)
+class EnergyConfig:
+    g_co2eq_kwh: float = 0
+    schedules: Sequence[EnergySchedule] = ()
+
+
+@dataclass(frozen=True)
 class Cluster:
     name: str
     status: ClusterStatus
     created_at: datetime
+    timezone: tzinfo = ZoneInfo("UTC")
     platform_infra_image_tag: str | None = None
     cloud_provider: CloudProvider | None = None
     credentials: CredentialsConfig | None = None
@@ -564,3 +585,4 @@ class Cluster:
     disks: DisksConfig | None = None
     buckets: BucketsConfig | None = None
     ingress: IngressConfig | None = None
+    energy: EnergyConfig | None = None

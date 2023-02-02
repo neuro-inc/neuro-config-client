@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, time, tzinfo
 from decimal import Decimal
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from yarl import URL
 
@@ -33,6 +34,9 @@ from .entities import (
     EFSPerformanceMode,
     EFSThroughputMode,
     EMCECSCredentials,
+    EnergyConfig,
+    EnergySchedule,
+    EnergySchedulePeriod,
     GoogleCloudProvider,
     GoogleFilestoreTier,
     GoogleStorage,
@@ -180,6 +184,8 @@ class EntityFactory:
         dns = payload.get("dns")
         cloud_provider = payload.get("cloud_provider")
         credentials = payload.get("credentials")
+        timezone = self._create_timezone(payload.get("timezone"))
+        energy = payload.get("energy")
         return Cluster(
             name=payload["name"],
             status=ClusterStatus(payload["status"]),
@@ -201,6 +207,8 @@ class EntityFactory:
             else None,
             credentials=self.create_credentials(credentials) if credentials else None,
             created_at=datetime.fromisoformat(payload["created_at"]),
+            timezone=timezone,
+            energy=self.create_energy(energy, timezone=timezone) if energy else None,
         )
 
     def create_orchestrator(self, payload: dict[str, Any]) -> OrchestratorConfig:
@@ -413,9 +421,6 @@ class EntityFactory:
             idle_size=payload.get("idle_size", NodePool.idle_size),
             is_preemptible=payload.get("is_preemptible", NodePool.is_preemptible),
             zones=payload.get("zones", NodePool.zones),
-            co2_grams_eq_per_kwh=payload.get(
-                "co2_grams_eq_per_kwh", NodePool.co2_grams_eq_per_kwh
-            ),
             cpu_min_watts=payload.get("cpu_min_watts", NodePool.cpu_min_watts),
             cpu_max_watts=payload.get("cpu_max_watts", NodePool.cpu_max_watts),
         )
@@ -629,6 +634,48 @@ class EntityFactory:
             s3_endpoint=URL(payload["s3_endpoint"]),
             endpoint=URL(payload["endpoint"]),
             region_name=payload["region_name"],
+        )
+
+    def _create_timezone(self, name: str | None) -> tzinfo:
+        if not name:
+            return Cluster.timezone
+        try:
+            return ZoneInfo(name)
+        except Exception:
+            raise ValueError(f"invalid timezone: {name}")
+
+    def create_energy(
+        self, payload: dict[str, Any], *, timezone: tzinfo
+    ) -> EnergyConfig:
+        return EnergyConfig(
+            g_co2eq_kwh=payload["g_co2eq_kwh"],
+            schedules=[
+                self._create_energy_schedule(s, timezone)
+                for s in payload.get("schedules", ())
+            ],
+        )
+
+    def _create_energy_schedule(
+        self, payload: dict[str, Any], timezone: tzinfo
+    ) -> EnergySchedule:
+        return EnergySchedule(
+            name=payload["name"],
+            price_kwh=Decimal(payload["price_kwh"]),
+            periods=[
+                self._create_energy_schedule_period(p, timezone=timezone)
+                for p in payload.get("periods", ())
+            ],
+        )
+
+    def _create_energy_schedule_period(
+        self, payload: dict[str, Any], *, timezone: tzinfo
+    ) -> EnergySchedulePeriod:
+        start_time = time.fromisoformat(payload["start_time"]).replace(tzinfo=timezone)
+        end_time = time.fromisoformat(payload["end_time"]).replace(tzinfo=timezone)
+        return EnergySchedulePeriod(
+            weekday=payload["weekday"],
+            start_time=start_time,
+            end_time=end_time,
         )
 
 
@@ -882,6 +929,7 @@ class PayloadFactory:
     def create_metrics(cls, metrics: MetricsConfig) -> dict[str, Any]:
         return {"url": str(metrics.url)}
 
+    @classmethod
     def create_secrets(cls, secrets: SecretsConfig) -> dict[str, Any]:
         return {"url": str(secrets.url)}
 
@@ -927,8 +975,7 @@ class PayloadFactory:
 
     @classmethod
     def create_node_pool(cls, node_pool: NodePool) -> dict[str, Any]:
-        node_pool
-        result = {
+        result: dict[str, Any] = {
             "name": node_pool.name,
             "role": node_pool.role.value,
             "min_size": node_pool.min_size,
@@ -964,10 +1011,36 @@ class PayloadFactory:
             result["is_preemptible"] = node_pool.is_preemptible
         if node_pool.zones:
             result["zones"] = node_pool.zones
-        if node_pool.co2_grams_eq_per_kwh:
-            result["co2_grams_eq_per_kwh"] = node_pool.co2_grams_eq_per_kwh
         if node_pool.cpu_min_watts:
             result["cpu_min_watts"] = node_pool.cpu_min_watts
         if node_pool.cpu_max_watts:
             result["cpu_max_watts"] = node_pool.cpu_max_watts
         return result
+
+    @classmethod
+    def create_energy(cls, energy: EnergyConfig) -> dict[str, Any]:
+        return {
+            "g_co2eq_kwh": energy.g_co2eq_kwh,
+            "schedules": [cls._create_energy_schedule(s) for s in energy.schedules],
+        }
+
+    @classmethod
+    def _create_energy_schedule(cls, schedule: EnergySchedule) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "name": schedule.name,
+            "price_kwh": str(schedule.price_kwh),
+        }
+        periods = [cls._create_energy_schedule_period(p) for p in schedule.periods]
+        if periods:
+            payload["periods"] = periods
+        return payload
+
+    @classmethod
+    def _create_energy_schedule_period(
+        cls, period: EnergySchedulePeriod
+    ) -> dict[str, Any]:
+        return {
+            "weekday": period.weekday,
+            "start_time": period.start_time.strftime("%H:%M"),
+            "end_time": period.end_time.strftime("%H:%M"),
+        }

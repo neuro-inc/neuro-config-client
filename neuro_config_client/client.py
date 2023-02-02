@@ -7,6 +7,7 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
 from types import TracebackType
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import aiohttp
 from aiohttp import ClientResponseError
@@ -20,6 +21,7 @@ from .entities import (
     CredentialsConfig,
     DisksConfig,
     DNSConfig,
+    EnergyConfig,
     IngressConfig,
     MetricsConfig,
     MonitoringConfig,
@@ -176,6 +178,8 @@ class ConfigClientBase:
         buckets: BucketsConfig | None = None,
         ingress: IngressConfig | None = None,
         dns: DNSConfig | None = None,
+        timezone: ZoneInfo | None,
+        energy: EnergyConfig | None = None,
         token: str | None = None,
     ) -> Cluster:
         path = self._endpoints.cluster(name)
@@ -206,6 +210,10 @@ class ConfigClientBase:
             payload["ingress"] = self._payload_factory.create_ingress(ingress)
         if dns:
             payload["dns"] = self._payload_factory.create_dns(dns)
+        if timezone:
+            payload["timezone"] = str(timezone)
+        if energy:
+            payload["energy"] = self._payload_factory.create_energy(energy)
         async with self._request(
             "PATCH", path, headers=self._create_headers(token=token), json=payload
         ) as resp:
