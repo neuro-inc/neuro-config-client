@@ -37,7 +37,7 @@ from .factories import EntityFactory, PayloadFactory
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
-    from backports.zoneinfo import ZoneInfo
+    from backports.zoneinfo import ZoneInfo  # type: ignore
 
 logger = logging.getLogger(__name__)
 

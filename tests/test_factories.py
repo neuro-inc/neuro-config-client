@@ -77,7 +77,7 @@ from neuro_config_client.factories import EntityFactory, PayloadFactory
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
-    from backports.zoneinfo import ZoneInfo
+    from backports.zoneinfo import ZoneInfo  # type: ignore
 
 
 class TestEntityFactory:

@@ -12,7 +12,7 @@ from yarl import URL
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
-    from backports.zoneinfo import ZoneInfo
+    from backports.zoneinfo import ZoneInfo  # type: ignore
 
 
 class NotificationType(str, enum.Enum):
@@ -145,7 +145,8 @@ class Storage:
     instances: Sequence[StorageInstance]
 
 
-@dataclass(frozen=True)
+# about 'type ignore': see https://github.com/python/mypy/issues/5374
+@dataclass(frozen=True)  # type: ignore
 class CloudProvider(abc.ABC):
     node_pools: Sequence[NodePool]
     storage: Storage | None
