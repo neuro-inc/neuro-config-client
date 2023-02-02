@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import logging
+import sys
 from collections.abc import AsyncIterator, Mapping, Sequence
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
@@ -20,6 +21,7 @@ from .entities import (
     CredentialsConfig,
     DisksConfig,
     DNSConfig,
+    EnergyConfig,
     IngressConfig,
     MetricsConfig,
     MonitoringConfig,
@@ -32,6 +34,11 @@ from .entities import (
     StorageConfig,
 )
 from .factories import EntityFactory, PayloadFactory
+
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +183,8 @@ class ConfigClientBase:
         buckets: BucketsConfig | None = None,
         ingress: IngressConfig | None = None,
         dns: DNSConfig | None = None,
+        timezone: ZoneInfo | None,
+        energy: EnergyConfig | None = None,
         token: str | None = None,
     ) -> Cluster:
         path = self._endpoints.cluster(name)
@@ -206,6 +215,10 @@ class ConfigClientBase:
             payload["ingress"] = self._payload_factory.create_ingress(ingress)
         if dns:
             payload["dns"] = self._payload_factory.create_dns(dns)
+        if timezone:
+            payload["timezone"] = str(timezone)
+        if energy:
+            payload["energy"] = self._payload_factory.create_energy(energy)
         async with self._request(
             "PATCH", path, headers=self._create_headers(token=token), json=payload
         ) as resp:

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import replace
-from datetime import datetime
+from datetime import datetime, time
 from decimal import Decimal
 from typing import Any
 from unittest import mock
@@ -35,6 +36,9 @@ from neuro_config_client.entities import (
     EFSPerformanceMode,
     EFSThroughputMode,
     EMCECSCredentials,
+    EnergyConfig,
+    EnergySchedule,
+    EnergySchedulePeriod,
     GoogleCloudProvider,
     GoogleFilestoreTier,
     GoogleStorage,
@@ -71,6 +75,11 @@ from neuro_config_client.entities import (
 )
 from neuro_config_client.factories import EntityFactory, PayloadFactory
 
+if sys.version_info >= (3, 9):
+    from zoneinfo import ZoneInfo
+else:
+    from backports.zoneinfo import ZoneInfo
+
 
 class TestEntityFactory:
     @pytest.fixture
@@ -96,6 +105,7 @@ class TestEntityFactory:
             {
                 "name": "default",
                 "status": "blank",
+                "timezone": "America/Los_Angeles",
                 "orchestrator": {
                     "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
                     "job_fallback_hostname": "default.jobs-dev.neu.ro",
@@ -131,6 +141,7 @@ class TestEntityFactory:
 
         assert result.name == "default"
         assert result.status == ClusterStatus.BLANK
+        assert result.timezone == ZoneInfo("America/Los_Angeles")
         assert result.orchestrator
         assert result.storage
         assert result.registry
@@ -143,6 +154,17 @@ class TestEntityFactory:
         assert result.cloud_provider
         assert result.credentials
         assert result.created_at
+
+    def test_create_cluster__invalid_timezone(self, factory: EntityFactory) -> None:
+        with pytest.raises(ValueError, match="invalid timezone"):
+            factory.create_cluster(
+                {
+                    "name": "default",
+                    "status": "blank",
+                    "created_at": str(datetime.now()),
+                    "timezone": "invalid",
+                }
+            )
 
     def test_create_orchestrator(self, factory: EntityFactory) -> None:
         result = factory.create_orchestrator(
@@ -858,7 +880,6 @@ class TestEntityFactory:
                     "gpu_model": "nvidia-tesla-k80",
                     "price": "0.9",
                     "currency": "USD",
-                    "co2_grams_eq_per_kwh": 100,
                     "cpu_min_watts": 0.1,
                     "cpu_max_watts": 100,
                 },
@@ -898,7 +919,6 @@ class TestEntityFactory:
                     price=Decimal("0.9"),
                     currency="USD",
                     machine_type="gpu-machine-1xk80",
-                    co2_grams_eq_per_kwh=100,
                     cpu_min_watts=0.1,
                     cpu_max_watts=100,
                 ),
@@ -961,7 +981,6 @@ class TestEntityFactory:
                     "gpu_model": "nvidia-tesla-k80",
                     "price": "0.9",
                     "currency": "USD",
-                    "co2_grams_eq_per_kwh": 100,
                     "cpu_min_watts": 0.1,
                     "cpu_max_watts": 100,
                 },
@@ -1019,7 +1038,6 @@ class TestEntityFactory:
                     gpu_model="nvidia-tesla-k80",
                     price=Decimal("0.9"),
                     currency="USD",
-                    co2_grams_eq_per_kwh=100,
                     cpu_min_watts=0.1,
                     cpu_max_watts=100,
                 ),
@@ -1368,6 +1386,43 @@ class TestEntityFactory:
             edge_external_network_name="neuro-edge-external",
             catalog_name="neuro",
             storage_profile_names=["neuro-storage"],
+        )
+
+    def test_create_energy(self, factory: EntityFactory) -> None:
+        timezone = ZoneInfo("America/Los_Angeles")
+        energy = factory.create_energy(
+            {
+                "g_co2eq_kwh": 100,
+                "schedules": [
+                    {"name": "default", "price_kwh": "123.4"},
+                    {
+                        "name": "green",
+                        "price_kwh": "123.4",
+                        "periods": [
+                            {"weekday": 1, "start_time": "23:00", "end_time": "00:00"}
+                        ],
+                    },
+                ],
+            },
+            timezone=timezone,
+        )
+
+        assert energy == EnergyConfig(
+            g_co2eq_kwh=100,
+            schedules=[
+                EnergySchedule(name="default", price_kwh=Decimal("123.4"), periods=[]),
+                EnergySchedule(
+                    name="green",
+                    price_kwh=Decimal("123.4"),
+                    periods=[
+                        EnergySchedulePeriod(
+                            weekday=1,
+                            start_time=time(hour=23, minute=0, tzinfo=timezone),
+                            end_time=time(hour=0, minute=0, tzinfo=timezone),
+                        )
+                    ],
+                ),
+            ],
         )
 
 
@@ -1856,7 +1911,6 @@ class TestPayloadFactory:
             currency="rabbits",
             is_preemptible=True,
             zones=("here", "there"),
-            co2_grams_eq_per_kwh=123,
             cpu_min_watts=0.01,
             cpu_max_watts=1000,
         )
@@ -1883,7 +1937,6 @@ class TestPayloadFactory:
             "zones": ("here", "there"),
             "price": "180",
             "currency": "rabbits",
-            "co2_grams_eq_per_kwh": 123,
             "cpu_min_watts": 0.01,
             "cpu_max_watts": 1000,
         }
@@ -1913,7 +1966,42 @@ class TestPayloadFactory:
             "gpu_model": "some-gpu-model",
             "price": "180",
             "currency": "rabbits",
-            "co2_grams_eq_per_kwh": 123,
             "cpu_min_watts": 0.01,
             "cpu_max_watts": 1000,
+        }
+
+    def test_create_energy(self, factory: PayloadFactory) -> None:
+        timezone = ZoneInfo("America/Los_Angeles")
+        energy = factory.create_energy(
+            EnergyConfig(
+                g_co2eq_kwh=100,
+                schedules=[
+                    EnergySchedule(name="default", price_kwh=Decimal("246.8")),
+                    EnergySchedule(
+                        name="green",
+                        price_kwh=Decimal("123.4"),
+                        periods=[
+                            EnergySchedulePeriod(
+                                weekday=1,
+                                start_time=time(hour=23, minute=0, tzinfo=timezone),
+                                end_time=time(hour=0, minute=0, tzinfo=timezone),
+                            )
+                        ],
+                    ),
+                ],
+            )
+        )
+
+        assert energy == {
+            "g_co2eq_kwh": 100,
+            "schedules": [
+                {"name": "default", "price_kwh": "246.8"},
+                {
+                    "name": "green",
+                    "price_kwh": "123.4",
+                    "periods": [
+                        {"weekday": 1, "start_time": "23:00", "end_time": "00:00"}
+                    ],
+                },
+            ],
         }
