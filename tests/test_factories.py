@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import replace
 from datetime import datetime, time
 from decimal import Decimal
@@ -74,10 +75,10 @@ from neuro_config_client.entities import (
 )
 from neuro_config_client.factories import EntityFactory, PayloadFactory
 
-try:
+if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
-except ImportError:
-    from backports.zoneinfo import ZoneInfo  # type: ignore
+else:
+    from backports.zoneinfo import ZoneInfo
 
 
 class TestEntityFactory:

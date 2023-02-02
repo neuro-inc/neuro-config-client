@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import logging
+import sys
 from collections.abc import AsyncIterator, Mapping, Sequence
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
@@ -34,10 +35,10 @@ from .entities import (
 )
 from .factories import EntityFactory, PayloadFactory
 
-try:
+if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
-except ImportError:
-    from backports.zoneinfo import ZoneInfo  # type: ignore
+else:
+    from backports.zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 

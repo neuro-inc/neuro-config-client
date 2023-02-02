@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from datetime import datetime, time, tzinfo
 from decimal import Decimal
 from typing import Any
@@ -73,10 +74,10 @@ from .entities import (
     VolumeConfig,
 )
 
-try:
+if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
-except ImportError:
-    from backports.zoneinfo import ZoneInfo  # type: ignore
+else:
+    from backports.zoneinfo import ZoneInfo
 
 
 class EntityFactory:

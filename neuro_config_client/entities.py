@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 import enum
+import sys
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, time, tzinfo
@@ -9,10 +10,10 @@ from decimal import Decimal
 
 from yarl import URL
 
-try:
+if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
-except ImportError:
-    from backports.zoneinfo import ZoneInfo  # type: ignore
+else:
+    from backports.zoneinfo import ZoneInfo
 
 
 class NotificationType(str, enum.Enum):
