@@ -563,12 +563,12 @@ class EnergySchedulePeriod:
 class EnergySchedule:
     name: str
     periods: Sequence[EnergySchedulePeriod] = ()
-    price_kwh: Decimal = Decimal("0")
+    price_per_kwh: Decimal = Decimal("0")
 
 
 @dataclass(frozen=True)
 class EnergyConfig:
-    g_co2eq_kwh: float = 0
+    co2_grams_eq_per_kwh: float = 0
     schedules: Sequence[EnergySchedule] = ()
 
 

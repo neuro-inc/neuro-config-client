@@ -1392,12 +1392,12 @@ class TestEntityFactory:
         timezone = ZoneInfo("America/Los_Angeles")
         energy = factory.create_energy(
             {
-                "g_co2eq_kwh": 100,
+                "co2_grams_eq_per_kwh": 100,
                 "schedules": [
-                    {"name": "default", "price_kwh": "123.4"},
+                    {"name": "default", "price_per_kwh": "123.4"},
                     {
                         "name": "green",
-                        "price_kwh": "123.4",
+                        "price_per_kwh": "123.4",
                         "periods": [
                             {"weekday": 1, "start_time": "23:00", "end_time": "00:00"}
                         ],
@@ -1408,12 +1408,16 @@ class TestEntityFactory:
         )
 
         assert energy == EnergyConfig(
-            g_co2eq_kwh=100,
+            co2_grams_eq_per_kwh=100,
             schedules=[
-                EnergySchedule(name="default", price_kwh=Decimal("123.4"), periods=[]),
+                EnergySchedule(
+                    name="default",
+                    price_per_kwh=Decimal("123.4"),
+                    periods=[],
+                ),
                 EnergySchedule(
                     name="green",
-                    price_kwh=Decimal("123.4"),
+                    price_per_kwh=Decimal("123.4"),
                     periods=[
                         EnergySchedulePeriod(
                             weekday=1,
@@ -1974,12 +1978,12 @@ class TestPayloadFactory:
         timezone = ZoneInfo("America/Los_Angeles")
         energy = factory.create_energy(
             EnergyConfig(
-                g_co2eq_kwh=100,
+                co2_grams_eq_per_kwh=100,
                 schedules=[
-                    EnergySchedule(name="default", price_kwh=Decimal("246.8")),
+                    EnergySchedule(name="default", price_per_kwh=Decimal("246.8")),
                     EnergySchedule(
                         name="green",
-                        price_kwh=Decimal("123.4"),
+                        price_per_kwh=Decimal("123.4"),
                         periods=[
                             EnergySchedulePeriod(
                                 weekday=1,
@@ -1993,12 +1997,12 @@ class TestPayloadFactory:
         )
 
         assert energy == {
-            "g_co2eq_kwh": 100,
+            "co2_grams_eq_per_kwh": 100,
             "schedules": [
-                {"name": "default", "price_kwh": "246.8"},
+                {"name": "default", "price_per_kwh": "246.8"},
                 {
                     "name": "green",
-                    "price_kwh": "123.4",
+                    "price_per_kwh": "123.4",
                     "periods": [
                         {"weekday": 1, "start_time": "23:00", "end_time": "00:00"}
                     ],

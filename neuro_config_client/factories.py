@@ -653,7 +653,7 @@ class EntityFactory:
         self, payload: dict[str, Any], *, timezone: tzinfo
     ) -> EnergyConfig:
         return EnergyConfig(
-            g_co2eq_kwh=payload["g_co2eq_kwh"],
+            co2_grams_eq_per_kwh=payload["co2_grams_eq_per_kwh"],
             schedules=[
                 self._create_energy_schedule(s, timezone)
                 for s in payload.get("schedules", ())
@@ -665,7 +665,7 @@ class EntityFactory:
     ) -> EnergySchedule:
         return EnergySchedule(
             name=payload["name"],
-            price_kwh=Decimal(payload["price_kwh"]),
+            price_per_kwh=Decimal(payload["price_per_kwh"]),
             periods=[
                 self._create_energy_schedule_period(p, timezone=timezone)
                 for p in payload.get("periods", ())
@@ -1025,7 +1025,7 @@ class PayloadFactory:
     @classmethod
     def create_energy(cls, energy: EnergyConfig) -> dict[str, Any]:
         return {
-            "g_co2eq_kwh": energy.g_co2eq_kwh,
+            "co2_grams_eq_per_kwh": energy.co2_grams_eq_per_kwh,
             "schedules": [cls._create_energy_schedule(s) for s in energy.schedules],
         }
 
@@ -1033,7 +1033,7 @@ class PayloadFactory:
     def _create_energy_schedule(cls, schedule: EnergySchedule) -> dict[str, Any]:
         payload: dict[str, Any] = {
             "name": schedule.name,
-            "price_kwh": str(schedule.price_kwh),
+            "price_per_kwh": str(schedule.price_per_kwh),
         }
         periods = [cls._create_energy_schedule_period(p) for p in schedule.periods]
         if periods:
