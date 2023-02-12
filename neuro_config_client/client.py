@@ -183,7 +183,7 @@ class ConfigClientBase:
         buckets: BucketsConfig | None = None,
         ingress: IngressConfig | None = None,
         dns: DNSConfig | None = None,
-        timezone: ZoneInfo | None,
+        timezone: ZoneInfo | None = None,
         energy: EnergyConfig | None = None,
         token: str | None = None,
     ) -> Cluster:
