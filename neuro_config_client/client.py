@@ -544,11 +544,21 @@ class ConfigClient(ConfigClientBase):
 
     @asynccontextmanager
     async def _request(
-        self, method: str, path: str, **kwargs: Any
+        self,
+        method: str,
+        path: str,
+        json: dict[str, Any] | None = None,
+        params: Mapping[str, str] | None = None,
+        headers: Mapping[str, str] | None = None,
     ) -> AsyncIterator[aiohttp.ClientResponse]:
         assert self._client
         assert self._base_url
         url = self._base_url / path
-        async with self._client.request(method, url, **kwargs) as response:
+        if params:
+            url = url.with_query(params)
+
+        async with self._client.request(
+            method, url, json=json, headers=headers
+        ) as response:
             response.raise_for_status()
             yield response
