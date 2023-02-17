@@ -147,7 +147,6 @@ class Storage:
     instances: Sequence[StorageInstance]
 
 
-# about 'type ignore': see https://github.com/python/mypy/issues/5374
 @dataclass(frozen=True)
 class CloudProvider(abc.ABC):
     node_pools: Sequence[NodePool]
