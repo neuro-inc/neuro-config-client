@@ -1,6 +1,7 @@
 -e .
-mypy==0.812
+mypy==1.0.0
 pre-commit==2.13.0
 pytest==6.2.4
 pytest-cov==2.12.0
 types-backports
+types-setuptools

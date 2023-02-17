@@ -13,7 +13,8 @@ from yarl import URL
 if sys.version_info >= (3, 9):
     from zoneinfo import ZoneInfo
 else:
-    from backports.zoneinfo import ZoneInfo
+    # why not backports.zoneinfo: https://github.com/pganssle/zoneinfo/issues/125
+    from backports.zoneinfo._zoneinfo import ZoneInfo
 
 
 class NotificationType(str, enum.Enum):
@@ -146,8 +147,7 @@ class Storage:
     instances: Sequence[StorageInstance]
 
 
-# about 'type ignore': see https://github.com/python/mypy/issues/5374
-@dataclass(frozen=True)  # type: ignore
+@dataclass(frozen=True)
 class CloudProvider(abc.ABC):
     node_pools: Sequence[NodePool]
     storage: Storage | None
