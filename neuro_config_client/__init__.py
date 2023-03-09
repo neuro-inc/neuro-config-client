@@ -1,5 +1,5 @@
 """Platform config client."""
-from pkg_resources import get_distribution
+from importlib.metadata import version
 
 from .client import ConfigClient, ConfigClientBase
 from .entities import (
@@ -139,4 +139,4 @@ __all__ = [
     "VCDStorage",
     "VolumeConfig",
 ]
-__version__ = get_distribution(__name__).version
+__version__ = version(__name__)
