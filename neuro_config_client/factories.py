@@ -294,6 +294,7 @@ class EntityFactory:
             scheduler_enabled=payload.get("scheduler_enabled", False),
             preemptible_node=payload.get("preemptible_node", False),
             resource_affinity=payload.get("resource_affinity", ()),
+            is_external_job=payload.get("is_external_job", False),
         )
 
     def create_tpu_preset(self, payload: dict[str, Any]) -> TPUPreset:

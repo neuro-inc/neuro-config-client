@@ -469,6 +469,7 @@ class ResourcePreset:
     scheduler_enabled: bool = False
     preemptible_node: bool = False
     resource_affinity: Sequence[str] = ()
+    is_external_job: bool = False
 
 
 @dataclass(frozen=True)
