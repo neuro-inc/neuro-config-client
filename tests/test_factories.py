@@ -326,7 +326,7 @@ class TestEntityFactory:
             ipv4_cidr_block="10.0.0.0/8", types=["tpu"], software_versions=["v1"]
         )
 
-    def test_create_resource_preset(self, factory: EntityFactory) -> None:
+    def test_create_resource_preset_default(self, factory: EntityFactory) -> None:
         result = factory.create_resource_preset(
             {
                 "name": "cpu-small",
@@ -340,7 +340,7 @@ class TestEntityFactory:
             name="cpu-small", credits_per_hour=Decimal("10"), cpu=4.0, memory=1024
         )
 
-    def test_create_resource_preset_with_memory_gpu_tpu_preemptible_affinity(
+    def test_create_resource_preset_custom(
         self, factory: EntityFactory
     ) -> None:
         result = factory.create_resource_preset(
@@ -355,6 +355,7 @@ class TestEntityFactory:
                 "scheduler_enabled": True,
                 "preemptible_node": True,
                 "resource_affinity": ["gpu-k80"],
+                "is_external_job": True,
             }
         )
 
@@ -369,6 +370,7 @@ class TestEntityFactory:
             scheduler_enabled=True,
             preemptible_node=True,
             resource_affinity=["gpu-k80"],
+            is_external_job=True
         )
 
     def test_create_storage(self, factory: EntityFactory) -> None:
