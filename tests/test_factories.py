@@ -340,9 +340,7 @@ class TestEntityFactory:
             name="cpu-small", credits_per_hour=Decimal("10"), cpu=4.0, memory=1024
         )
 
-    def test_create_resource_preset_custom(
-        self, factory: EntityFactory
-    ) -> None:
+    def test_create_resource_preset_custom(self, factory: EntityFactory) -> None:
         result = factory.create_resource_preset(
             {
                 "name": "gpu-small",
@@ -370,7 +368,7 @@ class TestEntityFactory:
             scheduler_enabled=True,
             preemptible_node=True,
             resource_affinity=["gpu-k80"],
-            is_external_job=True
+            is_external_job=True,
         )
 
     def test_create_storage(self, factory: EntityFactory) -> None:

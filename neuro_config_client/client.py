@@ -513,7 +513,7 @@ class ConfigClient(ConfigClientBase):
         self._trace_configs = trace_configs
         self._client: aiohttp.ClientSession | None = None
 
-    async def __aenter__(self) -> "ConfigClient":
+    async def __aenter__(self) -> ConfigClient:
         self._client = await self._create_http_client()
         return self
 
