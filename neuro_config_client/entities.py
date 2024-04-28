@@ -469,8 +469,9 @@ class ResourcePreset:
     tpu: TPUPreset | None = None
     scheduler_enabled: bool = False
     preemptible_node: bool = False
-    resource_affinity: Sequence[str] = ()
     is_external_job: bool = False
+    resource_pool_names: Sequence[str] = ()
+    available_resource_pool_names: Sequence[str] = ()
 
 
 @dataclass(frozen=True)

@@ -355,7 +355,8 @@ class TestEntityFactory:
                 "tpu": {"type": "tpu", "software_version": "v1"},
                 "scheduler_enabled": True,
                 "preemptible_node": True,
-                "resource_affinity": ["gpu-k80"],
+                "resource_pool_names": ["gpu"],
+                "available_resource_pool_names": ["available-gpu"],
                 "is_external_job": True,
             }
         )
@@ -371,7 +372,8 @@ class TestEntityFactory:
             tpu=TPUPreset(type="tpu", software_version="v1"),
             scheduler_enabled=True,
             preemptible_node=True,
-            resource_affinity=["gpu-k80"],
+            resource_pool_names=["gpu"],
+            available_resource_pool_names=["available-gpu"],
             is_external_job=True,
         )
 
@@ -1631,9 +1633,7 @@ class TestPayloadFactory:
             "memory": 1024,
         }
 
-    def test_create_resource_preset_with_memory_gpu_tpu_preemptible_affinity(
-        self, factory: PayloadFactory
-    ) -> None:
+    def test_create_resource_preset__custom(self, factory: PayloadFactory) -> None:
         result = factory.create_resource_preset(
             ResourcePreset(
                 name="gpu-small",
@@ -1646,7 +1646,7 @@ class TestPayloadFactory:
                 tpu=TPUPreset(type="tpu", software_version="v1"),
                 scheduler_enabled=True,
                 preemptible_node=True,
-                resource_affinity=["gpu-k80"],
+                resource_pool_names=["gpu"],
             )
         )
 
@@ -1661,6 +1661,7 @@ class TestPayloadFactory:
             "tpu": {"type": "tpu", "software_version": "v1"},
             "scheduler_enabled": True,
             "preemptible_node": True,
+            "resource_pool_names": ["gpu"],
         }
 
     def test_create_storage(self, factory: PayloadFactory) -> None:

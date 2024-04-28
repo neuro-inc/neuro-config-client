@@ -295,8 +295,11 @@ class EntityFactory:
             tpu=tpu,
             scheduler_enabled=payload.get("scheduler_enabled", False),
             preemptible_node=payload.get("preemptible_node", False),
-            resource_affinity=payload.get("resource_affinity", ()),
             is_external_job=payload.get("is_external_job", False),
+            resource_pool_names=payload.get("resource_pool_names", ()),
+            available_resource_pool_names=payload.get(
+                "available_resource_pool_names", ()
+            ),
         )
 
     def create_tpu_preset(self, payload: dict[str, Any]) -> TPUPreset:
@@ -903,6 +906,8 @@ class PayloadFactory:
             result["scheduler_enabled"] = preset.scheduler_enabled
         if preset.preemptible_node:
             result["preemptible_node"] = preset.preemptible_node
+        if preset.resource_pool_names:
+            result["resource_pool_names"] = preset.resource_pool_names
         return result
 
     @classmethod
