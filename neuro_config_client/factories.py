@@ -262,8 +262,9 @@ class EntityFactory:
             available_memory=payload.get(
                 "available_memory", ResourcePoolType.available_memory
             ),
-            gpu=payload.get("gpu"),
-            gpu_model=payload.get("gpu_model"),
+            nvidia_gpu=payload.get("nvidia_gpu"),
+            amd_gpu=payload.get("amd_gpu"),
+            intel_gpu=payload.get("intel_gpu"),
             price=Decimal(payload.get("price", ResourcePoolType.price)),
             currency=payload.get("currency"),
             tpu=tpu,
@@ -288,8 +289,9 @@ class EntityFactory:
             credits_per_hour=Decimal(payload["credits_per_hour"]),
             cpu=payload["cpu"],
             memory=payload["memory"],
-            gpu=payload.get("gpu"),
-            gpu_model=payload.get("gpu_model"),
+            nvidia_gpu=payload.get("nvidia_gpu"),
+            amd_gpu=payload.get("amd_gpu"),
+            intel_gpu=payload.get("intel_gpu"),
             tpu=tpu,
             scheduler_enabled=payload.get("scheduler_enabled", False),
             preemptible_node=payload.get("preemptible_node", False),
@@ -828,9 +830,9 @@ class PayloadFactory:
                 for r in orchestrator.resource_pool_types
             ]
         if orchestrator.job_internal_hostname_template:
-            result[
-                "job_internal_hostname_template"
-            ] = orchestrator.job_internal_hostname_template
+            result["job_internal_hostname_template"] = (
+                orchestrator.job_internal_hostname_template
+            )
         if orchestrator.resource_presets:
             result["resource_presets"] = [
                 self.create_resource_preset(preset)
@@ -860,9 +862,12 @@ class PayloadFactory:
             "available_memory": resource_pool_type.available_memory,
             "disk_size": resource_pool_type.disk_size,
         }
-        if resource_pool_type.gpu:
-            result["gpu"] = resource_pool_type.gpu
-            result["gpu_model"] = resource_pool_type.gpu_model
+        if resource_pool_type.nvidia_gpu:
+            result["nvidia_gpu"] = resource_pool_type.nvidia_gpu
+        if resource_pool_type.amd_gpu:
+            result["amd_gpu"] = resource_pool_type.amd_gpu
+        if resource_pool_type.intel_gpu:
+            result["intel_gpu"] = resource_pool_type.intel_gpu
         if resource_pool_type.currency:
             result["price"] = str(resource_pool_type.price)
             result["currency"] = resource_pool_type.currency
@@ -886,9 +891,12 @@ class PayloadFactory:
             "cpu": preset.cpu,
             "memory": preset.memory,
         }
-        if preset.gpu:
-            result["gpu"] = preset.gpu
-            result["gpu_model"] = preset.gpu_model
+        if preset.nvidia_gpu:
+            result["nvidia_gpu"] = preset.nvidia_gpu
+        if preset.amd_gpu:
+            result["amd_gpu"] = preset.amd_gpu
+        if preset.intel_gpu:
+            result["intel_gpu"] = preset.intel_gpu
         if preset.tpu:
             result["tpu"] = cls._create_tpu_preset(preset.tpu)
         if preset.scheduler_enabled:
