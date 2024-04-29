@@ -257,11 +257,11 @@ class EntityFactory:
             max_size=payload.get("max_size", ResourcePoolType.max_size),
             idle_size=payload.get("idle_size", ResourcePoolType.idle_size),
             cpu=payload.get("cpu", ResourcePoolType.cpu),
-            available_cpu=payload.get("available_cpu", ResourcePoolType.available_cpu),
+            available_cpu=payload.get("available_cpu")
+            or payload.get("cpu", ResourcePoolType.cpu),
             memory=payload.get("memory", ResourcePoolType.memory),
-            available_memory=payload.get(
-                "available_memory", ResourcePoolType.available_memory
-            ),
+            available_memory=payload.get("available_memory")
+            or payload.get("memory", ResourcePoolType.memory),
             nvidia_gpu=payload.get("nvidia_gpu"),
             amd_gpu=payload.get("amd_gpu"),
             intel_gpu=payload.get("intel_gpu"),

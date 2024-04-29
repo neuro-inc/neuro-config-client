@@ -481,9 +481,9 @@ class ResourcePoolType:
     max_size: int = 1
     idle_size: int = 0
     cpu: float = 1.0
-    available_cpu: float = 1.0
+    available_cpu: float = 1.0  # TODO: deprecated, use cpu instead
     memory: int = 2**30  # 1gb
-    available_memory: int = 2**30  # 1gb
+    available_memory: int = 2**30  # TODO: deprecated, use memory instead
     disk_size: int = 150 * 2**30  # 150gb
     nvidia_gpu: int | None = None
     amd_gpu: int | None = None
