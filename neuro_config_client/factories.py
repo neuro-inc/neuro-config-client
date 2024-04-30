@@ -251,19 +251,20 @@ class EntityFactory:
         tpu = None
         if payload.get("tpu"):
             tpu = self.create_tpu_resource(payload["tpu"])
+        cpu = payload.get("cpu", ResourcePoolType.cpu)
+        memory = payload.get("memory", ResourcePoolType.memory)
         return ResourcePoolType(
             name=payload["name"],
             min_size=payload.get("min_size", ResourcePoolType.min_size),
             max_size=payload.get("max_size", ResourcePoolType.max_size),
             idle_size=payload.get("idle_size", ResourcePoolType.idle_size),
-            cpu=payload.get("cpu", ResourcePoolType.cpu),
-            available_cpu=payload.get("available_cpu", ResourcePoolType.available_cpu),
-            memory=payload.get("memory", ResourcePoolType.memory),
-            available_memory=payload.get(
-                "available_memory", ResourcePoolType.available_memory
-            ),
-            gpu=payload.get("gpu"),
-            gpu_model=payload.get("gpu_model"),
+            cpu=cpu,
+            available_cpu=payload.get("available_cpu") or cpu,
+            memory=memory,
+            available_memory=payload.get("available_memory") or memory,
+            nvidia_gpu=payload.get("nvidia_gpu"),
+            amd_gpu=payload.get("amd_gpu"),
+            intel_gpu=payload.get("intel_gpu"),
             price=Decimal(payload.get("price", ResourcePoolType.price)),
             currency=payload.get("currency"),
             tpu=tpu,
@@ -288,13 +289,17 @@ class EntityFactory:
             credits_per_hour=Decimal(payload["credits_per_hour"]),
             cpu=payload["cpu"],
             memory=payload["memory"],
-            gpu=payload.get("gpu"),
-            gpu_model=payload.get("gpu_model"),
+            nvidia_gpu=payload.get("nvidia_gpu"),
+            amd_gpu=payload.get("amd_gpu"),
+            intel_gpu=payload.get("intel_gpu"),
             tpu=tpu,
             scheduler_enabled=payload.get("scheduler_enabled", False),
             preemptible_node=payload.get("preemptible_node", False),
-            resource_affinity=payload.get("resource_affinity", ()),
             is_external_job=payload.get("is_external_job", False),
+            resource_pool_names=payload.get("resource_pool_names", ()),
+            available_resource_pool_names=payload.get(
+                "available_resource_pool_names", ()
+            ),
         )
 
     def create_tpu_preset(self, payload: dict[str, Any]) -> TPUPreset:
@@ -828,9 +833,9 @@ class PayloadFactory:
                 for r in orchestrator.resource_pool_types
             ]
         if orchestrator.job_internal_hostname_template:
-            result[
-                "job_internal_hostname_template"
-            ] = orchestrator.job_internal_hostname_template
+            result["job_internal_hostname_template"] = (
+                orchestrator.job_internal_hostname_template
+            )
         if orchestrator.resource_presets:
             result["resource_presets"] = [
                 self.create_resource_preset(preset)
@@ -860,9 +865,12 @@ class PayloadFactory:
             "available_memory": resource_pool_type.available_memory,
             "disk_size": resource_pool_type.disk_size,
         }
-        if resource_pool_type.gpu:
-            result["gpu"] = resource_pool_type.gpu
-            result["gpu_model"] = resource_pool_type.gpu_model
+        if resource_pool_type.nvidia_gpu:
+            result["nvidia_gpu"] = resource_pool_type.nvidia_gpu
+        if resource_pool_type.amd_gpu:
+            result["amd_gpu"] = resource_pool_type.amd_gpu
+        if resource_pool_type.intel_gpu:
+            result["intel_gpu"] = resource_pool_type.intel_gpu
         if resource_pool_type.currency:
             result["price"] = str(resource_pool_type.price)
             result["currency"] = resource_pool_type.currency
@@ -886,15 +894,20 @@ class PayloadFactory:
             "cpu": preset.cpu,
             "memory": preset.memory,
         }
-        if preset.gpu:
-            result["gpu"] = preset.gpu
-            result["gpu_model"] = preset.gpu_model
+        if preset.nvidia_gpu:
+            result["nvidia_gpu"] = preset.nvidia_gpu
+        if preset.amd_gpu:
+            result["amd_gpu"] = preset.amd_gpu
+        if preset.intel_gpu:
+            result["intel_gpu"] = preset.intel_gpu
         if preset.tpu:
             result["tpu"] = cls._create_tpu_preset(preset.tpu)
         if preset.scheduler_enabled:
             result["scheduler_enabled"] = preset.scheduler_enabled
         if preset.preemptible_node:
             result["preemptible_node"] = preset.preemptible_node
+        if preset.resource_pool_names:
+            result["resource_pool_names"] = preset.resource_pool_names
         return result
 
     @classmethod

@@ -278,8 +278,9 @@ class TestEntityFactory:
                 "memory": 12 * 1024,
                 "available_memory": 10 * 1024,
                 "disk_size": 700,
-                "gpu": 1,
-                "gpu_model": "nvidia-tesla-k80",
+                "nvidia_gpu": 1,
+                "amd_gpu": 2,
+                "intel_gpu": 3,
                 "tpu": {
                     "ipv4_cidr_block": "10.0.0.0/8",
                     "types": ["tpu"],
@@ -300,8 +301,9 @@ class TestEntityFactory:
             available_cpu=3.0,
             memory=12 * 1024,
             available_memory=10 * 1024,
-            gpu=1,
-            gpu_model="nvidia-tesla-k80",
+            nvidia_gpu=1,
+            amd_gpu=2,
+            intel_gpu=3,
             tpu=mock.ANY,
             is_preemptible=True,
             price=Decimal("1.0"),
@@ -340,21 +342,21 @@ class TestEntityFactory:
             name="cpu-small", credits_per_hour=Decimal("10"), cpu=4.0, memory=1024
         )
 
-    def test_create_resource_preset_custom(
-        self, factory: EntityFactory
-    ) -> None:
+    def test_create_resource_preset_custom(self, factory: EntityFactory) -> None:
         result = factory.create_resource_preset(
             {
                 "name": "gpu-small",
                 "credits_per_hour": "10",
                 "cpu": 4.0,
                 "memory": 12288,
-                "gpu": 1,
-                "gpu_model": "nvidia-tesla-k80",
+                "nvidia_gpu": 1,
+                "amd_gpu": 2,
+                "intel_gpu": 3,
                 "tpu": {"type": "tpu", "software_version": "v1"},
                 "scheduler_enabled": True,
                 "preemptible_node": True,
-                "resource_affinity": ["gpu-k80"],
+                "resource_pool_names": ["gpu"],
+                "available_resource_pool_names": ["available-gpu"],
                 "is_external_job": True,
             }
         )
@@ -364,13 +366,15 @@ class TestEntityFactory:
             credits_per_hour=Decimal("10"),
             cpu=4.0,
             memory=12288,
-            gpu=1,
-            gpu_model="nvidia-tesla-k80",
+            nvidia_gpu=1,
+            amd_gpu=2,
+            intel_gpu=3,
             tpu=TPUPreset(type="tpu", software_version="v1"),
             scheduler_enabled=True,
             preemptible_node=True,
-            resource_affinity=["gpu-k80"],
-            is_external_job=True
+            resource_pool_names=["gpu"],
+            available_resource_pool_names=["available-gpu"],
+            is_external_job=True,
         )
 
     def test_create_storage(self, factory: EntityFactory) -> None:
@@ -1546,8 +1550,9 @@ class TestPayloadFactory:
                 memory=12 * 1024,
                 available_memory=10 * 1024,
                 disk_size=700,
-                gpu=1,
-                gpu_model="nvidia-tesla-k80",
+                nvidia_gpu=1,
+                amd_gpu=2,
+                intel_gpu=3,
                 tpu=TPUResource(
                     ipv4_cidr_block="10.0.0.0/8",
                     types=["tpu"],
@@ -1569,8 +1574,9 @@ class TestPayloadFactory:
             "memory": 12 * 1024,
             "available_memory": 10 * 1024,
             "disk_size": 700,
-            "gpu": 1,
-            "gpu_model": "nvidia-tesla-k80",
+            "nvidia_gpu": 1,
+            "amd_gpu": 2,
+            "intel_gpu": 3,
             "tpu": {
                 "ipv4_cidr_block": "10.0.0.0/8",
                 "types": ["tpu"],
@@ -1627,21 +1633,20 @@ class TestPayloadFactory:
             "memory": 1024,
         }
 
-    def test_create_resource_preset_with_memory_gpu_tpu_preemptible_affinity(
-        self, factory: PayloadFactory
-    ) -> None:
+    def test_create_resource_preset__custom(self, factory: PayloadFactory) -> None:
         result = factory.create_resource_preset(
             ResourcePreset(
                 name="gpu-small",
                 credits_per_hour=Decimal("10"),
                 cpu=4.0,
                 memory=12288,
-                gpu=1,
-                gpu_model="nvidia-tesla-k80",
+                nvidia_gpu=1,
+                amd_gpu=2,
+                intel_gpu=3,
                 tpu=TPUPreset(type="tpu", software_version="v1"),
                 scheduler_enabled=True,
                 preemptible_node=True,
-                resource_affinity=["gpu-k80"],
+                resource_pool_names=["gpu"],
             )
         )
 
@@ -1650,11 +1655,13 @@ class TestPayloadFactory:
             "credits_per_hour": "10",
             "cpu": 4.0,
             "memory": 12288,
-            "gpu": 1,
-            "gpu_model": "nvidia-tesla-k80",
+            "nvidia_gpu": 1,
+            "amd_gpu": 2,
+            "intel_gpu": 3,
             "tpu": {"type": "tpu", "software_version": "v1"},
             "scheduler_enabled": True,
             "preemptible_node": True,
+            "resource_pool_names": ["gpu"],
         }
 
     def test_create_storage(self, factory: PayloadFactory) -> None:
