@@ -289,6 +289,8 @@ class TestEntityFactory:
                 "is_preemptible": True,
                 "price": "1.0",
                 "currency": "USD",
+                "cpu_min_watts": 1.0,
+                "cpu_max_watts": 2.0,
             }
         )
 
@@ -308,6 +310,8 @@ class TestEntityFactory:
             is_preemptible=True,
             price=Decimal("1.0"),
             currency="USD",
+            cpu_min_watts=1.0,
+            cpu_max_watts=2.0,
         )
 
     def test_create_empty_resource_pool_type(self, factory: EntityFactory) -> None:
@@ -389,8 +393,13 @@ class TestEntityFactory:
             {
                 "url": "https://storage-dev.neu.ro",
                 "volumes": [
-                    {},
-                    {"path": "/volume", "size": 1024},
+                    {"name": "test-1"},
+                    {
+                        "name": "test-2",
+                        "path": "/volume",
+                        "size": 1024,
+                        "credits_per_hour_per_gb": "123",
+                    },
                 ],
             }
         )
@@ -398,8 +407,13 @@ class TestEntityFactory:
         assert result == StorageConfig(
             url=URL("https://storage-dev.neu.ro"),
             volumes=[
-                VolumeConfig(),
-                VolumeConfig(path="/volume", size=1024),
+                VolumeConfig(name="test-1"),
+                VolumeConfig(
+                    name="test-2",
+                    path="/volume",
+                    size=1024,
+                    credits_per_hour_per_gb=Decimal(123),
+                ),
             ],
         )
 
@@ -548,8 +562,8 @@ class TestEntityFactory:
                 "backend": "filestore",
                 "tier": "PREMIUM",
                 "instances": [
-                    {"size": 5 * 1024 * 1024, "ready": False},
-                    {"name": "org", "size": 3 * 1024 * 1024, "ready": True},
+                    {"name": "test-1", "size": 5 * 1024 * 1024, "ready": False},
+                    {"name": "test-2", "size": 3 * 1024 * 1024, "ready": True},
                 ],
             },
         }
@@ -608,8 +622,8 @@ class TestEntityFactory:
                 description="GCP Filestore (Premium)",
                 tier=GoogleFilestoreTier.PREMIUM,
                 instances=[
-                    StorageInstance(size=5 * 1024 * 1024),
-                    StorageInstance(name="org", size=3 * 1024 * 1024, ready=True),
+                    StorageInstance(name="test-1", size=5 * 1024 * 1024),
+                    StorageInstance(name="test-2", size=3 * 1024 * 1024, ready=True),
                 ],
             ),
         )
@@ -671,7 +685,10 @@ class TestEntityFactory:
                 "description": "AWS EFS (generalPurpose, bursting)",
                 "performance_mode": "generalPurpose",
                 "throughput_mode": "bursting",
-                "instances": [{"ready": False}, {"name": "org", "ready": True}],
+                "instances": [
+                    {"name": "test-1", "ready": False},
+                    {"name": "test-2", "ready": True},
+                ],
             },
         }
 
@@ -719,7 +736,10 @@ class TestEntityFactory:
                 description="AWS EFS (generalPurpose, bursting)",
                 performance_mode=EFSPerformanceMode.GENERAL_PURPOSE,
                 throughput_mode=EFSThroughputMode.BURSTING,
-                instances=[StorageInstance(), StorageInstance(name="org", ready=True)],
+                instances=[
+                    StorageInstance(name="test-1"),
+                    StorageInstance(name="test-2", ready=True),
+                ],
             ),
         )
 
@@ -782,8 +802,8 @@ class TestEntityFactory:
                 "tier": "Premium",
                 "replication_type": "LRS",
                 "instances": [
-                    {"size": 100 * 1024, "ready": False},
-                    {"name": "org", "size": 200 * 1024, "ready": True},
+                    {"name": "test-1", "size": 100 * 1024, "ready": False},
+                    {"name": "test-2", "size": 200 * 1024, "ready": True},
                 ],
             },
         }
@@ -835,8 +855,8 @@ class TestEntityFactory:
                 tier=AzureStorageTier.PREMIUM,
                 replication_type=AzureReplicationType.LRS,
                 instances=[
-                    StorageInstance(size=100 * 1024),
-                    StorageInstance(name="org", size=200 * 1024, ready=True),
+                    StorageInstance(name="test-1", size=100 * 1024),
+                    StorageInstance(name="test-2", size=200 * 1024, ready=True),
                 ],
             ),
         )
@@ -996,8 +1016,8 @@ class TestEntityFactory:
                 "profile_name": "profile",
                 "size": 10,
                 "instances": [
-                    {"size": 7 * 1024, "ready": False},
-                    {"name": "org", "size": 3 * 1024, "ready": True},
+                    {"name": "test-1", "size": 7 * 1024, "ready": False},
+                    {"name": "test-2", "size": 3 * 1024, "ready": True},
                 ],
                 "description": "profile",
             },
@@ -1054,8 +1074,8 @@ class TestEntityFactory:
                 profile_name="profile",
                 size=10,
                 instances=[
-                    StorageInstance(size=7 * 1024),
-                    StorageInstance(name="org", size=3 * 1024, ready=True),
+                    StorageInstance(name="test-1", size=7 * 1024),
+                    StorageInstance(name="test-2", size=3 * 1024, ready=True),
                 ],
             ),
         )
@@ -1561,6 +1581,8 @@ class TestPayloadFactory:
                 is_preemptible=True,
                 price=Decimal("1.0"),
                 currency="USD",
+                cpu_min_watts=1.0,
+                cpu_max_watts=2.0,
             )
         )
 
@@ -1585,6 +1607,8 @@ class TestPayloadFactory:
             "is_preemptible": True,
             "price": "1.0",
             "currency": "USD",
+            "cpu_min_watts": 1.0,
+            "cpu_max_watts": 2.0,
         }
 
     def test_create_empty_resource_pool_type(self, factory: PayloadFactory) -> None:
@@ -1676,8 +1700,13 @@ class TestPayloadFactory:
             StorageConfig(
                 url=URL("https://storage-dev.neu.ro"),
                 volumes=[
-                    VolumeConfig(),
-                    VolumeConfig(path="/volume", size=1024),
+                    VolumeConfig(name="test-1"),
+                    VolumeConfig(
+                        name="test-2",
+                        path="/volume",
+                        size=1024,
+                        credits_per_hour_per_gb=Decimal(123),
+                    ),
                 ],
             )
         )
@@ -1685,8 +1714,16 @@ class TestPayloadFactory:
         assert result == {
             "url": "https://storage-dev.neu.ro",
             "volumes": [
-                {},
-                {"path": "/volume", "size": 1024},
+                {
+                    "name": "test-1",
+                    "credits_per_hour_per_gb": "0",
+                },
+                {
+                    "name": "test-2",
+                    "path": "/volume",
+                    "size": 1024,
+                    "credits_per_hour_per_gb": "123",
+                },
             ],
         }
 

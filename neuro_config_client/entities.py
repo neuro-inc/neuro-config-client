@@ -137,8 +137,8 @@ class NodePool:
 
 @dataclass(frozen=True)
 class StorageInstance:
+    name: str
     size: int | None = None
-    name: str | None = None
     ready: bool = False
 
 
@@ -391,8 +391,10 @@ class CredentialsConfig:
 
 @dataclass(frozen=True)
 class VolumeConfig:
+    name: str
     size: int | None = None
     path: str | None = None
+    credits_per_hour_per_gb: Decimal = Decimal(0)
 
 
 @dataclass(frozen=True)
@@ -480,18 +482,25 @@ class ResourcePoolType:
     min_size: int = 0
     max_size: int = 1
     idle_size: int = 0
+
     cpu: float = 1.0
     available_cpu: float = 1.0  # TODO: deprecated, use cpu instead
     memory: int = 2**30  # 1gb
     available_memory: int = 2**30  # TODO: deprecated, use memory instead
     disk_size: int = 150 * 2**30  # 150gb
+
     nvidia_gpu: int | None = None
     amd_gpu: int | None = None
     intel_gpu: int | None = None
+    tpu: TPUResource | None = None
+
     price: Decimal = Decimal()
     currency: str | None = None
-    tpu: TPUResource | None = None
+
     is_preemptible: bool = False
+
+    cpu_min_watts: float = 0.0
+    cpu_max_watts: float = 0.0
 
 
 @dataclass(frozen=True)
