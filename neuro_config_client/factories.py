@@ -271,6 +271,8 @@ class EntityFactory:
             is_preemptible=payload.get(
                 "is_preemptible", ResourcePoolType.is_preemptible
             ),
+            cpu_min_watts=payload.get("cpu_min_watts", ResourcePoolType.cpu_min_watts),
+            cpu_max_watts=payload.get("cpu_max_watts", ResourcePoolType.cpu_max_watts),
         )
 
     def create_tpu_resource(self, payload: dict[str, Any]) -> TPUResource:
@@ -334,7 +336,16 @@ class EntityFactory:
         )
 
     def create_volume(self, payload: dict[str, Any]) -> VolumeConfig:
-        return VolumeConfig(path=payload.get("path"), size=payload.get("size"))
+        return VolumeConfig(
+            name=payload["name"],
+            path=payload.get("path"),
+            size=payload.get("size"),
+            credits_per_hour_per_gb=Decimal(
+                payload.get(
+                    "credits_per_hour_per_gb", VolumeConfig.credits_per_hour_per_gb
+                )
+            ),
+        )
 
     def create_registry(self, payload: dict[str, Any]) -> RegistryConfig:
         return RegistryConfig(url=URL(payload["url"]))
@@ -551,7 +562,7 @@ class EntityFactory:
 
     def _create_storage_instance(self, payload: dict[str, Any]) -> StorageInstance:
         return StorageInstance(
-            name=payload.get("name"),
+            name=payload["name"],
             size=payload.get("size"),
             ready=payload["ready"],
         )
@@ -802,7 +813,10 @@ class PayloadFactory:
 
     @classmethod
     def _create_volume(cls, volume: VolumeConfig) -> dict[str, Any]:
-        result: dict[str, Any] = {}
+        result: dict[str, Any] = {
+            "name": volume.name,
+            "credits_per_hour_per_gb": str(volume.credits_per_hour_per_gb),
+        }
         if volume.path:
             result["path"] = volume.path
         if volume.size is not None:
@@ -876,6 +890,10 @@ class PayloadFactory:
             result["currency"] = resource_pool_type.currency
         if resource_pool_type.tpu:
             result["tpu"] = cls.create_tpu_resource(resource_pool_type.tpu)
+        if resource_pool_type.cpu_min_watts:
+            result["cpu_min_watts"] = resource_pool_type.cpu_min_watts
+        if resource_pool_type.cpu_max_watts:
+            result["cpu_max_watts"] = resource_pool_type.cpu_max_watts
         return result
 
     @classmethod
