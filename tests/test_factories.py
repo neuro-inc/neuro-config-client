@@ -82,6 +82,21 @@ else:
     from backports.zoneinfo._zoneinfo import ZoneInfo
 
 
+@pytest.fixture()
+def nvidia_small_gpu() -> str:
+    return "nvidia-tesla-k80"
+
+
+@pytest.fixture()
+def amd_small_gpu() -> str:
+    return "instinct-mi25"
+
+
+@pytest.fixture()
+def intel_small_gpu() -> str:
+    return "flex-170"
+
+
 class TestEntityFactory:
     @pytest.fixture
     def factory(self) -> EntityFactory:
@@ -266,7 +281,13 @@ class TestEntityFactory:
             idle_jobs=[],
         )
 
-    def test_create_resource_pool_type(self, factory: EntityFactory) -> None:
+    def test_create_resource_pool_type(
+        self,
+        factory: EntityFactory,
+        nvidia_small_gpu: str,
+        amd_small_gpu: str,
+        intel_small_gpu: str
+    ) -> None:
         result = factory.create_resource_pool_type(
             {
                 "name": "n1-highmem-4",
@@ -281,6 +302,9 @@ class TestEntityFactory:
                 "nvidia_gpu": 1,
                 "amd_gpu": 2,
                 "intel_gpu": 3,
+                "nvidia_model": nvidia_small_gpu,
+                "amd_model": amd_small_gpu,
+                "intel_model": intel_small_gpu,
                 "tpu": {
                     "ipv4_cidr_block": "10.0.0.0/8",
                     "types": ["tpu"],
@@ -306,6 +330,9 @@ class TestEntityFactory:
             nvidia_gpu=1,
             amd_gpu=2,
             intel_gpu=3,
+            nvidia_model=nvidia_small_gpu,
+            amd_model=amd_small_gpu,
+            intel_model=intel_small_gpu,
             tpu=mock.ANY,
             is_preemptible=True,
             price=Decimal("1.0"),
@@ -346,7 +373,13 @@ class TestEntityFactory:
             name="cpu-small", credits_per_hour=Decimal("10"), cpu=4.0, memory=1024
         )
 
-    def test_create_resource_preset_custom(self, factory: EntityFactory) -> None:
+    def test_create_resource_preset_custom(
+        self,
+        factory: EntityFactory,
+        nvidia_small_gpu: str,
+        amd_small_gpu: str,
+        intel_small_gpu: str
+    ) -> None:
         result = factory.create_resource_preset(
             {
                 "name": "gpu-small",
@@ -356,6 +389,9 @@ class TestEntityFactory:
                 "nvidia_gpu": 1,
                 "amd_gpu": 2,
                 "intel_gpu": 3,
+                "nvidia_model": nvidia_small_gpu,
+                "amd_model": amd_small_gpu,
+                "intel_model": intel_small_gpu,
                 "tpu": {"type": "tpu", "software_version": "v1"},
                 "scheduler_enabled": True,
                 "preemptible_node": True,
@@ -373,6 +409,9 @@ class TestEntityFactory:
             nvidia_gpu=1,
             amd_gpu=2,
             intel_gpu=3,
+            nvidia_model=nvidia_small_gpu,
+            amd_model=amd_small_gpu,
+            intel_model=intel_small_gpu,
             tpu=TPUPreset(type="tpu", software_version="v1"),
             scheduler_enabled=True,
             preemptible_node=True,
@@ -551,8 +590,8 @@ class TestEntityFactory:
                     "memory": 208 * 1024,
                     "available_memory": 201 * 1024,
                     "disk_size": 700,
-                    "gpu": 1,
-                    "gpu_model": "nvidia-tesla-k80",
+                    "nvidia_gpu": 1,
+                    "nvidia_model": "nvidia-tesla-k80",
                     "is_preemptible": True,
                 },
             ],
@@ -612,8 +651,8 @@ class TestEntityFactory:
                     memory=208 * 1024,
                     available_memory=201 * 1024,
                     disk_size=700,
-                    gpu=1,
-                    gpu_model="nvidia-tesla-k80",
+                    nvidia_gpu=1,
+                    nvidia_model="nvidia-tesla-k80",
                     is_preemptible=True,
                 ),
             ],
@@ -675,8 +714,8 @@ class TestEntityFactory:
                     "memory": 61 * 1024,
                     "available_memory": 57 * 1024,
                     "disk_size": 700,
-                    "gpu": 1,
-                    "gpu_model": "nvidia-tesla-k80",
+                    "nvidia_gpu": 1,
+                    "nvidia_model": "nvidia-tesla-k80",
                     "is_preemptible": True,
                 },
             ],
@@ -726,8 +765,8 @@ class TestEntityFactory:
                     memory=61 * 1024,
                     available_memory=57 * 1024,
                     disk_size=700,
-                    gpu=1,
-                    gpu_model="nvidia-tesla-k80",
+                    nvidia_gpu=1,
+                    nvidia_model="nvidia-tesla-k80",
                     is_preemptible=True,
                 ),
             ],
@@ -791,8 +830,8 @@ class TestEntityFactory:
                     "memory": 56 * 1024,
                     "available_memory": 50 * 1024,
                     "disk_size": 700,
-                    "gpu": 1,
-                    "gpu_model": "nvidia-tesla-k80",
+                    "nvidia_gpu": 1,
+                    "nvidia_model": "nvidia-tesla-k80",
                     "is_preemptible": True,
                 },
             ],
@@ -844,8 +883,8 @@ class TestEntityFactory:
                     memory=56 * 1024,
                     available_memory=50 * 1024,
                     disk_size=700,
-                    gpu=1,
-                    gpu_model="nvidia-tesla-k80",
+                    nvidia_gpu=1,
+                    nvidia_model="nvidia-tesla-k80",
                     is_preemptible=True,
                 ),
             ],
@@ -903,8 +942,8 @@ class TestEntityFactory:
                     "memory": 1024,
                     "available_memory": 1024,
                     "disk_size": 700,
-                    "gpu": 1,
-                    "gpu_model": "nvidia-tesla-k80",
+                    "nvidia_gpu": 1,
+                    "nvidia_model": "nvidia-tesla-k80",
                     "price": "0.9",
                     "currency": "USD",
                     "cpu_min_watts": 0.1,
@@ -941,8 +980,8 @@ class TestEntityFactory:
                     memory=1024,
                     available_memory=1024,
                     disk_size=700,
-                    gpu=1,
-                    gpu_model="nvidia-tesla-k80",
+                    nvidia_gpu=1,
+                    nvidia_model="nvidia-tesla-k80",
                     price=Decimal("0.9"),
                     currency="USD",
                     machine_type="gpu-machine-1xk80",
@@ -1004,8 +1043,8 @@ class TestEntityFactory:
                     "memory": 40 * 1024,
                     "available_memory": 37 * 1024,
                     "disk_size": 700,
-                    "gpu": 1,
-                    "gpu_model": "nvidia-tesla-k80",
+                    "nvidia_gpu": 1,
+                    "nvidia_model": "nvidia-tesla-k80",
                     "price": "0.9",
                     "currency": "USD",
                     "cpu_min_watts": 0.1,
@@ -1061,8 +1100,8 @@ class TestEntityFactory:
                     memory=40 * 1024,
                     available_memory=37 * 1024,
                     disk_size=700,
-                    gpu=1,
-                    gpu_model="nvidia-tesla-k80",
+                    nvidia_gpu=1,
+                    nvidia_model="nvidia-tesla-k80",
                     price=Decimal("0.9"),
                     currency="USD",
                     cpu_min_watts=0.1,
@@ -1234,8 +1273,8 @@ class TestEntityFactory:
             "available_cpu": 23,
             "memory": 458752,
             "available_memory": 452608,
-            "gpu": 4,
-            "gpu_model": "nvidia-tesla-p40",
+            "nvidia_gpu": 4,
+            "nvidia_model": "nvidia-tesla-p40",
             "extra_info": "will be ignored",
         }
 
@@ -1248,8 +1287,8 @@ class TestEntityFactory:
             available_cpu=23,
             memory=458752,
             available_memory=452608,
-            gpu=4,
-            gpu_model="nvidia-tesla-p40",
+            nvidia_gpu=4,
+            nvidia_model="nvidia-tesla-p40",
         )
 
     def test_aws_cloud_provider_options(
@@ -1558,7 +1597,13 @@ class TestPayloadFactory:
             "is_http_ingress_secure": False,
         }
 
-    def test_create_resource_pool_type(self, factory: PayloadFactory) -> None:
+    def test_create_resource_pool_type(
+        self,
+        factory: PayloadFactory,
+        nvidia_small_gpu: str,
+        amd_small_gpu: str,
+        intel_small_gpu: str
+    ) -> None:
         result = factory.create_resource_pool_type(
             ResourcePoolType(
                 name="n1-highmem-4",
@@ -1573,6 +1618,9 @@ class TestPayloadFactory:
                 nvidia_gpu=1,
                 amd_gpu=2,
                 intel_gpu=3,
+                nvidia_model=nvidia_small_gpu,
+                amd_model=amd_small_gpu,
+                intel_model=intel_small_gpu,
                 tpu=TPUResource(
                     ipv4_cidr_block="10.0.0.0/8",
                     types=["tpu"],
@@ -1599,6 +1647,9 @@ class TestPayloadFactory:
             "nvidia_gpu": 1,
             "amd_gpu": 2,
             "intel_gpu": 3,
+            "nvidia_model": nvidia_small_gpu,
+            "amd_model": amd_small_gpu,
+            "intel_model": intel_small_gpu,
             "tpu": {
                 "ipv4_cidr_block": "10.0.0.0/8",
                 "types": ["tpu"],
@@ -1956,8 +2007,8 @@ class TestPayloadFactory:
             available_memory=1024,
             disk_size=100500,
             disk_type="some-disk-type",
-            gpu=1,
-            gpu_model="some-gpu-model",
+            nvidia_gpu=1,
+            nvidia_model="some-gpu-model",
             price=Decimal(180),
             currency="rabbits",
             is_preemptible=True,
@@ -1983,8 +2034,8 @@ class TestPayloadFactory:
             "available_memory": 1024,
             "disk_size": 100500,
             "disk_type": "some-disk-type",
-            "gpu": 1,
-            "gpu_model": "some-gpu-model",
+            "nvidia_gpu": 1,
+            "nvidia_model": "some-gpu-model",
             "zones": ("here", "there"),
             "price": "180",
             "currency": "rabbits",
@@ -2013,8 +2064,8 @@ class TestPayloadFactory:
             "machine_type": "some-machine-type",
             "disk_size": 100500,
             "disk_type": "some-disk-type",
-            "gpu": 1,
-            "gpu_model": "some-gpu-model",
+            "nvidia_gpu": 1,
+            "nvidia_model": "some-gpu-model",
             "price": "180",
             "currency": "rabbits",
             "cpu_min_watts": 0.01,

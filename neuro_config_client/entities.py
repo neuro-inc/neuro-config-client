@@ -65,8 +65,12 @@ class NodePoolOptions:
     available_cpu: float
     memory: int
     available_memory: int
-    gpu: int | None = None
-    gpu_model: str | None = None
+    nvidia_gpu: int | None = None
+    amd_gpu: int | None = None
+    intel_gpu: int | None = None
+    nvidia_model: str | None = None
+    amd_model: str | None = None
+    intel_model: str | None = None
 
 
 @dataclass(frozen=True)
@@ -121,8 +125,12 @@ class NodePool:
     disk_size: int | None = None
     disk_type: str | None = None
 
-    gpu: int | None = None
-    gpu_model: str | None = None
+    nvidia_gpu: int | None = None
+    amd_gpu: int | None = None
+    intel_gpu: int | None = None
+    nvidia_model: str | None = None
+    amd_model: str | None = None
+    intel_model: str | None = None
 
     price: Decimal | None = None
     currency: str | None = None
@@ -468,6 +476,9 @@ class ResourcePreset:
     nvidia_gpu: int | None = None
     amd_gpu: int | None = None
     intel_gpu: int | None = None
+    nvidia_model: str | None = None
+    amd_model: str | None = None
+    intel_model: str | None = None
     tpu: TPUPreset | None = None
     scheduler_enabled: bool = False
     preemptible_node: bool = False
@@ -492,6 +503,9 @@ class ResourcePoolType:
     nvidia_gpu: int | None = None
     amd_gpu: int | None = None
     intel_gpu: int | None = None
+    nvidia_model: str | None = None
+    amd_model: str | None = None
+    intel_model: str | None = None
     tpu: TPUResource | None = None
 
     price: Decimal = Decimal()
@@ -507,7 +521,9 @@ class ResourcePoolType:
 class Resources:
     cpu_m: int
     memory: int
-    gpu: int = 0
+    nvidia_gpu: int = 0
+    amd_gpu: int = 0
+    intel_gpu: int = 0
 
 
 @dataclass(frozen=True)
