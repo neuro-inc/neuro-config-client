@@ -130,12 +130,8 @@ class EntityFactory:
             available_cpu=payload["available_cpu"],
             memory=payload["memory"],
             available_memory=payload["available_memory"],
-            nvidia_gpu=payload.get("nvidia_gpu"),
-            amd_gpu=payload.get("amd_gpu"),
-            intel_gpu=payload.get("intel_gpu"),
-            nvidia_gpu_model=payload.get("nvidia_gpu_model"),
-            amd_gpu_model=payload.get("amd_gpu_model"),
-            intel_gpu_model=payload.get("intel_gpu_model")
+            gpu=payload.get("gpu"),
+            gpu_model=payload.get("gpu_model")
         )
 
     @classmethod
@@ -336,9 +332,7 @@ class EntityFactory:
         return Resources(
             cpu_m=payload["cpu_m"],
             memory=payload["memory"],
-            nvidia_gpu=payload.get("nvidia_gpu", 0),
-            amd_gpu=payload.get("amd_gpu", 0),
-            intel_gpu=payload.get("intel_gpu", 0)
+            gpu=payload.get("gpu", 0)
         )
 
     def create_storage(self, payload: dict[str, Any]) -> StorageConfig:
@@ -977,12 +971,8 @@ class PayloadFactory:
     @classmethod
     def _create_resources(cls, resources: Resources) -> dict[str, Any]:
         result = {"cpu_m": resources.cpu_m, "memory": resources.memory}
-        if resources.nvidia_gpu:
-            result["nvidia_gpu"] = resources.nvidia_gpu
-        if resources.amd_gpu:
-            result["amd_gpu"] = resources.amd_gpu
-        if resources.intel_gpu:
-            result["intel_gpu"] = resources.intel_gpu
+        if resources.gpu:
+            result["gpu"] = resources.gpu
         return result
 
     @classmethod
