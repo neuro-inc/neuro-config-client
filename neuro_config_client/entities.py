@@ -65,12 +65,8 @@ class NodePoolOptions:
     available_cpu: float
     memory: int
     available_memory: int
-    nvidia_gpu: int | None = None
-    amd_gpu: int | None = None
-    intel_gpu: int | None = None
-    nvidia_gpu_model: str | None = None
-    amd_gpu_model: str | None = None
-    intel_gpu_model: str | None = None
+    gpu: int | None = None
+    gpu_model: str | None = None
 
 
 @dataclass(frozen=True)
@@ -521,9 +517,7 @@ class ResourcePoolType:
 class Resources:
     cpu_m: int
     memory: int
-    nvidia_gpu: int = 0
-    amd_gpu: int = 0
-    intel_gpu: int = 0
+    gpu: int = 0
 
 
 @dataclass(frozen=True)

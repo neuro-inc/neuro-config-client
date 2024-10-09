@@ -1273,8 +1273,8 @@ class TestEntityFactory:
             "available_cpu": 23,
             "memory": 458752,
             "available_memory": 452608,
-            "nvidia_gpu": 4,
-            "nvidia_gpu_model": "nvidia-tesla-p40",
+            "gpu": 4,
+            "gpu_model": "nvidia-tesla-p40",
             "extra_info": "will be ignored",
         }
 
@@ -1287,8 +1287,8 @@ class TestEntityFactory:
             available_cpu=23,
             memory=458752,
             available_memory=452608,
-            nvidia_gpu=4,
-            nvidia_gpu_model="nvidia-tesla-p40",
+            gpu=4,
+            gpu_model="nvidia-tesla-p40",
         )
 
     def test_aws_cloud_provider_options(
