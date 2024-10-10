@@ -127,6 +127,9 @@ class NodePool:
     nvidia_gpu_model: str | None = None
     amd_gpu_model: str | None = None
     intel_gpu_model: str | None = None
+    # todo: two props below are already deprecated
+    gpu: int | None = None
+    gpu_model: int | None = None
 
     price: Decimal | None = None
     currency: str | None = None
