@@ -1,4 +1,5 @@
 """Platform config client."""
+
 from importlib.metadata import version
 
 from .client import ConfigClient, ConfigClientBase

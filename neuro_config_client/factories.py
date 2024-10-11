@@ -196,9 +196,9 @@ class EntityFactory:
             name=payload["name"],
             status=ClusterStatus(payload["status"]),
             platform_infra_image_tag=payload.get("platform_infra_image_tag"),
-            orchestrator=self.create_orchestrator(orchestrator)
-            if orchestrator
-            else None,
+            orchestrator=(
+                self.create_orchestrator(orchestrator) if orchestrator else None
+            ),
             storage=self.create_storage(storage) if storage else None,
             registry=self.create_registry(registry) if registry else None,
             monitoring=self.create_monitoring(monitoring) if monitoring else None,
@@ -208,9 +208,9 @@ class EntityFactory:
             buckets=self.create_buckets(buckets) if buckets else None,
             ingress=self.create_ingress(ingress) if ingress else None,
             dns=self.create_dns(dns) if dns else None,
-            cloud_provider=self.create_cloud_provider(cloud_provider)
-            if cloud_provider
-            else None,
+            cloud_provider=(
+                self.create_cloud_provider(cloud_provider) if cloud_provider else None
+            ),
             credentials=self.create_credentials(credentials) if credentials else None,
             created_at=datetime.fromisoformat(payload["created_at"]),
             timezone=timezone,
@@ -588,9 +588,9 @@ class EntityFactory:
             docker_hub=cls._create_docker_registry(docker_hub) if docker_hub else None,
             minio=cls._create_minio_credentials(minio) if minio else None,
             emc_ecs=cls._create_emc_ecs_credentials(emc_ecs) if emc_ecs else None,
-            open_stack=cls._create_open_stack_credentials(open_stack)
-            if open_stack
-            else None,
+            open_stack=(
+                cls._create_open_stack_credentials(open_stack) if open_stack else None
+            ),
         )
 
     @classmethod
