@@ -131,7 +131,7 @@ class EntityFactory:
             memory=payload["memory"],
             available_memory=payload["available_memory"],
             gpu=payload.get("gpu"),
-            gpu_model=payload.get("gpu_model")
+            gpu_model=payload.get("gpu_model"),
         )
 
     @classmethod
@@ -330,9 +330,7 @@ class EntityFactory:
 
     def create_resources(self, payload: dict[str, Any]) -> Resources:
         return Resources(
-            cpu_m=payload["cpu_m"],
-            memory=payload["memory"],
-            gpu=payload.get("gpu", 0)
+            cpu_m=payload["cpu_m"], memory=payload["memory"], gpu=payload.get("gpu", 0)
         )
 
     def create_storage(self, payload: dict[str, Any]) -> StorageConfig:

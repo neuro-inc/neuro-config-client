@@ -286,7 +286,7 @@ class TestEntityFactory:
         factory: EntityFactory,
         nvidia_small_gpu: str,
         amd_small_gpu: str,
-        intel_small_gpu: str
+        intel_small_gpu: str,
     ) -> None:
         result = factory.create_resource_pool_type(
             {
@@ -378,7 +378,7 @@ class TestEntityFactory:
         factory: EntityFactory,
         nvidia_small_gpu: str,
         amd_small_gpu: str,
-        intel_small_gpu: str
+        intel_small_gpu: str,
     ) -> None:
         result = factory.create_resource_preset(
             {
@@ -1602,7 +1602,7 @@ class TestPayloadFactory:
         factory: PayloadFactory,
         nvidia_small_gpu: str,
         amd_small_gpu: str,
-        intel_small_gpu: str
+        intel_small_gpu: str,
     ) -> None:
         result = factory.create_resource_pool_type(
             ResourcePoolType(
