@@ -39,7 +39,7 @@ jobs:
         path: ~/.cache/pip
         key: ${{ runner.os }}-py-${{ matrix.py_version }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('setup.py') }}
     - name: Install dependencies
-      uses: py-actions/py-dependency-install@v2
+      uses: py-actions/py-dependency-install@v4
       with:
         path: requirements.txt
     - name: Lint
