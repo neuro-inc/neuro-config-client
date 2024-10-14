@@ -121,6 +121,13 @@ class NodePool:
     disk_size: int | None = None
     disk_type: str | None = None
 
+    nvidia_gpu: int | None = None
+    amd_gpu: int | None = None
+    intel_gpu: int | None = None
+    nvidia_gpu_model: str | None = None
+    amd_gpu_model: str | None = None
+    intel_gpu_model: str | None = None
+    # todo: two props below are already deprecated
     gpu: int | None = None
     gpu_model: str | None = None
 
@@ -468,6 +475,9 @@ class ResourcePreset:
     nvidia_gpu: int | None = None
     amd_gpu: int | None = None
     intel_gpu: int | None = None
+    nvidia_gpu_model: str | None = None
+    amd_gpu_model: str | None = None
+    intel_gpu_model: str | None = None
     tpu: TPUPreset | None = None
     scheduler_enabled: bool = False
     preemptible_node: bool = False
@@ -492,6 +502,9 @@ class ResourcePoolType:
     nvidia_gpu: int | None = None
     amd_gpu: int | None = None
     intel_gpu: int | None = None
+    nvidia_gpu_model: str | None = None
+    amd_gpu_model: str | None = None
+    intel_gpu_model: str | None = None
     tpu: TPUResource | None = None
 
     price: Decimal = Decimal()

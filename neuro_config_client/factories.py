@@ -265,6 +265,9 @@ class EntityFactory:
             nvidia_gpu=payload.get("nvidia_gpu"),
             amd_gpu=payload.get("amd_gpu"),
             intel_gpu=payload.get("intel_gpu"),
+            nvidia_gpu_model=payload.get("nvidia_gpu_model"),
+            amd_gpu_model=payload.get("amd_gpu_model"),
+            intel_gpu_model=payload.get("intel_gpu_model"),
             price=Decimal(payload.get("price", ResourcePoolType.price)),
             currency=payload.get("currency"),
             tpu=tpu,
@@ -294,6 +297,9 @@ class EntityFactory:
             nvidia_gpu=payload.get("nvidia_gpu"),
             amd_gpu=payload.get("amd_gpu"),
             intel_gpu=payload.get("intel_gpu"),
+            nvidia_gpu_model=payload.get("nvidia_gpu_model"),
+            amd_gpu_model=payload.get("amd_gpu_model"),
+            intel_gpu_model=payload.get("intel_gpu_model"),
             tpu=tpu,
             scheduler_enabled=payload.get("scheduler_enabled", False),
             preemptible_node=payload.get("preemptible_node", False),
@@ -324,9 +330,7 @@ class EntityFactory:
 
     def create_resources(self, payload: dict[str, Any]) -> Resources:
         return Resources(
-            cpu_m=payload["cpu_m"],
-            memory=payload["memory"],
-            gpu=payload.get("gpu", 0),
+            cpu_m=payload["cpu_m"], memory=payload["memory"], gpu=payload.get("gpu", 0)
         )
 
     def create_storage(self, payload: dict[str, Any]) -> StorageConfig:
@@ -436,8 +440,14 @@ class EntityFactory:
             available_memory=payload.get("available_memory"),
             disk_size=payload.get("disk_size", NodePool.disk_size),
             disk_type=payload.get("disk_type", NodePool.disk_type),
-            gpu=payload.get("gpu"),
-            gpu_model=payload.get("gpu_model"),
+            nvidia_gpu=payload.get("nvidia_gpu") or payload.get("gpu"),
+            amd_gpu=payload.get("amd_gpu"),
+            intel_gpu=payload.get("intel_gpu"),
+            nvidia_gpu_model=(
+                payload.get("nvidia_gpu_model") or payload.get("gpu_model")
+            ),
+            amd_gpu_model=payload.get("amd_gpu_model"),
+            intel_gpu_model=payload.get("intel_gpu_model"),
             price=price,
             currency=payload.get("currency", NodePool.currency),
             machine_type=payload.get("machine_type"),
@@ -885,6 +895,12 @@ class PayloadFactory:
             result["amd_gpu"] = resource_pool_type.amd_gpu
         if resource_pool_type.intel_gpu:
             result["intel_gpu"] = resource_pool_type.intel_gpu
+        if resource_pool_type.nvidia_gpu_model:
+            result["nvidia_gpu_model"] = resource_pool_type.nvidia_gpu_model
+        if resource_pool_type.amd_gpu_model:
+            result["amd_gpu_model"] = resource_pool_type.amd_gpu_model
+        if resource_pool_type.intel_gpu_model:
+            result["intel_gpu_model"] = resource_pool_type.intel_gpu_model
         if resource_pool_type.currency:
             result["price"] = str(resource_pool_type.price)
             result["currency"] = resource_pool_type.currency
@@ -1037,10 +1053,20 @@ class PayloadFactory:
             result["disk_size"] = node_pool.disk_size
         if node_pool.disk_type:
             result["disk_type"] = node_pool.disk_type
-        if node_pool.gpu:
-            result["gpu"] = node_pool.gpu
-        if node_pool.gpu_model:
-            result["gpu_model"] = node_pool.gpu_model
+        nvidia_gpu = node_pool.nvidia_gpu or node_pool.gpu
+        if nvidia_gpu:
+            result["nvidia_gpu"] = nvidia_gpu
+        if node_pool.amd_gpu:
+            result["amd_gpu"] = node_pool.amd_gpu
+        if node_pool.intel_gpu:
+            result["intel_gpu"] = node_pool.intel_gpu
+        nvidia_gpu_model = node_pool.nvidia_gpu_model or node_pool.gpu_model
+        if nvidia_gpu_model:
+            result["nvidia_gpu_model"] = nvidia_gpu_model
+        if node_pool.amd_gpu_model:
+            result["amd_gpu_model"] = node_pool.amd_gpu_model
+        if node_pool.intel_gpu_model:
+            result["intel_gpu_model"] = node_pool.intel_gpu_model
         if node_pool.price:
             result["price"] = str(node_pool.price)
         if node_pool.currency:
