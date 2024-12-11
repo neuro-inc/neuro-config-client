@@ -13,12 +13,10 @@ from .entities import (
     AWSCloudProvider,
     AWSCredentials,
     AWSStorage,
-    AWSStorageOptions,
     AzureCloudProvider,
     AzureCredentials,
     AzureReplicationType,
     AzureStorage,
-    AzureStorageOptions,
     AzureStorageTier,
     BucketsConfig,
     CloudProvider,
@@ -40,7 +38,6 @@ from .entities import (
     GoogleCloudProvider,
     GoogleFilestoreTier,
     GoogleStorage,
-    GoogleStorageOptions,
     GrafanaCredentials,
     HelmRegistryConfig,
     IdleJobConfig,
@@ -56,6 +53,10 @@ from .entities import (
     OnPremCloudProvider,
     OpenStackCredentials,
     OrchestratorConfig,
+    PatchClusterRequest,
+    PatchNodePoolResourcesRequest,
+    PatchNodePoolSizeRequest,
+    PatchOrchestratorConfigRequest,
     RegistryConfig,
     ResourcePoolType,
     ResourcePreset,
@@ -64,7 +65,6 @@ from .entities import (
     SentryCredentials,
     StorageConfig,
     StorageInstance,
-    StorageOptions,
     TPUPreset,
     TPUResource,
     VCDCloudProvider,
@@ -93,9 +93,6 @@ class EntityFactory:
             node_pools=[
                 cls.create_node_pool_options(p) for p in payload.get("node_pools", ())
             ],
-            storages=[
-                cls.create_storage_options(type, p) for p in payload.get("storages", ())
-            ],
         )
 
     @classmethod
@@ -107,9 +104,6 @@ class EntityFactory:
             type=type,
             node_pools=[
                 cls.create_node_pool_options(p) for p in payload.get("node_pools", ())
-            ],
-            storages=[
-                cls.create_storage_options(type, p) for p in payload.get("storages", ())
             ],
             kubernetes_node_pool_id=payload["kubernetes_node_pool_id"],
             platform_node_pool_id=payload["platform_node_pool_id"],
@@ -124,57 +118,15 @@ class EntityFactory:
     @staticmethod
     def create_node_pool_options(payload: dict[str, Any]) -> NodePoolOptions:
         return NodePoolOptions(
-            id=payload["id"],
             machine_type=payload["machine_type"],
             cpu=payload["cpu"],
-            available_cpu=payload["available_cpu"],
+            available_cpu=payload.get("available_cpu"),
             memory=payload["memory"],
-            available_memory=payload["available_memory"],
-            gpu=payload.get("gpu"),
-            gpu_model=payload.get("gpu_model"),
-        )
-
-    @classmethod
-    def create_storage_options(
-        cls, type: CloudProviderType, payload: dict[str, Any]
-    ) -> StorageOptions:
-        if type == CloudProviderType.AWS:
-            return cls.create_aws_storage_options(payload)
-        elif type == CloudProviderType.GCP:
-            return cls.create_google_storage_options(payload)
-        elif type == CloudProviderType.AZURE:
-            return cls.create_azure_storage_options(payload)
-        else:
-            raise ValueError(
-                f"Storage options are not supported for {type.value!r} cloud provider"
-            )
-
-    @staticmethod
-    def create_aws_storage_options(payload: dict[str, Any]) -> AWSStorageOptions:
-        return AWSStorageOptions(
-            id=payload["id"],
-            performance_mode=EFSPerformanceMode(payload["performance_mode"]),
-            throughput_mode=EFSThroughputMode(payload["throughput_mode"]),
-            provisioned_throughput_mibps=payload.get("provisioned_throughput_mibps"),
-        )
-
-    @staticmethod
-    def create_google_storage_options(payload: dict[str, Any]) -> GoogleStorageOptions:
-        return GoogleStorageOptions(
-            id=payload["id"],
-            tier=GoogleFilestoreTier(payload["tier"]),
-            min_capacity=payload["min_capacity"],
-            max_capacity=payload["max_capacity"],
-        )
-
-    @staticmethod
-    def create_azure_storage_options(payload: dict[str, Any]) -> AzureStorageOptions:
-        return AzureStorageOptions(
-            id=payload["id"],
-            tier=AzureStorageTier(payload["tier"]),
-            replication_type=AzureReplicationType(payload["replication_type"]),
-            min_file_share_size=payload["min_file_share_size"],
-            max_file_share_size=payload["max_file_share_size"],
+            available_memory=payload.get("available_memory"),
+            nvidia_gpu=payload.get("nvidia_gpu") or payload.get("gpu"),
+            nvidia_gpu_model=(
+                payload.get("nvidia_gpu_model") or payload.get("gpu_model")
+            ),
         )
 
     def create_cluster(self, payload: dict[str, Any]) -> Cluster:
@@ -330,7 +282,11 @@ class EntityFactory:
 
     def create_resources(self, payload: dict[str, Any]) -> Resources:
         return Resources(
-            cpu_m=payload["cpu_m"], memory=payload["memory"], gpu=payload.get("gpu", 0)
+            cpu=payload["cpu"],
+            memory=payload["memory"],
+            nvidia_gpu=payload.get("nvidia_gpu", 0),
+            amd_gpu=payload.get("amd_gpu", 0),
+            intel_gpu=payload.get("intel_gpu", 0),
         )
 
     def create_storage(self, payload: dict[str, Any]) -> StorageConfig:
@@ -430,7 +386,6 @@ class EntityFactory:
         price = Decimal(payload["price"]) if payload.get("price") else NodePool.price
         return NodePool(
             name=payload["name"],
-            id=payload.get("id"),
             role=NodeRole(payload["role"]),
             min_size=payload["min_size"],
             max_size=payload["max_size"],
@@ -460,7 +415,6 @@ class EntityFactory:
 
     def _create_aws_storage(self, payload: dict[str, Any]) -> AWSStorage:
         result = AWSStorage(
-            id=payload["id"],
             description=payload["description"],
             performance_mode=EFSPerformanceMode(payload["performance_mode"]),
             throughput_mode=EFSThroughputMode(payload["throughput_mode"]),
@@ -482,7 +436,6 @@ class EntityFactory:
 
     def _create_google_storage(self, payload: dict[str, Any]) -> GoogleStorage:
         result = GoogleStorage(
-            id=payload["id"],
             description=payload["description"],
             tier=GoogleFilestoreTier(payload["tier"]),
             instances=[self._create_storage_instance(p) for p in payload["instances"]],
@@ -507,7 +460,6 @@ class EntityFactory:
 
     def _create_azure_storage(self, payload: dict[str, Any]) -> AzureStorage:
         result = AzureStorage(
-            id=payload["id"],
             description=payload["description"],
             replication_type=AzureReplicationType(payload["replication_type"]),
             tier=AzureStorageTier(payload["tier"]),
@@ -714,6 +666,41 @@ class EntityFactory:
 
 class PayloadFactory:
     @classmethod
+    def create_patch_cluster_request(
+        cls, request: PatchClusterRequest
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {}
+        if request.credentials:
+            payload["credentials"] = cls.create_credentials(request.credentials)
+        if request.storage:
+            payload["storage"] = cls.create_storage(request.storage)
+        if request.registry:
+            payload["registry"] = cls.create_registry(request.registry)
+        if request.orchestrator:
+            payload["orchestrator"] = cls.create_patch_orchestrator_request(
+                request.orchestrator
+            )
+        if request.monitoring:
+            payload["monitoring"] = cls.create_monitoring(request.monitoring)
+        if request.secrets:
+            payload["secrets"] = cls.create_secrets(request.secrets)
+        if request.metrics:
+            payload["metrics"] = cls.create_metrics(request.metrics)
+        if request.disks:
+            payload["disks"] = cls.create_disks(request.disks)
+        if request.buckets:
+            payload["buckets"] = cls.create_buckets(request.buckets)
+        if request.ingress:
+            payload["ingress"] = cls.create_ingress(request.ingress)
+        if request.dns:
+            payload["dns"] = cls.create_dns(request.dns)
+        if request.timezone:
+            payload["timezone"] = str(request.timezone)
+        if request.energy:
+            payload["energy"] = cls.create_energy(request.energy)
+        return payload
+
+    @classmethod
     def create_credentials(cls, credentials: CredentialsConfig) -> dict[str, Any]:
         result = {
             "neuro": cls._create_neuro_auth(credentials.neuro),
@@ -874,6 +861,49 @@ class PayloadFactory:
         return result
 
     @classmethod
+    def create_patch_orchestrator_request(
+        cls, orchestrator: PatchOrchestratorConfigRequest
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {}
+        if orchestrator.job_hostname_template:
+            payload["job_hostname_template"] = orchestrator.job_hostname_template
+        if orchestrator.job_internal_hostname_template:
+            payload["job_internal_hostname_template"] = (
+                orchestrator.job_internal_hostname_template
+            )
+        if orchestrator.is_http_ingress_secure is not None:
+            payload["is_http_ingress_secure"] = orchestrator.is_http_ingress_secure
+        if orchestrator.job_fallback_hostname:
+            payload["job_fallback_hostname"] = orchestrator.job_fallback_hostname
+        if orchestrator.job_schedule_timeout_s is not None:
+            payload["job_schedule_timeout_s"] = orchestrator.job_schedule_timeout_s
+        if orchestrator.job_schedule_scale_up_timeout_s is not None:
+            payload["job_schedule_scale_up_timeout_s"] = (
+                orchestrator.job_schedule_scale_up_timeout_s
+            )
+        if orchestrator.allow_privileged_mode is not None:
+            payload["allow_privileged_mode"] = orchestrator.allow_privileged_mode
+        if orchestrator.allow_job_priority is not None:
+            payload["allow_job_priority"] = orchestrator.allow_job_priority
+        if orchestrator.resource_pool_types:
+            payload["resource_pool_types"] = [
+                cls.create_resource_pool_type(r)
+                for r in orchestrator.resource_pool_types
+            ]
+        if orchestrator.resource_presets:
+            payload["resource_presets"] = [
+                cls.create_resource_preset(preset)
+                for preset in orchestrator.resource_presets
+            ]
+        if orchestrator.pre_pull_images:
+            payload["pre_pull_images"] = orchestrator.pre_pull_images
+        if orchestrator.idle_jobs:
+            payload["idle_jobs"] = [
+                cls._create_idle_job(job) for job in orchestrator.idle_jobs
+            ]
+        return payload
+
+    @classmethod
     def create_resource_pool_type(
         cls, resource_pool_type: ResourcePoolType
     ) -> dict[str, Any]:
@@ -970,9 +1000,13 @@ class PayloadFactory:
 
     @classmethod
     def _create_resources(cls, resources: Resources) -> dict[str, Any]:
-        result = {"cpu_m": resources.cpu_m, "memory": resources.memory}
-        if resources.gpu:
-            result["gpu"] = resources.gpu
+        result = {"cpu": resources.cpu, "memory": resources.memory}
+        if resources.nvidia_gpu:
+            result["nvidia_gpu"] = resources.nvidia_gpu
+        if resources.amd_gpu:
+            result["amd_gpu"] = resources.amd_gpu
+        if resources.intel_gpu:
+            result["intel_gpu"] = resources.intel_gpu
         return result
 
     @classmethod
@@ -1035,8 +1069,6 @@ class PayloadFactory:
             "min_size": node_pool.min_size,
             "max_size": node_pool.max_size,
         }
-        if node_pool.id:
-            result["id"] = node_pool.id
         if node_pool.idle_size:
             result["idle_size"] = node_pool.idle_size
         if node_pool.machine_type:
@@ -1080,6 +1112,59 @@ class PayloadFactory:
         if node_pool.cpu_max_watts:
             result["cpu_max_watts"] = node_pool.cpu_max_watts
         return result
+
+    @classmethod
+    def create_patch_node_pool_request(
+        cls, request: PatchNodePoolSizeRequest | PatchNodePoolResourcesRequest
+    ) -> dict[str, Any]:
+        if isinstance(request, PatchNodePoolSizeRequest):
+            return cls._create_patch_node_pool_size_request(request)
+        elif isinstance(request, PatchNodePoolResourcesRequest):
+            return cls._create_patch_node_pool_resources_request(request)
+        msg = "Request type is not supported"
+        raise ValueError(msg)
+
+    @classmethod
+    def _create_patch_node_pool_size_request(
+        cls, request: PatchNodePoolSizeRequest
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {}
+        if request.min_size is not None:
+            payload["min_size"] = request.min_size
+        if request.max_size is not None:
+            payload["max_size"] = request.max_size
+        if request.idle_size is not None:
+            payload["idle_size"] = request.idle_size
+        return payload
+
+    @classmethod
+    def _create_patch_node_pool_resources_request(
+        cls, request: PatchNodePoolResourcesRequest
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "cpu": request.cpu,
+            "available_cpu": request.available_cpu,
+            "memory": request.memory,
+            "available_memory": request.available_memory,
+            "disk_size": request.disk_size,
+            "available_disk_size": request.available_disk_size,
+        }
+        if request.nvidia_gpu:
+            payload["nvidia_gpu"] = request.nvidia_gpu
+            payload["nvidia_gpu_model"] = request.nvidia_gpu_model
+        if request.amd_gpu:
+            payload["amd_gpu"] = request.amd_gpu
+            payload["amd_gpu_model"] = request.amd_gpu_model
+        if request.intel_gpu:
+            payload["intel_gpu"] = request.intel_gpu
+            payload["intel_gpu_model"] = request.intel_gpu_model
+        if request.machine_type:
+            payload["machine_type"] = request.machine_type
+        if request.min_size is not None:
+            payload["min_size"] = request.min_size
+        if request.max_size is not None:
+            payload["max_size"] = request.max_size
+        return payload
 
     @classmethod
     def create_energy(cls, energy: EnergyConfig) -> dict[str, Any]:

@@ -16,12 +16,10 @@ from neuro_config_client.entities import (
     AWSCloudProvider,
     AWSCredentials,
     AWSStorage,
-    AWSStorageOptions,
     AzureCloudProvider,
     AzureCredentials,
     AzureReplicationType,
     AzureStorage,
-    AzureStorageOptions,
     AzureStorageTier,
     BucketsConfig,
     CloudProviderOptions,
@@ -42,7 +40,6 @@ from neuro_config_client.entities import (
     GoogleCloudProvider,
     GoogleFilestoreTier,
     GoogleStorage,
-    GoogleStorageOptions,
     GrafanaCredentials,
     HelmRegistryConfig,
     IdleJobConfig,
@@ -57,6 +54,10 @@ from neuro_config_client.entities import (
     OnPremCloudProvider,
     OpenStackCredentials,
     OrchestratorConfig,
+    PatchClusterRequest,
+    PatchNodePoolResourcesRequest,
+    PatchNodePoolSizeRequest,
+    PatchOrchestratorConfigRequest,
     RegistryConfig,
     ResourcePoolType,
     ResourcePreset,
@@ -208,7 +209,13 @@ class TestEntityFactory:
                         "name": "idle",
                         "count": 1,
                         "image": "miner",
-                        "resources": {"cpu_m": 1000, "memory": 1024},
+                        "resources": {
+                            "cpu": 1,
+                            "memory": 1024,
+                            "nvidia_gpu": 1,
+                            "amd_gpu": 2,
+                            "intel_gpu": 3,
+                        },
                     },
                     {
                         "name": "idle",
@@ -216,7 +223,7 @@ class TestEntityFactory:
                         "image": "miner",
                         "command": ["bash"],
                         "args": ["-c", "sleep infinity"],
-                        "resources": {"cpu_m": 1000, "memory": 1024},
+                        "resources": {"cpu": 1, "memory": 1024},
                         "env": {"NAME": "VALUE"},
                         "node_selector": {"label": "value"},
                         "image_pull_secret": "secret",
@@ -242,7 +249,13 @@ class TestEntityFactory:
                     name="idle",
                     count=1,
                     image="miner",
-                    resources=Resources(cpu_m=1000, memory=1024),
+                    resources=Resources(
+                        cpu=1,
+                        memory=1024,
+                        nvidia_gpu=1,
+                        amd_gpu=2,
+                        intel_gpu=3,
+                    ),
                 ),
                 IdleJobConfig(
                     name="idle",
@@ -250,7 +263,7 @@ class TestEntityFactory:
                     image="miner",
                     command=["bash"],
                     args=["-c", "sleep infinity"],
-                    resources=Resources(cpu_m=1000, memory=1024),
+                    resources=Resources(cpu=1, memory=1024),
                     env={"NAME": "VALUE"},
                     node_selector={"label": "value"},
                     image_pull_secret="secret",
@@ -565,7 +578,6 @@ class TestEntityFactory:
             },
             "node_pools": [
                 {
-                    "id": "n1_highmem_8",
                     "name": "n1-highmem-8",
                     "role": "platform_job",
                     "machine_type": "n1-highmem-8",
@@ -578,7 +590,6 @@ class TestEntityFactory:
                     "disk_size": 700,
                 },
                 {
-                    "id": "n1_highmem_32",
                     "name": "n1-highmem-32-1xk80-preemptible",
                     "role": "platform_job",
                     "machine_type": "n1-highmem-32",
@@ -596,7 +607,6 @@ class TestEntityFactory:
                 },
             ],
             "storage": {
-                "id": "premium",
                 "description": "GCP Filestore (Premium)",
                 "backend": "filestore",
                 "tier": "PREMIUM",
@@ -629,7 +639,6 @@ class TestEntityFactory:
             node_pools=[
                 NodePool(
                     name="n1-highmem-8",
-                    id="n1_highmem_8",
                     machine_type="n1-highmem-8",
                     min_size=0,
                     max_size=1,
@@ -641,7 +650,6 @@ class TestEntityFactory:
                 ),
                 NodePool(
                     name="n1-highmem-32-1xk80-preemptible",
-                    id="n1_highmem_32",
                     machine_type="n1-highmem-32",
                     min_size=0,
                     max_size=1,
@@ -657,7 +665,6 @@ class TestEntityFactory:
                 ),
             ],
             storage=GoogleStorage(
-                id="premium",
                 description="GCP Filestore (Premium)",
                 tier=GoogleFilestoreTier.PREMIUM,
                 instances=[
@@ -689,7 +696,6 @@ class TestEntityFactory:
             },
             "node_pools": [
                 {
-                    "id": "m5_2xlarge_8",
                     "role": "platform_job",
                     "name": "m5-2xlarge",
                     "machine_type": "m5.2xlarge",
@@ -702,7 +708,6 @@ class TestEntityFactory:
                     "disk_size": 700,
                 },
                 {
-                    "id": "p2_xlarge_4",
                     "role": "platform_job",
                     "name": "p2-xlarge-1xk80-preemptible",
                     "machine_type": "p2.xlarge",
@@ -720,7 +725,6 @@ class TestEntityFactory:
                 },
             ],
             "storage": {
-                "id": "generalpurpose_bursting",
                 "description": "AWS EFS (generalPurpose, bursting)",
                 "performance_mode": "generalPurpose",
                 "throughput_mode": "bursting",
@@ -743,7 +747,6 @@ class TestEntityFactory:
             node_pools=[
                 NodePool(
                     name="m5-2xlarge",
-                    id="m5_2xlarge_8",
                     machine_type="m5.2xlarge",
                     min_size=0,
                     max_size=1,
@@ -755,7 +758,6 @@ class TestEntityFactory:
                 ),
                 NodePool(
                     name="p2-xlarge-1xk80-preemptible",
-                    id="p2_xlarge_4",
                     machine_type="p2.xlarge",
                     min_size=0,
                     max_size=1,
@@ -771,7 +773,6 @@ class TestEntityFactory:
                 ),
             ],
             storage=AWSStorage(
-                id="generalpurpose_bursting",
                 description="AWS EFS (generalPurpose, bursting)",
                 performance_mode=EFSPerformanceMode.GENERAL_PURPOSE,
                 throughput_mode=EFSThroughputMode.BURSTING,
@@ -805,7 +806,6 @@ class TestEntityFactory:
             },
             "node_pools": [
                 {
-                    "id": "standard_d8s_v3_8",
                     "role": "platform_job",
                     "name": "Standard_D8s_v3",
                     "machine_type": "Standard_D8s_v3",
@@ -818,7 +818,6 @@ class TestEntityFactory:
                     "disk_size": 700,
                 },
                 {
-                    "id": "standard_nc6_6",
                     "role": "platform_job",
                     "name": "Standard_NC6-1xk80-preemptible",
                     "machine_type": "Standard_NC6",
@@ -836,7 +835,6 @@ class TestEntityFactory:
                 },
             ],
             "storage": {
-                "id": "premium_lrs",
                 "description": "Azure Files (Premium, LRS replication)",
                 "tier": "Premium",
                 "replication_type": "LRS",
@@ -861,7 +859,6 @@ class TestEntityFactory:
             node_pools=[
                 NodePool(
                     name="Standard_D8s_v3",
-                    id="standard_d8s_v3_8",
                     machine_type="Standard_D8s_v3",
                     min_size=0,
                     max_size=1,
@@ -873,7 +870,6 @@ class TestEntityFactory:
                 ),
                 NodePool(
                     name="Standard_NC6-1xk80-preemptible",
-                    id="standard_nc6_6",
                     machine_type="Standard_NC6",
                     min_size=0,
                     max_size=1,
@@ -889,7 +885,6 @@ class TestEntityFactory:
                 ),
             ],
             storage=AzureStorage(
-                id="premium_lrs",
                 description="Azure Files (Premium, LRS replication)",
                 tier=AzureStorageTier.PREMIUM,
                 replication_type=AzureReplicationType.LRS,
@@ -1019,7 +1014,6 @@ class TestEntityFactory:
             },
             "node_pools": [
                 {
-                    "id": "master_neuro_8",
                     "role": "platform_job",
                     "min_size": 1,
                     "max_size": 1,
@@ -1032,7 +1026,6 @@ class TestEntityFactory:
                     "disk_size": 700,
                 },
                 {
-                    "id": "x16_neuro_16",
                     "role": "platform_job",
                     "min_size": 1,
                     "max_size": 1,
@@ -1081,7 +1074,6 @@ class TestEntityFactory:
                     min_size=1,
                     max_size=1,
                     name="Master-neuro",
-                    id="master_neuro_8",
                     machine_type="Master-neuro",
                     cpu=8.0,
                     available_cpu=7.0,
@@ -1093,7 +1085,6 @@ class TestEntityFactory:
                     min_size=1,
                     max_size=1,
                     name="X16-neuro-1xk80",
-                    id="x16_neuro_16",
                     machine_type="X16-neuro",
                     cpu=16.0,
                     available_cpu=15.0,
@@ -1267,7 +1258,6 @@ class TestEntityFactory:
     @pytest.fixture
     def node_pool_options_response(self) -> dict[str, Any]:
         return {
-            "id": "standard_nd24s_24",
             "machine_type": "Standard_ND24s",
             "cpu": 24,
             "available_cpu": 23,
@@ -1281,14 +1271,13 @@ class TestEntityFactory:
     @pytest.fixture
     def node_pool_options(self) -> NodePoolOptions:
         return NodePoolOptions(
-            id="standard_nd24s_24",
             machine_type="Standard_ND24s",
             cpu=24,
             available_cpu=23,
             memory=458752,
             available_memory=452608,
-            gpu=4,
-            gpu_model="nvidia-tesla-p40",
+            nvidia_gpu=4,
+            nvidia_gpu_model="nvidia-tesla-p40",
         )
 
     def test_aws_cloud_provider_options(
@@ -1299,34 +1288,18 @@ class TestEntityFactory:
     ) -> None:
         response = {
             "node_pools": [node_pool_options_response],
-            "storages": [
-                {
-                    "id": "generalpurpose_bursting",
-                    "performance_mode": "generalPurpose",
-                    "throughput_mode": "bursting",
-                }
-            ],
         }
         result = factory.create_cloud_provider_options(CloudProviderType.AWS, response)
 
         assert result == CloudProviderOptions(
             type=CloudProviderType.AWS,
             node_pools=[node_pool_options],
-            storages=[
-                AWSStorageOptions(
-                    id="generalpurpose_bursting",
-                    performance_mode=EFSPerformanceMode.GENERAL_PURPOSE,
-                    throughput_mode=EFSThroughputMode.BURSTING,
-                )
-            ],
         )
 
     def test_aws_cloud_provider_options_defaults(self, factory: EntityFactory) -> None:
         result = factory.create_cloud_provider_options(CloudProviderType.AWS, {})
 
-        assert result == CloudProviderOptions(
-            type=CloudProviderType.AWS, node_pools=[], storages=[]
-        )
+        assert result == CloudProviderOptions(type=CloudProviderType.AWS, node_pools=[])
 
     def test_google_cloud_provider_options(
         self,
@@ -1336,28 +1309,11 @@ class TestEntityFactory:
     ) -> None:
         response = {
             "node_pools": [node_pool_options_response],
-            "storages": [
-                {
-                    "id": "standard",
-                    "tier": "STANDARD",
-                    "min_capacity": 1099511627776,
-                    "max_capacity": 70258793014886,
-                }
-            ],
         }
         result = factory.create_cloud_provider_options(CloudProviderType.GCP, response)
 
         assert result == CloudProviderOptions(
-            type=CloudProviderType.GCP,
-            node_pools=[node_pool_options],
-            storages=[
-                GoogleStorageOptions(
-                    id="standard",
-                    tier=GoogleFilestoreTier.STANDARD,
-                    min_capacity=1099511627776,
-                    max_capacity=70258793014886,
-                )
-            ],
+            type=CloudProviderType.GCP, node_pools=[node_pool_options]
         )
 
     def test_azure_cloud_provider_options(
@@ -1368,32 +1324,13 @@ class TestEntityFactory:
     ) -> None:
         response = {
             "node_pools": [node_pool_options_response],
-            "storages": [
-                {
-                    "id": "standard_lrs",
-                    "tier": "Standard",
-                    "replication_type": "LRS",
-                    "min_file_share_size": 1073741824,
-                    "max_file_share_size": 5497558138880,
-                }
-            ],
         }
         result = factory.create_cloud_provider_options(
             CloudProviderType.AZURE, response
         )
 
         assert result == CloudProviderOptions(
-            type=CloudProviderType.AZURE,
-            node_pools=[node_pool_options],
-            storages=[
-                AzureStorageOptions(
-                    id="standard_lrs",
-                    tier=AzureStorageTier.STANDARD,
-                    replication_type=AzureReplicationType.LRS,
-                    min_file_share_size=1073741824,
-                    max_file_share_size=5497558138880,
-                )
-            ],
+            type=CloudProviderType.AZURE, node_pools=[node_pool_options]
         )
 
     def test_vcd_cloud_provider_options_defaults(
@@ -1414,7 +1351,6 @@ class TestEntityFactory:
         assert result == VCDCloudProviderOptions(
             type=CloudProviderType.VCD_MTS,
             node_pools=[node_pool_options],
-            storages=[],
             kubernetes_node_pool_id="master_neuro_2",
             platform_node_pool_id="master_neuro_2",
         )
@@ -1443,7 +1379,6 @@ class TestEntityFactory:
         assert result == VCDCloudProviderOptions(
             type=CloudProviderType.VCD_MTS,
             node_pools=[node_pool_options],
-            storages=[],
             kubernetes_node_pool_id="master_neuro_2",
             platform_node_pool_id="master_neuro_2",
             url=URL("https://vcd"),
@@ -1501,6 +1436,57 @@ class TestPayloadFactory:
     def factory(self) -> PayloadFactory:
         return PayloadFactory()
 
+    def test_create_patch_cluster_request(
+        self, factory: PayloadFactory, credentials: CredentialsConfig
+    ) -> None:
+        result = factory.create_patch_cluster_request(
+            PatchClusterRequest(
+                credentials=credentials,
+                storage=StorageConfig(url=URL("https://storage-dev.neu.ro")),
+                registry=RegistryConfig(url=URL("https://registry-dev.neu.ro")),
+                orchestrator=PatchOrchestratorConfigRequest(),
+                monitoring=MonitoringConfig(url=URL("https://monitoring-dev.neu.ro")),
+                secrets=SecretsConfig(url=URL("https://secrets-dev.neu.ro")),
+                metrics=MetricsConfig(url=URL("https://metrics-dev.neu.ro")),
+                disks=DisksConfig(
+                    url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user=1024
+                ),
+                buckets=BucketsConfig(
+                    url=URL("https://buckets-dev.neu.ro"), disable_creation=True
+                ),
+                ingress=IngressConfig(acme_environment=ACMEEnvironment.PRODUCTION),
+                dns=DNSConfig(
+                    name="neu.ro",
+                    a_records=[ARecord(name="*.jobs-dev.neu.ro.", ips=["192.168.0.2"])],
+                ),
+                timezone=ZoneInfo("America/Los_Angeles"),
+                energy=EnergyConfig(co2_grams_eq_per_kwh=100),
+            )
+        )
+
+        assert result == {
+            "credentials": mock.ANY,
+            "storage": mock.ANY,
+            "registry": mock.ANY,
+            "orchestrator": mock.ANY,
+            "monitoring": mock.ANY,
+            "secrets": mock.ANY,
+            "metrics": mock.ANY,
+            "disks": mock.ANY,
+            "buckets": mock.ANY,
+            "ingress": mock.ANY,
+            "dns": mock.ANY,
+            "timezone": "America/Los_Angeles",
+            "energy": mock.ANY,
+        }
+
+    def test_create_patch_cluster_request_default(
+        self, factory: PayloadFactory
+    ) -> None:
+        result = factory.create_patch_cluster_request(PatchClusterRequest())
+
+        assert result == {}
+
     def test_create_orchestrator(self, factory: PayloadFactory) -> None:
         result = factory.create_orchestrator(
             OrchestratorConfig(
@@ -1527,7 +1513,13 @@ class TestPayloadFactory:
                         name="idle",
                         count=1,
                         image="miner",
-                        resources=Resources(cpu_m=1000, memory=1024),
+                        resources=Resources(
+                            cpu=1,
+                            memory=1024,
+                            nvidia_gpu=1,
+                            amd_gpu=2,
+                            intel_gpu=3,
+                        ),
                     ),
                     IdleJobConfig(
                         name="idle",
@@ -1535,7 +1527,7 @@ class TestPayloadFactory:
                         image="miner",
                         command=["bash"],
                         args=["-c", "sleep infinity"],
-                        resources=Resources(cpu_m=1000, memory=1024),
+                        resources=Resources(cpu=1, memory=1024),
                         env={"NAME": "VALUE"},
                         node_selector={"label": "value"},
                         image_pull_secret="secret",
@@ -1561,7 +1553,13 @@ class TestPayloadFactory:
                     "name": "idle",
                     "count": 1,
                     "image": "miner",
-                    "resources": {"cpu_m": 1000, "memory": 1024},
+                    "resources": {
+                        "cpu": 1,
+                        "memory": 1024,
+                        "nvidia_gpu": 1,
+                        "amd_gpu": 2,
+                        "intel_gpu": 3,
+                    },
                 },
                 {
                     "name": "idle",
@@ -1569,7 +1567,7 @@ class TestPayloadFactory:
                     "image": "miner",
                     "command": ["bash"],
                     "args": ["-c", "sleep infinity"],
-                    "resources": {"cpu_m": 1000, "memory": 1024},
+                    "resources": {"cpu": 1, "memory": 1024},
                     "env": {"NAME": "VALUE"},
                     "node_selector": {"label": "value"},
                     "image_pull_secret": "secret",
@@ -1596,6 +1594,69 @@ class TestPayloadFactory:
             "job_schedule_scale_up_timeout_s": 2,
             "is_http_ingress_secure": False,
         }
+
+    def test_create_patch_orchestrator_request(self, factory: PayloadFactory) -> None:
+        result = factory.create_patch_orchestrator_request(
+            PatchOrchestratorConfigRequest(
+                job_hostname_template="{job_id}.jobs-dev.neu.ro",
+                job_internal_hostname_template="{job_id}.platform-jobs",
+                job_fallback_hostname="default.jobs-dev.neu.ro",
+                job_schedule_timeout_s=1,
+                job_schedule_scale_up_timeout_s=2,
+                is_http_ingress_secure=False,
+                allow_privileged_mode=True,
+                allow_job_priority=True,
+                resource_pool_types=[ResourcePoolType(name="cpu")],
+                resource_presets=[
+                    ResourcePreset(
+                        name="cpu-micro",
+                        credits_per_hour=Decimal(10),
+                        cpu=0.1,
+                        memory=100,
+                    )
+                ],
+                pre_pull_images=["neuromation/base"],
+                idle_jobs=[
+                    IdleJobConfig(
+                        name="idle",
+                        count=1,
+                        image="miner",
+                        resources=Resources(cpu=1, memory=1024),
+                    )
+                ],
+            )
+        )
+
+        assert result == {
+            "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
+            "job_internal_hostname_template": "{job_id}.platform-jobs",
+            "job_fallback_hostname": "default.jobs-dev.neu.ro",
+            "job_schedule_timeout_s": 1,
+            "job_schedule_scale_up_timeout_s": 2,
+            "is_http_ingress_secure": False,
+            "resource_pool_types": [mock.ANY],
+            "resource_presets": [mock.ANY],
+            "allow_privileged_mode": True,
+            "allow_job_priority": True,
+            "pre_pull_images": ["neuromation/base"],
+            "idle_jobs": [
+                {
+                    "name": "idle",
+                    "count": 1,
+                    "image": "miner",
+                    "resources": {"cpu": 1, "memory": 1024},
+                }
+            ],
+        }
+
+    def test_create_patch_orchestrator_request_default(
+        self, factory: PayloadFactory
+    ) -> None:
+        result = factory.create_patch_orchestrator_request(
+            PatchOrchestratorConfigRequest()
+        )
+
+        assert result == {}
 
     def test_create_resource_pool_type(
         self,
@@ -1996,7 +2057,6 @@ class TestPayloadFactory:
     def node_pool(self) -> NodePool:
         return NodePool(
             name="my-node-pool",
-            id="someid",
             min_size=0,
             max_size=10,
             idle_size=1,
@@ -2020,7 +2080,6 @@ class TestPayloadFactory:
     def test_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
         payload = factory.create_node_pool(node_pool)
         assert payload == {
-            "id": "someid",
             "name": "my-node-pool",
             "role": "platform_job",
             "min_size": 0,
@@ -2054,7 +2113,6 @@ class TestPayloadFactory:
 
         payload = factory.create_node_pool(np)
         assert payload == {
-            "id": "someid",
             "name": "my-node-pool",
             "role": "platform_job",
             "min_size": 0,
@@ -2070,6 +2128,88 @@ class TestPayloadFactory:
             "currency": "rabbits",
             "cpu_min_watts": 0.01,
             "cpu_max_watts": 1000,
+        }
+
+    def test_create_patch_node_pool_size_request(self, factory: PayloadFactory) -> None:
+        payload = factory.create_patch_node_pool_request(
+            PatchNodePoolSizeRequest(min_size=1, max_size=3, idle_size=2)
+        )
+
+        assert payload == {
+            "min_size": 1,
+            "max_size": 3,
+            "idle_size": 2,
+        }
+
+    def test_create_patch_node_pool_size_request_default(
+        self, factory: PayloadFactory
+    ) -> None:
+        payload = factory.create_patch_node_pool_request(PatchNodePoolSizeRequest())
+
+        assert payload == {}
+
+    def test_create_patch_node_pool_resources_request(
+        self, factory: PayloadFactory
+    ) -> None:
+        payload = factory.create_patch_node_pool_request(
+            PatchNodePoolResourcesRequest(
+                min_size=0,
+                max_size=10,
+                machine_type="n1-highmem-8",
+                cpu=1,
+                available_cpu=0.9,
+                memory=1024,
+                available_memory=1023,
+                disk_size=100,
+                available_disk_size=75,
+                nvidia_gpu=1,
+                nvidia_gpu_model="nvidia-gpu",
+                amd_gpu=1,
+                amd_gpu_model="amd-gpu",
+                intel_gpu=1,
+                intel_gpu_model="intel-gpu",
+            )
+        )
+
+        assert payload == {
+            "min_size": 0,
+            "max_size": 10,
+            "machine_type": "n1-highmem-8",
+            "cpu": 1,
+            "available_cpu": 0.9,
+            "memory": 1024,
+            "available_memory": 1023,
+            "disk_size": 100,
+            "available_disk_size": 75,
+            "nvidia_gpu": 1,
+            "nvidia_gpu_model": "nvidia-gpu",
+            "amd_gpu": 1,
+            "amd_gpu_model": "amd-gpu",
+            "intel_gpu": 1,
+            "intel_gpu_model": "intel-gpu",
+        }
+
+    def test_create_patch_node_pool_resources_request_default(
+        self, factory: PayloadFactory
+    ) -> None:
+        payload = factory.create_patch_node_pool_request(
+            PatchNodePoolResourcesRequest(
+                cpu=1,
+                available_cpu=0.9,
+                memory=1024,
+                available_memory=1023,
+                disk_size=100,
+                available_disk_size=75,
+            )
+        )
+
+        assert payload == {
+            "cpu": 1,
+            "available_cpu": 0.9,
+            "memory": 1024,
+            "available_memory": 1023,
+            "disk_size": 100,
+            "available_disk_size": 75,
         }
 
     def test_create_energy(self, factory: PayloadFactory) -> None:
