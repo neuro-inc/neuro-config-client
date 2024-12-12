@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import abc
 import logging
-import sys
 from collections.abc import AsyncIterator, Mapping, Sequence
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
@@ -14,32 +13,19 @@ from aiohttp import ClientResponseError
 from yarl import URL
 
 from .entities import (
-    BucketsConfig,
+    AddNodePoolRequest,
     CloudProviderOptions,
     CloudProviderType,
     Cluster,
-    CredentialsConfig,
-    DisksConfig,
-    DNSConfig,
-    EnergyConfig,
-    IngressConfig,
-    MetricsConfig,
-    MonitoringConfig,
     NodePool,
     NotificationType,
-    OrchestratorConfig,
-    RegistryConfig,
+    PatchClusterRequest,
+    PatchNodePoolResourcesRequest,
+    PatchNodePoolSizeRequest,
+    PutNodePoolRequest,
     ResourcePreset,
-    SecretsConfig,
-    StorageConfig,
 )
 from .factories import EntityFactory, PayloadFactory
-
-if sys.version_info >= (3, 9):
-    from zoneinfo import ZoneInfo
-else:
-    # why not backports.zoneinfo: https://github.com/pganssle/zoneinfo/issues/125
-    from backports.zoneinfo._zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
@@ -170,56 +156,10 @@ class ConfigClientBase:
         return await self.get_cluster(name)
 
     async def patch_cluster(
-        self,
-        name: str,
-        *,
-        credentials: CredentialsConfig | None = None,
-        storage: StorageConfig | None = None,
-        registry: RegistryConfig | None = None,
-        orchestrator: OrchestratorConfig | None = None,
-        monitoring: MonitoringConfig | None = None,
-        secrets: SecretsConfig | None = None,
-        metrics: MetricsConfig | None = None,
-        disks: DisksConfig | None = None,
-        buckets: BucketsConfig | None = None,
-        ingress: IngressConfig | None = None,
-        dns: DNSConfig | None = None,
-        timezone: ZoneInfo | None = None,
-        energy: EnergyConfig | None = None,
-        token: str | None = None,
+        self, name: str, request: PatchClusterRequest, *, token: str | None = None
     ) -> Cluster:
         path = self._endpoints.cluster(name)
-        payload: dict[str, Any] = {}
-        if credentials:
-            payload["credentials"] = self._payload_factory.create_credentials(
-                credentials
-            )
-        if storage:
-            payload["storage"] = self._payload_factory.create_storage(storage)
-        if registry:
-            payload["registry"] = self._payload_factory.create_registry(registry)
-        if orchestrator:
-            payload["orchestrator"] = self._payload_factory.create_orchestrator(
-                orchestrator
-            )
-        if monitoring:
-            payload["monitoring"] = self._payload_factory.create_monitoring(monitoring)
-        if secrets:
-            payload["secrets"] = self._payload_factory.create_secrets(secrets)
-        if metrics:
-            payload["metrics"] = self._payload_factory.create_metrics(metrics)
-        if disks:
-            payload["disks"] = self._payload_factory.create_disks(disks)
-        if buckets:
-            payload["buckets"] = self._payload_factory.create_buckets(buckets)
-        if ingress:
-            payload["ingress"] = self._payload_factory.create_ingress(ingress)
-        if dns:
-            payload["dns"] = self._payload_factory.create_dns(dns)
-        if timezone:
-            payload["timezone"] = str(timezone)
-        if energy:
-            payload["energy"] = self._payload_factory.create_energy(energy)
+        payload = self._payload_factory.create_patch_cluster_request(request)
         async with self._request(
             "PATCH", path, headers=self._create_headers(token=token), json=payload
         ) as resp:
@@ -337,7 +277,7 @@ class ConfigClientBase:
     async def add_node_pool(
         self,
         cluster_name: str,
-        node_pool: NodePool,
+        node_pool: AddNodePoolRequest,
         *,
         start_deployment: bool = True,
         token: str | None = None,
@@ -345,8 +285,9 @@ class ConfigClientBase:
         """Add new node pool to the existing cluster.
         Cloud provider should be already set up.
 
-        Make sure you use one of the available node pool templates by providing its ID,
-            if the cluster is deployed in public cloud (AWS / GCP / Azure / VCD).
+        Make sure you use one of the available node pool templates by providing
+        its machine type, if the cluster is deployed in public cloud
+        (AWS / GCP / Azure / VCD).
 
         Args:
             cluster_name (str): Name of the cluster within the platform.
@@ -358,7 +299,7 @@ class ConfigClientBase:
             Cluster: Cluster instance with applied changes
         """
         path = self._endpoints.node_pools(cluster_name)
-        payload = self._payload_factory.create_node_pool(node_pool)
+        payload = self._payload_factory.create_add_node_pool_request(node_pool)
         async with self._request(
             "POST",
             path,
@@ -372,13 +313,13 @@ class ConfigClientBase:
     async def put_node_pool(
         self,
         cluster_name: str,
-        node_pool: NodePool,
+        node_pool: PutNodePoolRequest,
         *,
         start_deployment: bool = True,
         token: str | None = None,
     ) -> Cluster:
         path = self._endpoints.node_pool(cluster_name, node_pool.name)
-        payload = self._payload_factory.create_node_pool(node_pool)
+        payload = self._payload_factory.create_add_node_pool_request(node_pool)
         async with self._request(
             "PUT",
             path,
@@ -393,16 +334,19 @@ class ConfigClientBase:
         self,
         cluster_name: str,
         node_pool_name: str,
+        request: PatchNodePoolSizeRequest | PatchNodePoolResourcesRequest,
         *,
-        idle_size: int | None = None,
+        start_deployment: bool = True,
         token: str | None = None,
     ) -> Cluster:
         path = self._endpoints.node_pool(cluster_name, node_pool_name)
-        payload: dict[str, Any] = {}
-        if idle_size is not None:
-            payload["idle_size"] = idle_size
+        payload = self._payload_factory.create_patch_node_pool_request(request)
         async with self._request(
-            "PATCH", path, headers=self._create_headers(token=token), json=payload
+            "PATCH",
+            path,
+            params={"start_deployment": str(start_deployment).lower()},
+            headers=self._create_headers(token=token),
+            json=payload,
         ) as response:
             resp_payload = await response.json()
             return self._entity_factory.create_cluster(resp_payload)

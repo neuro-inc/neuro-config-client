@@ -42,7 +42,6 @@ class CloudProviderType(str, enum.Enum):
 class CloudProviderOptions:
     type: CloudProviderType
     node_pools: list[NodePoolOptions]
-    storages: list[StorageOptions]
 
 
 @dataclass(frozen=True)
@@ -59,41 +58,13 @@ class VCDCloudProviderOptions(CloudProviderOptions):
 
 @dataclass(frozen=True)
 class NodePoolOptions:
-    id: str
     machine_type: str
     cpu: float
-    available_cpu: float
     memory: int
-    available_memory: int
-    gpu: int | None = None
-    gpu_model: str | None = None
-
-
-@dataclass(frozen=True)
-class StorageOptions:
-    id: str
-
-
-@dataclass(frozen=True)
-class GoogleStorageOptions(StorageOptions):
-    tier: GoogleFilestoreTier
-    min_capacity: int
-    max_capacity: int
-
-
-@dataclass(frozen=True)
-class AWSStorageOptions(StorageOptions):
-    performance_mode: EFSPerformanceMode
-    throughput_mode: EFSThroughputMode
-    provisioned_throughput_mibps: int | None = None
-
-
-@dataclass(frozen=True)
-class AzureStorageOptions(StorageOptions):
-    tier: AzureStorageTier
-    replication_type: AzureReplicationType
-    min_file_share_size: int
-    max_file_share_size: int
+    available_cpu: float | None = None
+    available_memory: int | None = None
+    nvidia_gpu: int | None = None
+    nvidia_gpu_model: str | None = None
 
 
 class NodeRole(str, enum.Enum):
@@ -105,7 +76,14 @@ class NodeRole(str, enum.Enum):
 @dataclass(frozen=True)
 class NodePool:
     name: str
-    id: str | None = None
+
+    cpu: float
+    available_cpu: float
+    memory: int
+    available_memory: int
+    disk_size: int
+    available_disk_size: int
+
     role: NodeRole = NodeRole.PLATFORM_JOB
 
     min_size: int = 0
@@ -113,23 +91,15 @@ class NodePool:
     idle_size: int | None = None
 
     machine_type: str | None = None
-    cpu: float | None = None
-    available_cpu: float | None = None
-    memory: int | None = None
-    available_memory: int | None = None
 
-    disk_size: int | None = None
     disk_type: str | None = None
 
     nvidia_gpu: int | None = None
-    amd_gpu: int | None = None
-    intel_gpu: int | None = None
     nvidia_gpu_model: str | None = None
+    amd_gpu: int | None = None
     amd_gpu_model: str | None = None
+    intel_gpu: int | None = None
     intel_gpu_model: str | None = None
-    # todo: two props below are already deprecated
-    gpu: int | None = None
-    gpu_model: str | None = None
 
     price: Decimal | None = None
     currency: str | None = None
@@ -140,6 +110,76 @@ class NodePool:
 
     cpu_min_watts: float = 0.0
     cpu_max_watts: float = 0.0
+
+
+@dataclass(frozen=True)
+class AddNodePoolRequest:
+    name: str
+
+    min_size: int
+    max_size: int
+    idle_size: int | None = None
+
+    role: NodeRole = NodeRole.PLATFORM_JOB
+
+    machine_type: str | None = None
+
+    cpu: float | None = None
+    available_cpu: float | None = None
+    memory: int | None = None
+    available_memory: int | None = None
+    disk_type: str | None = None
+    disk_size: int | None = None
+    available_disk_size: int | None = None
+
+    nvidia_gpu: int | None = None
+    nvidia_gpu_model: str | None = None
+    amd_gpu: int | None = None
+    amd_gpu_model: str | None = None
+    intel_gpu: int | None = None
+    intel_gpu_model: str | None = None
+
+    price: Decimal | None = None
+    currency: str | None = None
+
+    is_preemptible: bool | None = None
+
+    zones: tuple[str, ...] | None = None
+
+    cpu_min_watts: float | None = None
+    cpu_max_watts: float | None = None
+
+
+PutNodePoolRequest = AddNodePoolRequest
+
+
+@dataclass(frozen=True)
+class PatchNodePoolSizeRequest:
+    min_size: int | None = None
+    max_size: int | None = None
+    idle_size: int | None = None
+
+
+@dataclass(frozen=True)
+class PatchNodePoolResourcesRequest:
+    cpu: float
+    available_cpu: float
+    memory: int
+    available_memory: int
+    disk_size: int
+    available_disk_size: int
+
+    nvidia_gpu: int | None = None
+    nvidia_gpu_model: str | None = None
+    amd_gpu: int | None = None
+    amd_gpu_model: str | None = None
+    intel_gpu: int | None = None
+    intel_gpu_model: str | None = None
+
+    machine_type: str | None = None
+
+    min_size: int | None = None
+    max_size: int | None = None
 
 
 @dataclass(frozen=True)
@@ -183,7 +223,6 @@ class EFSThroughputMode(str, enum.Enum):
 
 @dataclass(frozen=True)
 class AWSStorage(Storage):
-    id: str
     description: str
     performance_mode: EFSPerformanceMode
     throughput_mode: EFSThroughputMode
@@ -215,7 +254,6 @@ class GoogleFilestoreTier(str, enum.Enum):
 
 @dataclass(frozen=True)
 class GoogleStorage(Storage):
-    id: str
     description: str
     tier: GoogleFilestoreTier
 
@@ -254,7 +292,6 @@ class AzureReplicationType(str, enum.Enum):
 
 @dataclass(frozen=True)
 class AzureStorage(Storage):
-    id: str
     description: str
     tier: AzureStorageTier
     replication_type: AzureReplicationType
@@ -494,10 +531,11 @@ class ResourcePoolType:
     idle_size: int = 0
 
     cpu: float = 1.0
-    available_cpu: float = 1.0  # TODO: deprecated, use cpu instead
+    available_cpu: float = 1.0
     memory: int = 2**30  # 1gb
-    available_memory: int = 2**30  # TODO: deprecated, use memory instead
+    available_memory: int = 2**30
     disk_size: int = 150 * 2**30  # 150gb
+    available_disk_size: int = 150 * 2**30  # 150gb
 
     nvidia_gpu: int | None = None
     amd_gpu: int | None = None
@@ -518,9 +556,11 @@ class ResourcePoolType:
 
 @dataclass(frozen=True)
 class Resources:
-    cpu_m: int
+    cpu: float
     memory: int
-    gpu: int = 0
+    nvidia_gpu: int = 0
+    amd_gpu: int = 0
+    intel_gpu: int = 0
 
 
 @dataclass(frozen=True)
@@ -550,6 +590,22 @@ class OrchestratorConfig:
     allow_job_priority: bool = False
     pre_pull_images: Sequence[str] = ()
     idle_jobs: Sequence[IdleJobConfig] = ()
+
+
+@dataclass
+class PatchOrchestratorConfigRequest:
+    job_hostname_template: str | None = None
+    job_internal_hostname_template: str | None = None
+    job_fallback_hostname: str | None = None
+    job_schedule_timeout_s: float | None = None
+    job_schedule_scale_up_timeout_s: float | None = None
+    is_http_ingress_secure: bool | None = None
+    resource_pool_types: Sequence[ResourcePoolType] | None = None
+    resource_presets: Sequence[ResourcePreset] | None = None
+    allow_privileged_mode: bool | None = None
+    allow_job_priority: bool | None = None
+    pre_pull_images: Sequence[str] | None = None
+    idle_jobs: Sequence[IdleJobConfig] | None = None
 
 
 @dataclass
@@ -617,4 +673,21 @@ class Cluster:
     disks: DisksConfig | None = None
     buckets: BucketsConfig | None = None
     ingress: IngressConfig | None = None
+    energy: EnergyConfig | None = None
+
+
+@dataclass(frozen=True)
+class PatchClusterRequest:
+    credentials: CredentialsConfig | None = None
+    storage: StorageConfig | None = None
+    registry: RegistryConfig | None = None
+    orchestrator: PatchOrchestratorConfigRequest | None = None
+    monitoring: MonitoringConfig | None = None
+    secrets: SecretsConfig | None = None
+    metrics: MetricsConfig | None = None
+    disks: DisksConfig | None = None
+    buckets: BucketsConfig | None = None
+    ingress: IngressConfig | None = None
+    dns: DNSConfig | None = None
+    timezone: ZoneInfo | None = None
     energy: EnergyConfig | None = None
