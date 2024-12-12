@@ -76,6 +76,14 @@ class NodeRole(str, enum.Enum):
 @dataclass(frozen=True)
 class NodePool:
     name: str
+
+    cpu: float
+    available_cpu: float
+    memory: int
+    available_memory: int
+    disk_size: int
+    available_disk_size: int
+
     role: NodeRole = NodeRole.PLATFORM_JOB
 
     min_size: int = 0
@@ -83,24 +91,15 @@ class NodePool:
     idle_size: int | None = None
 
     machine_type: str | None = None
-    cpu: float | None = None
-    available_cpu: float | None = None
-    memory: int | None = None
-    available_memory: int | None = None
 
-    disk_size: int | None = None
-    available_disk_size: int | None = None
     disk_type: str | None = None
 
     nvidia_gpu: int | None = None
-    amd_gpu: int | None = None
-    intel_gpu: int | None = None
     nvidia_gpu_model: str | None = None
+    amd_gpu: int | None = None
     amd_gpu_model: str | None = None
+    intel_gpu: int | None = None
     intel_gpu_model: str | None = None
-    # todo: two props below are already deprecated
-    gpu: int | None = None
-    gpu_model: str | None = None
 
     price: Decimal | None = None
     currency: str | None = None
@@ -111,6 +110,47 @@ class NodePool:
 
     cpu_min_watts: float = 0.0
     cpu_max_watts: float = 0.0
+
+
+@dataclass(frozen=True)
+class AddNodePoolRequest:
+    name: str
+
+    min_size: int
+    max_size: int
+    idle_size: int | None = None
+
+    role: NodeRole = NodeRole.PLATFORM_JOB
+
+    machine_type: str | None = None
+
+    cpu: float | None = None
+    available_cpu: float | None = None
+    memory: int | None = None
+    available_memory: int | None = None
+    disk_type: str | None = None
+    disk_size: int | None = None
+    available_disk_size: int | None = None
+
+    nvidia_gpu: int | None = None
+    nvidia_gpu_model: str | None = None
+    amd_gpu: int | None = None
+    amd_gpu_model: str | None = None
+    intel_gpu: int | None = None
+    intel_gpu_model: str | None = None
+
+    price: Decimal | None = None
+    currency: str | None = None
+
+    is_preemptible: bool | None = None
+
+    zones: tuple[str, ...] | None = None
+
+    cpu_min_watts: float | None = None
+    cpu_max_watts: float | None = None
+
+
+PutNodePoolRequest = AddNodePoolRequest
 
 
 @dataclass(frozen=True)
@@ -491,10 +531,11 @@ class ResourcePoolType:
     idle_size: int = 0
 
     cpu: float = 1.0
-    available_cpu: float = 1.0  # TODO: deprecated, use cpu instead
+    available_cpu: float = 1.0
     memory: int = 2**30  # 1gb
-    available_memory: int = 2**30  # TODO: deprecated, use memory instead
+    available_memory: int = 2**30
     disk_size: int = 150 * 2**30  # 150gb
+    available_disk_size: int = 150 * 2**30  # 150gb
 
     nvidia_gpu: int | None = None
     amd_gpu: int | None = None

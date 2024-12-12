@@ -12,6 +12,7 @@ from yarl import URL
 
 from neuro_config_client.entities import (
     ACMEEnvironment,
+    AddNodePoolRequest,
     ARecord,
     AWSCloudProvider,
     AWSCredentials,
@@ -588,6 +589,7 @@ class TestEntityFactory:
                     "memory": 52 * 1024,
                     "available_memory": 45 * 1024,
                     "disk_size": 700,
+                    "available_disk_size": 670,
                 },
                 {
                     "name": "n1-highmem-32-1xk80-preemptible",
@@ -601,6 +603,7 @@ class TestEntityFactory:
                     "memory": 208 * 1024,
                     "available_memory": 201 * 1024,
                     "disk_size": 700,
+                    "available_disk_size": 670,
                     "nvidia_gpu": 1,
                     "nvidia_gpu_model": "nvidia-tesla-k80",
                     "is_preemptible": True,
@@ -647,6 +650,7 @@ class TestEntityFactory:
                     memory=52 * 1024,
                     available_memory=45 * 1024,
                     disk_size=700,
+                    available_disk_size=670,
                 ),
                 NodePool(
                     name="n1-highmem-32-1xk80-preemptible",
@@ -659,6 +663,7 @@ class TestEntityFactory:
                     memory=208 * 1024,
                     available_memory=201 * 1024,
                     disk_size=700,
+                    available_disk_size=670,
                     nvidia_gpu=1,
                     nvidia_gpu_model="nvidia-tesla-k80",
                     is_preemptible=True,
@@ -706,6 +711,7 @@ class TestEntityFactory:
                     "memory": 32 * 1024,
                     "available_memory": 28 * 1024,
                     "disk_size": 700,
+                    "available_disk_size": 670,
                 },
                 {
                     "role": "platform_job",
@@ -719,6 +725,7 @@ class TestEntityFactory:
                     "memory": 61 * 1024,
                     "available_memory": 57 * 1024,
                     "disk_size": 700,
+                    "available_disk_size": 670,
                     "nvidia_gpu": 1,
                     "nvidia_gpu_model": "nvidia-tesla-k80",
                     "is_preemptible": True,
@@ -755,6 +762,7 @@ class TestEntityFactory:
                     memory=32 * 1024,
                     available_memory=28 * 1024,
                     disk_size=700,
+                    available_disk_size=670,
                 ),
                 NodePool(
                     name="p2-xlarge-1xk80-preemptible",
@@ -767,6 +775,7 @@ class TestEntityFactory:
                     memory=61 * 1024,
                     available_memory=57 * 1024,
                     disk_size=700,
+                    available_disk_size=670,
                     nvidia_gpu=1,
                     nvidia_gpu_model="nvidia-tesla-k80",
                     is_preemptible=True,
@@ -816,6 +825,7 @@ class TestEntityFactory:
                     "memory": 32 * 1024,
                     "available_memory": 28 * 1024,
                     "disk_size": 700,
+                    "available_disk_size": 670,
                 },
                 {
                     "role": "platform_job",
@@ -829,6 +839,7 @@ class TestEntityFactory:
                     "memory": 56 * 1024,
                     "available_memory": 50 * 1024,
                     "disk_size": 700,
+                    "available_disk_size": 670,
                     "nvidia_gpu": 1,
                     "nvidia_gpu_model": "nvidia-tesla-k80",
                     "is_preemptible": True,
@@ -867,6 +878,7 @@ class TestEntityFactory:
                     memory=32 * 1024,
                     available_memory=28 * 1024,
                     disk_size=700,
+                    available_disk_size=670,
                 ),
                 NodePool(
                     name="Standard_NC6-1xk80-preemptible",
@@ -879,6 +891,7 @@ class TestEntityFactory:
                     memory=56 * 1024,
                     available_memory=50 * 1024,
                     disk_size=700,
+                    available_disk_size=670,
                     nvidia_gpu=1,
                     nvidia_gpu_model="nvidia-tesla-k80",
                     is_preemptible=True,
@@ -964,6 +977,7 @@ class TestEntityFactory:
                     memory=1024,
                     available_memory=1024,
                     disk_size=700,
+                    available_disk_size=700,
                     machine_type="cpu-machine",
                 ),
                 NodePool(
@@ -975,6 +989,7 @@ class TestEntityFactory:
                     memory=1024,
                     available_memory=1024,
                     disk_size=700,
+                    available_disk_size=700,
                     nvidia_gpu=1,
                     nvidia_gpu_model="nvidia-tesla-k80",
                     price=Decimal("0.9"),
@@ -1024,6 +1039,7 @@ class TestEntityFactory:
                     "memory": 32 * 1024,
                     "available_memory": 29 * 1024,
                     "disk_size": 700,
+                    "available_disk_size": 670,
                 },
                 {
                     "role": "platform_job",
@@ -1036,6 +1052,7 @@ class TestEntityFactory:
                     "memory": 40 * 1024,
                     "available_memory": 37 * 1024,
                     "disk_size": 700,
+                    "available_disk_size": 670,
                     "nvidia_gpu": 1,
                     "nvidia_gpu_model": "nvidia-tesla-k80",
                     "price": "0.9",
@@ -1080,6 +1097,7 @@ class TestEntityFactory:
                     memory=32 * 1024,
                     available_memory=29 * 1024,
                     disk_size=700,
+                    available_disk_size=670,
                 ),
                 NodePool(
                     min_size=1,
@@ -1091,6 +1109,7 @@ class TestEntityFactory:
                     memory=40 * 1024,
                     available_memory=37 * 1024,
                     disk_size=700,
+                    available_disk_size=670,
                     nvidia_gpu=1,
                     nvidia_gpu_model="nvidia-tesla-k80",
                     price=Decimal("0.9"),
@@ -1676,6 +1695,7 @@ class TestPayloadFactory:
                 memory=12 * 1024,
                 available_memory=10 * 1024,
                 disk_size=700,
+                available_disk_size=670,
                 nvidia_gpu=1,
                 amd_gpu=2,
                 intel_gpu=3,
@@ -1705,6 +1725,7 @@ class TestPayloadFactory:
             "memory": 12 * 1024,
             "available_memory": 10 * 1024,
             "disk_size": 700,
+            "available_disk_size": 670,
             "nvidia_gpu": 1,
             "amd_gpu": 2,
             "intel_gpu": 3,
@@ -1728,15 +1749,16 @@ class TestPayloadFactory:
 
         assert result == {
             "name": "node-pool",
-            "available_cpu": 1.0,
-            "available_memory": 2**30,
             "cpu": 1.0,
+            "available_cpu": 1.0,
+            "memory": 2**30,
+            "available_memory": 2**30,
             "disk_size": 150 * 2**30,
+            "available_disk_size": 150 * 2**30,
             "idle_size": 0,
             "is_preemptible": False,
-            "max_size": 1,
-            "memory": 2**30,
             "min_size": 0,
+            "max_size": 1,
         }
 
     def test_create_tpu_resource(self, factory: PayloadFactory) -> None:
@@ -2066,6 +2088,7 @@ class TestPayloadFactory:
             memory=2048,
             available_memory=1024,
             disk_size=100500,
+            available_disk_size=100000,
             disk_type="some-disk-type",
             nvidia_gpu=1,
             nvidia_gpu_model="some-gpu-model",
@@ -2077,8 +2100,31 @@ class TestPayloadFactory:
             cpu_max_watts=1000,
         )
 
-    def test_node_pool(self, factory: PayloadFactory, node_pool: NodePool) -> None:
-        payload = factory.create_node_pool(node_pool)
+    def test_create_add_node_pool_request(self, factory: PayloadFactory) -> None:
+        node_pool = AddNodePoolRequest(
+            name="my-node-pool",
+            min_size=0,
+            max_size=10,
+            idle_size=1,
+            machine_type="some-machine-type",
+            cpu=10,
+            available_cpu=9,
+            memory=2048,
+            available_memory=1024,
+            disk_size=100500,
+            available_disk_size=100000,
+            disk_type="some-disk-type",
+            nvidia_gpu=1,
+            nvidia_gpu_model="some-gpu-model",
+            price=Decimal(180),
+            currency="rabbits",
+            is_preemptible=True,
+            zones=("here", "there"),
+            cpu_min_watts=0.01,
+            cpu_max_watts=1000,
+        )
+        payload = factory.create_add_node_pool_request(node_pool)
+
         assert payload == {
             "name": "my-node-pool",
             "role": "platform_job",
@@ -2092,6 +2138,7 @@ class TestPayloadFactory:
             "memory": 2048,
             "available_memory": 1024,
             "disk_size": 100500,
+            "available_disk_size": 100000,
             "disk_type": "some-disk-type",
             "nvidia_gpu": 1,
             "nvidia_gpu_model": "some-gpu-model",
@@ -2102,32 +2149,18 @@ class TestPayloadFactory:
             "cpu_max_watts": 1000,
         }
 
-        np = replace(
-            node_pool,
-            cpu=None,
-            available_cpu=None,
-            memory=None,
-            available_memory=None,
-            zones=None,
-        )
+    def test_create_add_node_pool_request_default(
+        self, factory: PayloadFactory
+    ) -> None:
+        node_pool = AddNodePoolRequest(name="my-node-pool", min_size=0, max_size=1)
 
-        payload = factory.create_node_pool(np)
+        payload = factory.create_add_node_pool_request(node_pool)
+
         assert payload == {
             "name": "my-node-pool",
             "role": "platform_job",
             "min_size": 0,
-            "max_size": 10,
-            "idle_size": 1,
-            "is_preemptible": True,
-            "machine_type": "some-machine-type",
-            "disk_size": 100500,
-            "disk_type": "some-disk-type",
-            "nvidia_gpu": 1,
-            "nvidia_gpu_model": "some-gpu-model",
-            "price": "180",
-            "currency": "rabbits",
-            "cpu_min_watts": 0.01,
-            "cpu_max_watts": 1000,
+            "max_size": 1,
         }
 
     def test_create_patch_node_pool_size_request(self, factory: PayloadFactory) -> None:

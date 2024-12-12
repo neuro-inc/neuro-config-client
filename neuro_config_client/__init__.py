@@ -5,6 +5,7 @@ from importlib.metadata import version
 from .client import ConfigClient, ConfigClientBase
 from .entities import (
     ACMEEnvironment,
+    AddNodePoolRequest,
     ARecord,
     AWSCloudProvider,
     AWSCredentials,
@@ -53,6 +54,7 @@ from .entities import (
     PatchNodePoolResourcesRequest,
     PatchNodePoolSizeRequest,
     PatchOrchestratorConfigRequest,
+    PutNodePoolRequest,
     RegistryConfig,
     ResourcePoolType,
     ResourcePreset,
@@ -75,6 +77,7 @@ __all__ = [
     "ConfigClient",
     "ConfigClientBase",
     "ACMEEnvironment",
+    "AddNodePoolRequest",
     "ARecord",
     "AWSCloudProvider",
     "AWSCredentials",
@@ -123,6 +126,7 @@ __all__ = [
     "PatchNodePoolResourcesRequest",
     "PatchNodePoolSizeRequest",
     "PatchOrchestratorConfigRequest",
+    "PutNodePoolRequest",
     "RegistryConfig",
     "ResourcePoolType",
     "ResourcePreset",

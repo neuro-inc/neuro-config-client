@@ -9,6 +9,7 @@ from yarl import URL
 
 from .entities import (
     ACMEEnvironment,
+    AddNodePoolRequest,
     ARecord,
     AWSCloudProvider,
     AWSCredentials,
@@ -383,25 +384,28 @@ class EntityFactory:
         )
 
     def create_node_pool(self, payload: dict[str, Any]) -> NodePool:
-        price = Decimal(payload["price"]) if payload.get("price") else NodePool.price
+        price_value = payload.get("price")
+        price = Decimal(price_value) if price_value is not None else NodePool.price
+        disk_size = payload.get("disk_size", 0)
         return NodePool(
             name=payload["name"],
             role=NodeRole(payload["role"]),
             min_size=payload["min_size"],
             max_size=payload["max_size"],
-            cpu=payload.get("cpu"),
-            available_cpu=payload.get("available_cpu"),
-            memory=payload.get("memory"),
-            available_memory=payload.get("available_memory"),
-            disk_size=payload.get("disk_size", NodePool.disk_size),
+            cpu=payload["cpu"],
+            available_cpu=payload["available_cpu"],
+            memory=payload["memory"],
+            available_memory=payload["available_memory"],
+            disk_size=disk_size,
+            available_disk_size=payload.get("available_disk_size", disk_size),
             disk_type=payload.get("disk_type", NodePool.disk_type),
             nvidia_gpu=payload.get("nvidia_gpu") or payload.get("gpu"),
-            amd_gpu=payload.get("amd_gpu"),
-            intel_gpu=payload.get("intel_gpu"),
             nvidia_gpu_model=(
                 payload.get("nvidia_gpu_model") or payload.get("gpu_model")
             ),
+            amd_gpu=payload.get("amd_gpu"),
             amd_gpu_model=payload.get("amd_gpu_model"),
+            intel_gpu=payload.get("intel_gpu"),
             intel_gpu_model=payload.get("intel_gpu_model"),
             price=price,
             currency=payload.get("currency", NodePool.currency),
@@ -918,6 +922,7 @@ class PayloadFactory:
             "memory": resource_pool_type.memory,
             "available_memory": resource_pool_type.available_memory,
             "disk_size": resource_pool_type.disk_size,
+            "available_disk_size": resource_pool_type.available_disk_size,
         }
         if resource_pool_type.nvidia_gpu:
             result["nvidia_gpu"] = resource_pool_type.nvidia_gpu
@@ -1062,7 +1067,9 @@ class PayloadFactory:
         return result
 
     @classmethod
-    def create_node_pool(cls, node_pool: NodePool) -> dict[str, Any]:
+    def create_add_node_pool_request(
+        cls, node_pool: AddNodePoolRequest
+    ) -> dict[str, Any]:
         result: dict[str, Any] = {
             "name": node_pool.name,
             "role": node_pool.role.value,
@@ -1083,23 +1090,23 @@ class PayloadFactory:
             result["available_memory"] = node_pool.available_memory
         if node_pool.disk_size:
             result["disk_size"] = node_pool.disk_size
+        if node_pool.available_disk_size:
+            result["available_disk_size"] = node_pool.available_disk_size
         if node_pool.disk_type:
             result["disk_type"] = node_pool.disk_type
-        nvidia_gpu = node_pool.nvidia_gpu or node_pool.gpu
-        if nvidia_gpu:
-            result["nvidia_gpu"] = nvidia_gpu
+        if node_pool.nvidia_gpu:
+            result["nvidia_gpu"] = node_pool.nvidia_gpu
+        if node_pool.nvidia_gpu_model:
+            result["nvidia_gpu_model"] = node_pool.nvidia_gpu_model
         if node_pool.amd_gpu:
             result["amd_gpu"] = node_pool.amd_gpu
-        if node_pool.intel_gpu:
-            result["intel_gpu"] = node_pool.intel_gpu
-        nvidia_gpu_model = node_pool.nvidia_gpu_model or node_pool.gpu_model
-        if nvidia_gpu_model:
-            result["nvidia_gpu_model"] = nvidia_gpu_model
         if node_pool.amd_gpu_model:
             result["amd_gpu_model"] = node_pool.amd_gpu_model
+        if node_pool.intel_gpu:
+            result["intel_gpu"] = node_pool.intel_gpu
         if node_pool.intel_gpu_model:
             result["intel_gpu_model"] = node_pool.intel_gpu_model
-        if node_pool.price:
+        if node_pool.price is not None:
             result["price"] = str(node_pool.price)
         if node_pool.currency:
             result["currency"] = node_pool.currency
@@ -1107,9 +1114,9 @@ class PayloadFactory:
             result["is_preemptible"] = node_pool.is_preemptible
         if node_pool.zones:
             result["zones"] = node_pool.zones
-        if node_pool.cpu_min_watts:
+        if node_pool.cpu_min_watts is not None:
             result["cpu_min_watts"] = node_pool.cpu_min_watts
-        if node_pool.cpu_max_watts:
+        if node_pool.cpu_max_watts is not None:
             result["cpu_max_watts"] = node_pool.cpu_max_watts
         return result
 

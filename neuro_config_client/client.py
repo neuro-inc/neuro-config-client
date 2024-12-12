@@ -13,6 +13,7 @@ from aiohttp import ClientResponseError
 from yarl import URL
 
 from .entities import (
+    AddNodePoolRequest,
     CloudProviderOptions,
     CloudProviderType,
     Cluster,
@@ -21,6 +22,7 @@ from .entities import (
     PatchClusterRequest,
     PatchNodePoolResourcesRequest,
     PatchNodePoolSizeRequest,
+    PutNodePoolRequest,
     ResourcePreset,
 )
 from .factories import EntityFactory, PayloadFactory
@@ -275,7 +277,7 @@ class ConfigClientBase:
     async def add_node_pool(
         self,
         cluster_name: str,
-        node_pool: NodePool,
+        node_pool: AddNodePoolRequest,
         *,
         start_deployment: bool = True,
         token: str | None = None,
@@ -283,8 +285,9 @@ class ConfigClientBase:
         """Add new node pool to the existing cluster.
         Cloud provider should be already set up.
 
-        Make sure you use one of the available node pool templates by providing its ID,
-            if the cluster is deployed in public cloud (AWS / GCP / Azure / VCD).
+        Make sure you use one of the available node pool templates by providing
+        its machine type, if the cluster is deployed in public cloud
+        (AWS / GCP / Azure / VCD).
 
         Args:
             cluster_name (str): Name of the cluster within the platform.
@@ -296,7 +299,7 @@ class ConfigClientBase:
             Cluster: Cluster instance with applied changes
         """
         path = self._endpoints.node_pools(cluster_name)
-        payload = self._payload_factory.create_node_pool(node_pool)
+        payload = self._payload_factory.create_add_node_pool_request(node_pool)
         async with self._request(
             "POST",
             path,
@@ -310,13 +313,13 @@ class ConfigClientBase:
     async def put_node_pool(
         self,
         cluster_name: str,
-        node_pool: NodePool,
+        node_pool: PutNodePoolRequest,
         *,
         start_deployment: bool = True,
         token: str | None = None,
     ) -> Cluster:
         path = self._endpoints.node_pool(cluster_name, node_pool.name)
-        payload = self._payload_factory.create_node_pool(node_pool)
+        payload = self._payload_factory.create_add_node_pool_request(node_pool)
         async with self._request(
             "PUT",
             path,
