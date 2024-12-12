@@ -1360,8 +1360,6 @@ class TestEntityFactory:
     ) -> None:
         response = {
             "node_pools": [node_pool_options_response],
-            "kubernetes_node_pool_id": "master_neuro_2",
-            "platform_node_pool_id": "master_neuro_2",
         }
         result = factory.create_cloud_provider_options(
             CloudProviderType.VCD_MTS, response
@@ -1370,8 +1368,6 @@ class TestEntityFactory:
         assert result == VCDCloudProviderOptions(
             type=CloudProviderType.VCD_MTS,
             node_pools=[node_pool_options],
-            kubernetes_node_pool_id="master_neuro_2",
-            platform_node_pool_id="master_neuro_2",
         )
 
     def test_vcd_cloud_provider_options(
@@ -1382,8 +1378,6 @@ class TestEntityFactory:
     ) -> None:
         response = {
             "node_pools": [node_pool_options_response],
-            "kubernetes_node_pool_id": "master_neuro_2",
-            "platform_node_pool_id": "master_neuro_2",
             "url": "https://vcd",
             "organization": "neuro-org",
             "edge_name_template": "neuro-edge",
@@ -1398,8 +1392,6 @@ class TestEntityFactory:
         assert result == VCDCloudProviderOptions(
             type=CloudProviderType.VCD_MTS,
             node_pools=[node_pool_options],
-            kubernetes_node_pool_id="master_neuro_2",
-            platform_node_pool_id="master_neuro_2",
             url=URL("https://vcd"),
             organization="neuro-org",
             edge_name_template="neuro-edge",

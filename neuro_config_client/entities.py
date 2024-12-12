@@ -46,8 +46,6 @@ class CloudProviderOptions:
 
 @dataclass(frozen=True)
 class VCDCloudProviderOptions(CloudProviderOptions):
-    kubernetes_node_pool_id: str
-    platform_node_pool_id: str
     url: URL | None = None
     organization: str | None = None
     edge_name_template: str | None = None

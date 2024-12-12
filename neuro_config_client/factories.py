@@ -106,8 +106,6 @@ class EntityFactory:
             node_pools=[
                 cls.create_node_pool_options(p) for p in payload.get("node_pools", ())
             ],
-            kubernetes_node_pool_id=payload["kubernetes_node_pool_id"],
-            platform_node_pool_id=payload["platform_node_pool_id"],
             url=URL(url) if url else None,
             organization=payload.get("organization"),
             edge_name_template=payload.get("edge_name_template"),
