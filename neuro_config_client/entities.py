@@ -92,6 +92,8 @@ class NodePool:
 
     disk_type: str | None = None
 
+    gpu: int | None = None  # Deprecated. Use nvidia_gpu instead
+    gpu_model: str | None = None  # Deprecated. Use nvidia_gpu_model instead
     nvidia_gpu: int | None = None
     nvidia_gpu_model: str | None = None
     amd_gpu: int | None = None
@@ -535,11 +537,13 @@ class ResourcePoolType:
     disk_size: int = 150 * 2**30  # 150gb
     available_disk_size: int = 150 * 2**30  # 150gb
 
+    gpu: int | None = None  # Deprecated. Use nvidia_gpu instead
+    gpu_model: str | None = None  # Deprecated. Use nvidia_gpu_model instead
     nvidia_gpu: int | None = None
-    amd_gpu: int | None = None
-    intel_gpu: int | None = None
     nvidia_gpu_model: str | None = None
+    amd_gpu: int | None = None
     amd_gpu_model: str | None = None
+    intel_gpu: int | None = None
     intel_gpu_model: str | None = None
     tpu: TPUResource | None = None
 

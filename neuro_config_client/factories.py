@@ -204,6 +204,8 @@ class EntityFactory:
             tpu = self.create_tpu_resource(payload["tpu"])
         cpu = payload.get("cpu", ResourcePoolType.cpu)
         memory = payload.get("memory", ResourcePoolType.memory)
+        nvidia_gpu = payload.get("nvidia_gpu") or payload.get("gpu")
+        nvidia_gpu_model = payload.get("nvidia_gpu_model") or payload.get("gpu_model")
         return ResourcePoolType(
             name=payload["name"],
             min_size=payload.get("min_size", ResourcePoolType.min_size),
@@ -213,11 +215,13 @@ class EntityFactory:
             available_cpu=payload.get("available_cpu") or cpu,
             memory=memory,
             available_memory=payload.get("available_memory") or memory,
-            nvidia_gpu=payload.get("nvidia_gpu"),
+            gpu=nvidia_gpu,
+            gpu_model=nvidia_gpu_model,
+            nvidia_gpu=nvidia_gpu,
+            nvidia_gpu_model=nvidia_gpu_model,
             amd_gpu=payload.get("amd_gpu"),
-            intel_gpu=payload.get("intel_gpu"),
-            nvidia_gpu_model=payload.get("nvidia_gpu_model"),
             amd_gpu_model=payload.get("amd_gpu_model"),
+            intel_gpu=payload.get("intel_gpu"),
             intel_gpu_model=payload.get("intel_gpu_model"),
             price=Decimal(payload.get("price", ResourcePoolType.price)),
             currency=payload.get("currency"),
@@ -385,6 +389,8 @@ class EntityFactory:
         price_value = payload.get("price")
         price = Decimal(price_value) if price_value is not None else NodePool.price
         disk_size = payload.get("disk_size", 0)
+        nvidia_gpu = payload.get("nvidia_gpu") or payload.get("gpu")
+        nvidia_gpu_model = payload.get("nvidia_gpu_model") or payload.get("gpu_model")
         return NodePool(
             name=payload["name"],
             role=NodeRole(payload["role"]),
@@ -397,10 +403,10 @@ class EntityFactory:
             disk_size=disk_size,
             available_disk_size=payload.get("available_disk_size", disk_size),
             disk_type=payload.get("disk_type", NodePool.disk_type),
-            nvidia_gpu=payload.get("nvidia_gpu") or payload.get("gpu"),
-            nvidia_gpu_model=(
-                payload.get("nvidia_gpu_model") or payload.get("gpu_model")
-            ),
+            gpu=nvidia_gpu,
+            gpu_model=nvidia_gpu_model,
+            nvidia_gpu=nvidia_gpu,
+            nvidia_gpu_model=nvidia_gpu_model,
             amd_gpu=payload.get("amd_gpu"),
             amd_gpu_model=payload.get("amd_gpu_model"),
             intel_gpu=payload.get("intel_gpu"),
@@ -922,16 +928,20 @@ class PayloadFactory:
             "disk_size": resource_pool_type.disk_size,
             "available_disk_size": resource_pool_type.available_disk_size,
         }
+        if resource_pool_type.gpu:
+            result["nvidia_gpu"] = resource_pool_type.gpu
+        if resource_pool_type.gpu_model:
+            result["nvidia_gpu_model"] = resource_pool_type.gpu_model
         if resource_pool_type.nvidia_gpu:
             result["nvidia_gpu"] = resource_pool_type.nvidia_gpu
-        if resource_pool_type.amd_gpu:
-            result["amd_gpu"] = resource_pool_type.amd_gpu
-        if resource_pool_type.intel_gpu:
-            result["intel_gpu"] = resource_pool_type.intel_gpu
         if resource_pool_type.nvidia_gpu_model:
             result["nvidia_gpu_model"] = resource_pool_type.nvidia_gpu_model
+        if resource_pool_type.amd_gpu:
+            result["amd_gpu"] = resource_pool_type.amd_gpu
         if resource_pool_type.amd_gpu_model:
             result["amd_gpu_model"] = resource_pool_type.amd_gpu_model
+        if resource_pool_type.intel_gpu:
+            result["intel_gpu"] = resource_pool_type.intel_gpu
         if resource_pool_type.intel_gpu_model:
             result["intel_gpu_model"] = resource_pool_type.intel_gpu_model
         if resource_pool_type.currency:
