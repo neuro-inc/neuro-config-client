@@ -546,12 +546,17 @@ class TestEntityFactory:
 
     def test_create_ingress(self, factory: EntityFactory) -> None:
         result = factory.create_ingress(
-            {"acme_environment": "production", "cors_origins": ["https://app.neu.ro"]}
+            {
+                "acme_environment": "production",
+                "default_cors_origins": ["https://console.apolo.us"],
+                "additional_cors_origins": ["https://custom.app"],
+            }
         )
 
         assert result == IngressConfig(
             acme_environment=ACMEEnvironment.PRODUCTION,
-            cors_origins=["https://app.neu.ro"],
+            default_cors_origins=["https://console.apolo.us"],
+            additional_cors_origins=["https://custom.app"],
         )
 
     def test_create_ingress_defaults(self, factory: EntityFactory) -> None:
@@ -1953,13 +1958,13 @@ class TestPayloadFactory:
         result = factory.create_ingress(
             IngressConfig(
                 acme_environment=ACMEEnvironment.PRODUCTION,
-                cors_origins=["https://app.neu.ro"],
+                additional_cors_origins=["https://custom.app"],
             )
         )
 
         assert result == {
             "acme_environment": "production",
-            "cors_origins": ["https://app.neu.ro"],
+            "additional_cors_origins": ["https://custom.app"],
         }
 
     def test_create_ingress_defaults(self, factory: PayloadFactory) -> None:

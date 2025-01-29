@@ -354,7 +354,8 @@ class EntityFactory:
     def create_ingress(self, payload: dict[str, Any]) -> IngressConfig:
         return IngressConfig(
             acme_environment=ACMEEnvironment(payload["acme_environment"]),
-            cors_origins=payload.get("cors_origins", ()),
+            default_cors_origins=payload.get("default_cors_origins", ()),
+            additional_cors_origins=payload.get("additional_cors_origins", ()),
         )
 
     def create_cloud_provider(self, payload: dict[str, Any]) -> CloudProvider:
@@ -1070,8 +1071,8 @@ class PayloadFactory:
     @classmethod
     def create_ingress(cls, ingress: IngressConfig) -> dict[str, Any]:
         result: dict[str, Any] = {"acme_environment": ingress.acme_environment.value}
-        if ingress.cors_origins:
-            result["cors_origins"] = ingress.cors_origins
+        if ingress.additional_cors_origins:
+            result["additional_cors_origins"] = ingress.additional_cors_origins
         return result
 
     @classmethod
