@@ -487,7 +487,8 @@ class ACMEEnvironment(str, enum.Enum):
 @dataclass(frozen=True)
 class IngressConfig:
     acme_environment: ACMEEnvironment
-    cors_origins: Sequence[str] = ()
+    default_cors_origins: Sequence[str] = ()
+    additional_cors_origins: Sequence[str] = ()
 
 
 @dataclass(frozen=True)
