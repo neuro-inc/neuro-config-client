@@ -658,6 +658,12 @@ class EnergyConfig:
 
 
 @dataclass(frozen=True)
+class AppsConfig:
+    apps_hostname_templates: list[str]
+    app_proxy_url: URL
+
+
+@dataclass(frozen=True)
 class Cluster:
     name: str
     status: ClusterStatus
@@ -677,6 +683,7 @@ class Cluster:
     buckets: BucketsConfig | None = None
     ingress: IngressConfig | None = None
     energy: EnergyConfig | None = None
+    apps: AppsConfig | None = None
 
 
 @dataclass(frozen=True)
@@ -694,3 +701,4 @@ class PatchClusterRequest:
     dns: DNSConfig | None = None
     timezone: ZoneInfo | None = None
     energy: EnergyConfig | None = None
+    apps: AppsConfig | None = None
