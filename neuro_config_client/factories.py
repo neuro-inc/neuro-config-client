@@ -10,6 +10,7 @@ from yarl import URL
 from .entities import (
     ACMEEnvironment,
     AddNodePoolRequest,
+    AppsConfig,
     ARecord,
     AWSCloudProvider,
     AWSCredentials,
@@ -143,6 +144,7 @@ class EntityFactory:
         credentials = payload.get("credentials")
         timezone = self._create_timezone(payload.get("timezone"))
         energy = payload.get("energy")
+        apps = payload.get("apps")
         return Cluster(
             name=payload["name"],
             status=ClusterStatus(payload["status"]),
@@ -166,6 +168,7 @@ class EntityFactory:
             created_at=datetime.fromisoformat(payload["created_at"]),
             timezone=timezone,
             energy=self.create_energy(energy, timezone=timezone) if energy else None,
+            apps=self.create_apps(apps) if apps else None,
         )
 
     def create_orchestrator(self, payload: dict[str, Any]) -> OrchestratorConfig:
@@ -672,6 +675,12 @@ class EntityFactory:
             end_time=end_time,
         )
 
+    def create_apps(self, payload: dict[str, Any]) -> AppsConfig:
+        return AppsConfig(
+            apps_hostname_templates=payload.get("apps_hostname_templates", []),
+            app_proxy_url=URL(payload["app_proxy_url"]),
+        )
+
 
 class PayloadFactory:
     @classmethod
@@ -707,6 +716,8 @@ class PayloadFactory:
             payload["timezone"] = str(request.timezone)
         if request.energy:
             payload["energy"] = cls.create_energy(request.energy)
+        if request.apps:
+            payload["apps"] = cls.create_apps(request.apps)
         return payload
 
     @classmethod
@@ -1208,4 +1219,11 @@ class PayloadFactory:
             "weekday": period.weekday,
             "start_time": period.start_time.strftime("%H:%M"),
             "end_time": period.end_time.strftime("%H:%M"),
+        }
+
+    @classmethod
+    def create_apps(cls, apps: AppsConfig) -> dict[str, Any]:
+        return {
+            "apps_hostname_templates": apps.apps_hostname_templates,
+            "app_proxy_url": str(apps.app_proxy_url),
         }
