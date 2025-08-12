@@ -59,6 +59,7 @@ from .entities import (
     PatchNodePoolResourcesRequest,
     PatchNodePoolSizeRequest,
     PatchOrchestratorConfigRequest,
+    PrometheusCredentials,
     RegistryConfig,
     ResourcePoolType,
     ResourcePreset,
@@ -548,6 +549,7 @@ class EntityFactory:
         if not payload:
             return None
         grafana = payload.get("grafana")
+        prometheus = payload.get("prometheus")
         sentry = payload.get("sentry")
         docker_hub = payload.get("docker_hub")
         minio = payload.get("minio")
@@ -558,6 +560,9 @@ class EntityFactory:
             neuro_registry=cls._create_docker_registry(payload["neuro_registry"]),
             neuro_helm=cls._create_helm_registry(payload["neuro_helm"]),
             grafana=cls._create_grafana_credentials(grafana) if grafana else None,
+            prometheus=(
+                cls._create_promtheus_credentials(prometheus) if prometheus else None
+            ),
             sentry=cls._create_sentry_credentials(sentry) if sentry else None,
             docker_hub=cls._create_docker_registry(docker_hub) if docker_hub else None,
             minio=cls._create_minio_credentials(minio) if minio else None,
@@ -594,6 +599,14 @@ class EntityFactory:
     @classmethod
     def _create_grafana_credentials(cls, payload: dict[str, Any]) -> GrafanaCredentials:
         return GrafanaCredentials(
+            username=payload["username"], password=payload["password"]
+        )
+
+    @classmethod
+    def _create_promtheus_credentials(
+        cls, payload: dict[str, Any]
+    ) -> PrometheusCredentials:
+        return PrometheusCredentials(
             username=payload["username"], password=payload["password"]
         )
 
@@ -729,6 +742,10 @@ class PayloadFactory:
         }
         if credentials.grafana is not None:
             result["grafana"] = cls._create_grafana_credentials(credentials.grafana)
+        if credentials.prometheus is not None:
+            result["prometheus"] = cls._create_prometheus_credentials(
+                credentials.prometheus
+            )
         if credentials.sentry is not None:
             result["sentry"] = cls._create_sentry_credentials(credentials.sentry)
         if credentials.docker_hub is not None:
@@ -774,6 +791,15 @@ class PayloadFactory:
             "password": grafana_credentials.password,
         }
         return result
+
+    @classmethod
+    def _create_prometheus_credentials(
+        cls, prometheus_credentials: PrometheusCredentials
+    ) -> dict[str, str]:
+        return {
+            "username": prometheus_credentials.username,
+            "password": prometheus_credentials.password,
+        }
 
     @classmethod
     def _create_sentry_credentials(

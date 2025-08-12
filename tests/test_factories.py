@@ -60,6 +60,7 @@ from neuro_config_client.entities import (
     PatchNodePoolResourcesRequest,
     PatchNodePoolSizeRequest,
     PatchOrchestratorConfigRequest,
+    PrometheusCredentials,
     RegistryConfig,
     ResourcePoolType,
     ResourcePreset,
@@ -1175,8 +1176,12 @@ class TestEntityFactory:
                 "password": "password",
             },
             "grafana": {
-                "username": "username",
-                "password": "password",
+                "username": "grafana-username",
+                "password": "grafana-password",
+            },
+            "prometheus": {
+                "username": "prometheus-username",
+                "password": "prometheus-password",
             },
             "sentry": {
                 "client_key_id": "key",
@@ -1231,8 +1236,12 @@ class TestEntityFactory:
                 password="password",
             ),
             grafana=GrafanaCredentials(
-                username="username",
-                password="password",
+                username="grafana-username",
+                password="grafana-password",
+            ),
+            prometheus=PrometheusCredentials(
+                username="prometheus-username",
+                password="prometheus-password",
             ),
             sentry=SentryCredentials(
                 client_key_id="key", public_dsn=URL("dsn"), sample_rate=0.2
@@ -1267,6 +1276,7 @@ class TestEntityFactory:
         self, factory: EntityFactory, credentials: dict[str, Any]
     ) -> None:
         del credentials["grafana"]
+        del credentials["prometheus"]
         del credentials["sentry"]
         del credentials["docker_hub"]
         del credentials["minio"]
@@ -2077,8 +2087,12 @@ class TestPayloadFactory:
                 password="password",
             ),
             grafana=GrafanaCredentials(
-                username="username",
-                password="password",
+                username="grafana-username",
+                password="grafana-password",
+            ),
+            prometheus=PrometheusCredentials(
+                username="prometheus-username",
+                password="prometheus-password",
             ),
             sentry=SentryCredentials(
                 client_key_id="key", public_dsn=URL("dsn"), sample_rate=0.2
@@ -2119,8 +2133,12 @@ class TestPayloadFactory:
             "neuro_registry": {"username": "username", "password": "password"},
             "neuro_helm": {"username": "username", "password": "password"},
             "grafana": {
-                "username": "username",
-                "password": "password",
+                "username": "grafana-username",
+                "password": "grafana-password",
+            },
+            "prometheus": {
+                "username": "prometheus-username",
+                "password": "prometheus-password",
             },
             "sentry": {
                 "client_key_id": "key",
@@ -2154,6 +2172,7 @@ class TestPayloadFactory:
         credentials = replace(
             credentials,
             grafana=None,
+            prometheus=None,
             sentry=None,
             docker_hub=None,
             minio=None,
