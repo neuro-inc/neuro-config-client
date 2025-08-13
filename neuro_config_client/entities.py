@@ -386,6 +386,12 @@ class GrafanaCredentials:
 
 
 @dataclass(frozen=True)
+class PrometheusCredentials:
+    username: str
+    password: str = field(repr=False)
+
+
+@dataclass(frozen=True)
 class SentryCredentials:
     client_key_id: str
     public_dsn: URL
@@ -426,6 +432,7 @@ class CredentialsConfig:
     neuro_helm: HelmRegistryConfig
     neuro_registry: DockerRegistryConfig
     grafana: GrafanaCredentials | None = None
+    prometheus: PrometheusCredentials | None = None
     sentry: SentryCredentials | None = None
     docker_hub: DockerRegistryConfig | None = None
     minio: MinioCredentials | None = None
