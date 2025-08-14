@@ -499,10 +499,25 @@ class IngressConfig:
 
 
 @dataclass(frozen=True)
-class TPUResource:
-    ipv4_cidr_block: str
-    types: Sequence[str] = ()
-    software_versions: Sequence[str] = ()
+class GPUPreset:
+    count: int
+    model: str | None = None
+    memory: int | None = None
+
+
+@dataclass(frozen=True)
+class NvidiaGPUPreset(GPUPreset):
+    pass
+
+
+@dataclass(frozen=True)
+class AMDGPUPreset(GPUPreset):
+    pass
+
+
+@dataclass(frozen=True)
+class IntelGPUPreset(GPUPreset):
+    pass
 
 
 @dataclass(frozen=True)
@@ -517,18 +532,44 @@ class ResourcePreset:
     credits_per_hour: Decimal
     cpu: float
     memory: int
-    nvidia_gpu: int | None = None
-    amd_gpu: int | None = None
-    intel_gpu: int | None = None
-    nvidia_gpu_model: str | None = None
-    amd_gpu_model: str | None = None
-    intel_gpu_model: str | None = None
+    nvidia_gpu: NvidiaGPUPreset | None = None
+    amd_gpu: AMDGPUPreset | None = None
+    intel_gpu: IntelGPUPreset | None = None
     tpu: TPUPreset | None = None
     scheduler_enabled: bool = False
     preemptible_node: bool = False
     is_external_job: bool = False
     resource_pool_names: Sequence[str] = ()
     available_resource_pool_names: Sequence[str] = ()
+
+
+@dataclass(frozen=True)
+class GPU:
+    count: int
+    model: str
+    memory: int | None = None
+
+
+@dataclass(frozen=True)
+class NvidiaGPU(GPU):
+    pass
+
+
+@dataclass(frozen=True)
+class AMDGPU(GPU):
+    pass
+
+
+@dataclass(frozen=True)
+class IntelGPU(GPU):
+    pass
+
+
+@dataclass(frozen=True)
+class TPUResource:
+    ipv4_cidr_block: str
+    types: Sequence[str] = ()
+    software_versions: Sequence[str] = ()
 
 
 @dataclass(frozen=True)
@@ -545,14 +586,9 @@ class ResourcePoolType:
     disk_size: int = 150 * 2**30  # 150gb
     available_disk_size: int = 150 * 2**30  # 150gb
 
-    gpu: int | None = None  # Deprecated. Use nvidia_gpu instead
-    gpu_model: str | None = None  # Deprecated. Use nvidia_gpu_model instead
-    nvidia_gpu: int | None = None
-    nvidia_gpu_model: str | None = None
-    amd_gpu: int | None = None
-    amd_gpu_model: str | None = None
-    intel_gpu: int | None = None
-    intel_gpu_model: str | None = None
+    nvidia_gpu: NvidiaGPU | None = None
+    amd_gpu: AMDGPU | None = None
+    intel_gpu: IntelGPU | None = None
     tpu: TPUResource | None = None
 
     price: Decimal = Decimal()

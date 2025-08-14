@@ -8,8 +8,11 @@ from typing import Any
 from yarl import URL
 
 from .entities import (
+    AMDGPU,
+    GPU,
     ACMEEnvironment,
     AddNodePoolRequest,
+    AMDGPUPreset,
     AppsConfig,
     ARecord,
     AWSCloudProvider,
@@ -40,10 +43,13 @@ from .entities import (
     GoogleCloudProvider,
     GoogleFilestoreTier,
     GoogleStorage,
+    GPUPreset,
     GrafanaCredentials,
     HelmRegistryConfig,
     IdleJobConfig,
     IngressConfig,
+    IntelGPU,
+    IntelGPUPreset,
     KubernetesCredentials,
     MetricsConfig,
     MinioCredentials,
@@ -52,6 +58,8 @@ from .entities import (
     NodePool,
     NodePoolOptions,
     NodeRole,
+    NvidiaGPU,
+    NvidiaGPUPreset,
     OnPremCloudProvider,
     OpenStackCredentials,
     OrchestratorConfig,
@@ -203,13 +211,8 @@ class EntityFactory:
         )
 
     def create_resource_pool_type(self, payload: dict[str, Any]) -> ResourcePoolType:
-        tpu = None
-        if payload.get("tpu"):
-            tpu = self.create_tpu_resource(payload["tpu"])
         cpu = payload.get("cpu", ResourcePoolType.cpu)
         memory = payload.get("memory", ResourcePoolType.memory)
-        nvidia_gpu = payload.get("nvidia_gpu") or payload.get("gpu")
-        nvidia_gpu_model = payload.get("nvidia_gpu_model") or payload.get("gpu_model")
         return ResourcePoolType(
             name=payload["name"],
             min_size=payload.get("min_size", ResourcePoolType.min_size),
@@ -219,22 +222,74 @@ class EntityFactory:
             available_cpu=payload.get("available_cpu") or cpu,
             memory=memory,
             available_memory=payload.get("available_memory") or memory,
-            gpu=nvidia_gpu,
-            gpu_model=nvidia_gpu_model,
-            nvidia_gpu=nvidia_gpu,
-            nvidia_gpu_model=nvidia_gpu_model,
-            amd_gpu=payload.get("amd_gpu"),
-            amd_gpu_model=payload.get("amd_gpu_model"),
-            intel_gpu=payload.get("intel_gpu"),
-            intel_gpu_model=payload.get("intel_gpu_model"),
+            nvidia_gpu=(
+                self._create_nvidia_gpu(
+                    payload if isinstance(nvidia_gpu, int) else nvidia_gpu
+                )
+                if (nvidia_gpu := payload.get("nvidia_gpu"))
+                else None
+            ),
+            amd_gpu=(
+                self._create_amd_gpu(payload if isinstance(amd_gpu, int) else amd_gpu)
+                if (amd_gpu := payload.get("amd_gpu"))
+                else None
+            ),
+            intel_gpu=(
+                self._create_intel_gpu(
+                    payload if isinstance(intel_gpu, int) else intel_gpu
+                )
+                if (intel_gpu := payload.get("intel_gpu"))
+                else None
+            ),
+            tpu=(
+                self.create_tpu_resource(tpu) if (tpu := payload.get("tpu")) else None
+            ),
             price=Decimal(payload.get("price", ResourcePoolType.price)),
             currency=payload.get("currency"),
-            tpu=tpu,
             is_preemptible=payload.get(
                 "is_preemptible", ResourcePoolType.is_preemptible
             ),
             cpu_min_watts=payload.get("cpu_min_watts", ResourcePoolType.cpu_min_watts),
             cpu_max_watts=payload.get("cpu_max_watts", ResourcePoolType.cpu_max_watts),
+        )
+
+    def _create_nvidia_gpu(self, payload: dict[str, Any]) -> NvidiaGPU:
+        nvidia_gpu = payload.get("nvidia_gpu")
+        if isinstance(nvidia_gpu, int):
+            return NvidiaGPU(
+                count=nvidia_gpu,
+                model=payload["nvidia_gpu_model"],
+            )
+        return NvidiaGPU(
+            count=payload["count"],
+            model=payload["model"],
+            memory=payload.get("memory"),
+        )
+
+    def _create_amd_gpu(self, payload: dict[str, Any]) -> AMDGPU:
+        amd_gpu = payload.get("amd_gpu")
+        if isinstance(amd_gpu, int):
+            return AMDGPU(
+                count=amd_gpu,
+                model=payload["amd_gpu_model"],
+            )
+        return AMDGPU(
+            count=payload["count"],
+            model=payload["model"],
+            memory=payload.get("memory"),
+        )
+
+    def _create_intel_gpu(self, payload: dict[str, Any]) -> IntelGPU:
+        intel_gpu = payload.get("intel_gpu")
+        if isinstance(intel_gpu, int):
+            return IntelGPU(
+                count=intel_gpu,
+                model=payload["intel_gpu_model"],
+            )
+        return IntelGPU(
+            count=payload["count"],
+            model=payload["model"],
+            memory=payload.get("memory"),
         )
 
     def create_tpu_resource(self, payload: dict[str, Any]) -> TPUResource:
@@ -245,21 +300,33 @@ class EntityFactory:
         )
 
     def create_resource_preset(self, payload: dict[str, Any]) -> ResourcePreset:
-        tpu = None
-        if payload.get("tpu"):
-            tpu = self.create_tpu_preset(payload["tpu"])
         return ResourcePreset(
             name=payload["name"],
             credits_per_hour=Decimal(payload["credits_per_hour"]),
             cpu=payload["cpu"],
             memory=payload["memory"],
-            nvidia_gpu=payload.get("nvidia_gpu"),
-            amd_gpu=payload.get("amd_gpu"),
-            intel_gpu=payload.get("intel_gpu"),
-            nvidia_gpu_model=payload.get("nvidia_gpu_model"),
-            amd_gpu_model=payload.get("amd_gpu_model"),
-            intel_gpu_model=payload.get("intel_gpu_model"),
-            tpu=tpu,
+            nvidia_gpu=(
+                self._create_nvidia_gpu_preset(
+                    payload if isinstance(nvidia_gpu, int) else nvidia_gpu
+                )
+                if (nvidia_gpu := payload.get("nvidia_gpu"))
+                else None
+            ),
+            amd_gpu=(
+                self._create_amd_gpu_preset(
+                    payload if isinstance(amd_gpu, int) else amd_gpu
+                )
+                if (amd_gpu := payload.get("amd_gpu"))
+                else None
+            ),
+            intel_gpu=(
+                self._create_intel_gpu_preset(
+                    payload if isinstance(intel_gpu, int) else intel_gpu
+                )
+                if (intel_gpu := payload.get("intel_gpu"))
+                else None
+            ),
+            tpu=self.create_tpu_preset(tpu) if (tpu := payload.get("tpu")) else None,
             scheduler_enabled=payload.get("scheduler_enabled", False),
             preemptible_node=payload.get("preemptible_node", False),
             is_external_job=payload.get("is_external_job", False),
@@ -267,6 +334,45 @@ class EntityFactory:
             available_resource_pool_names=payload.get(
                 "available_resource_pool_names", ()
             ),
+        )
+
+    def _create_nvidia_gpu_preset(self, payload: dict[str, Any]) -> NvidiaGPUPreset:
+        nvidia_gpu = payload.get("nvidia_gpu")
+        if isinstance(nvidia_gpu, int):
+            return NvidiaGPUPreset(
+                count=nvidia_gpu,
+                model=payload.get("nvidia_gpu_model"),
+            )
+        return NvidiaGPUPreset(
+            count=payload["count"],
+            model=payload.get("model"),
+            memory=payload.get("memory"),
+        )
+
+    def _create_amd_gpu_preset(self, payload: dict[str, Any]) -> AMDGPUPreset:
+        amd_gpu = payload.get("amd_gpu")
+        if isinstance(amd_gpu, int):
+            return AMDGPUPreset(
+                count=amd_gpu,
+                model=payload.get("amd_gpu_model"),
+            )
+        return AMDGPUPreset(
+            count=payload["count"],
+            model=payload.get("model"),
+            memory=payload.get("memory"),
+        )
+
+    def _create_intel_gpu_preset(self, payload: dict[str, Any]) -> IntelGPUPreset:
+        amd_gpu = payload.get("intel_gpu")
+        if isinstance(amd_gpu, int):
+            return IntelGPUPreset(
+                count=amd_gpu,
+                model=payload.get("intel_gpu_model"),
+            )
+        return IntelGPUPreset(
+            count=payload["count"],
+            model=payload.get("model"),
+            memory=payload.get("memory"),
         )
 
     def create_tpu_preset(self, payload: dict[str, Any]) -> TPUPreset:
@@ -966,22 +1072,21 @@ class PayloadFactory:
             "disk_size": resource_pool_type.disk_size,
             "available_disk_size": resource_pool_type.available_disk_size,
         }
-        if resource_pool_type.gpu:
-            result["nvidia_gpu"] = resource_pool_type.gpu
-        if resource_pool_type.gpu_model:
-            result["nvidia_gpu_model"] = resource_pool_type.gpu_model
-        if resource_pool_type.nvidia_gpu:
-            result["nvidia_gpu"] = resource_pool_type.nvidia_gpu
-        if resource_pool_type.nvidia_gpu_model:
-            result["nvidia_gpu_model"] = resource_pool_type.nvidia_gpu_model
-        if resource_pool_type.amd_gpu:
-            result["amd_gpu"] = resource_pool_type.amd_gpu
-        if resource_pool_type.amd_gpu_model:
-            result["amd_gpu_model"] = resource_pool_type.amd_gpu_model
-        if resource_pool_type.intel_gpu:
-            result["intel_gpu"] = resource_pool_type.intel_gpu
-        if resource_pool_type.intel_gpu_model:
-            result["intel_gpu_model"] = resource_pool_type.intel_gpu_model
+        if resource_pool_type.nvidia_gpu and resource_pool_type.nvidia_gpu.memory:
+            result["nvidia_gpu"] = cls._create_gpu(resource_pool_type.nvidia_gpu)
+        elif resource_pool_type.nvidia_gpu:
+            result["nvidia_gpu"] = resource_pool_type.nvidia_gpu.count
+            result["nvidia_gpu_model"] = resource_pool_type.nvidia_gpu.model
+        if resource_pool_type.amd_gpu and resource_pool_type.amd_gpu.memory:
+            result["amd_gpu"] = cls._create_gpu(resource_pool_type.amd_gpu)
+        elif resource_pool_type.amd_gpu:
+            result["amd_gpu"] = resource_pool_type.amd_gpu.count
+            result["amd_gpu_model"] = resource_pool_type.amd_gpu.model
+        if resource_pool_type.intel_gpu and resource_pool_type.intel_gpu.memory:
+            result["intel_gpu"] = cls._create_gpu(resource_pool_type.intel_gpu)
+        elif resource_pool_type.intel_gpu:
+            result["intel_gpu"] = resource_pool_type.intel_gpu.count
+            result["intel_gpu_model"] = resource_pool_type.intel_gpu.model
         if resource_pool_type.currency:
             result["price"] = str(resource_pool_type.price)
             result["currency"] = resource_pool_type.currency
@@ -991,6 +1096,16 @@ class PayloadFactory:
             result["cpu_min_watts"] = resource_pool_type.cpu_min_watts
         if resource_pool_type.cpu_max_watts:
             result["cpu_max_watts"] = resource_pool_type.cpu_max_watts
+        return result
+
+    @classmethod
+    def _create_gpu(cls, gpu: GPU) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "count": gpu.count,
+            "model": gpu.model,
+        }
+        if gpu.memory:
+            result["memory"] = gpu.memory
         return result
 
     @classmethod
@@ -1009,12 +1124,24 @@ class PayloadFactory:
             "cpu": preset.cpu,
             "memory": preset.memory,
         }
-        if preset.nvidia_gpu:
-            result["nvidia_gpu"] = preset.nvidia_gpu
-        if preset.amd_gpu:
-            result["amd_gpu"] = preset.amd_gpu
-        if preset.intel_gpu:
-            result["intel_gpu"] = preset.intel_gpu
+        if preset.nvidia_gpu and preset.nvidia_gpu.memory:
+            result["nvidia_gpu"] = cls._create_gpu_preset(preset.nvidia_gpu)
+        elif preset.nvidia_gpu:
+            result["nvidia_gpu"] = preset.nvidia_gpu.count
+            if preset.nvidia_gpu.model:
+                result["nvidia_gpu_model"] = preset.nvidia_gpu.model
+        if preset.amd_gpu and preset.amd_gpu.memory:
+            result["amd_gpu"] = cls._create_gpu_preset(preset.amd_gpu)
+        elif preset.amd_gpu:
+            result["amd_gpu"] = preset.amd_gpu.count
+            if preset.amd_gpu.model:
+                result["amd_gpu_model"] = preset.amd_gpu.model
+        if preset.intel_gpu and preset.intel_gpu.memory:
+            result["intel_gpu"] = cls._create_gpu_preset(preset.intel_gpu)
+        elif preset.intel_gpu:
+            result["intel_gpu"] = preset.intel_gpu.count
+            if preset.intel_gpu.model:
+                result["intel_gpu_model"] = preset.intel_gpu.model
         if preset.tpu:
             result["tpu"] = cls._create_tpu_preset(preset.tpu)
         if preset.scheduler_enabled:
@@ -1023,6 +1150,15 @@ class PayloadFactory:
             result["preemptible_node"] = preset.preemptible_node
         if preset.resource_pool_names:
             result["resource_pool_names"] = preset.resource_pool_names
+        return result
+
+    @classmethod
+    def _create_gpu_preset(cls, gpu_preset: GPUPreset) -> dict[str, Any]:
+        result: dict[str, Any] = {"count": gpu_preset.count}
+        if gpu_preset.model:
+            result["model"] = gpu_preset.model
+        if gpu_preset.memory:
+            result["memory"] = gpu_preset.memory
         return result
 
     @classmethod
