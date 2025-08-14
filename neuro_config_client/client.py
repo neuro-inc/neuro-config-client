@@ -13,16 +13,9 @@ from aiohttp import ClientResponseError
 from yarl import URL
 
 from .entities import (
-    AddNodePoolRequest,
-    CloudProviderOptions,
-    CloudProviderType,
     Cluster,
-    NodePool,
     NotificationType,
     PatchClusterRequest,
-    PatchNodePoolResourcesRequest,
-    PatchNodePoolSizeRequest,
-    PutNodePoolRequest,
     ResourcePreset,
 )
 from .factories import EntityFactory, PayloadFactory
@@ -35,17 +28,8 @@ class _Endpoints:
     clusters: str = "clusters"
     cloud_providers: str = "cloud_providers"
 
-    def cloud_provider_options(self, type: CloudProviderType) -> str:
-        return f"{self.cloud_providers}/{type.value}"
-
     def cluster(self, cluster_name: str) -> str:
         return f"{self.clusters}/{cluster_name}"
-
-    def node_pools(self, cluster_name: str) -> str:
-        return f"{self.cluster(cluster_name)}/cloud_provider/node_pools"
-
-    def node_pool(self, cluster_name: str, node_pool_name: str) -> str:
-        return f"{self.node_pools(cluster_name)}/{node_pool_name}"
 
     def storages(self, cluster_name: str) -> str:
         return f"{self.cluster(cluster_name)}/cloud_provider/storages"
@@ -85,35 +69,6 @@ class ConfigClientBase:
         if token:
             result["Authorization"] = f"Bearer {token}"
         return result
-
-    async def list_cloud_provider_options(
-        self, *, token: str | None = None
-    ) -> list[CloudProviderOptions]:
-        path = self._endpoints.cloud_providers
-        async with self._request(
-            "GET", path, headers=self._create_headers(token=token)
-        ) as response:
-            resp_payload = await response.json()
-            result: list[CloudProviderOptions] = []
-            for k, v in resp_payload.items():
-                result.append(
-                    self._entity_factory.create_cloud_provider_options(
-                        CloudProviderType(k), v
-                    )
-                )
-            return result
-
-    async def get_cloud_provider_options(
-        self, type: CloudProviderType, *, token: str | None = None
-    ) -> CloudProviderOptions:
-        path = self._endpoints.cloud_provider_options(type)
-        async with self._request(
-            "GET", path, headers=self._create_headers(token=token)
-        ) as response:
-            resp_payload = await response.json()
-            return self._entity_factory.create_cloud_provider_options(
-                type, resp_payload
-            )
 
     async def list_clusters(self, *, token: str | None = None) -> Sequence[Cluster]:
         async with self._request(
@@ -253,121 +208,6 @@ class ConfigClientBase:
             if not ignore_not_found or e.status != 404:
                 raise
         return await self.get_cluster(cluster_name)
-
-    async def get_node_pool(
-        self, cluster_name: str, node_pool_name: str, *, token: str | None = None
-    ) -> NodePool:
-        path = self._endpoints.node_pool(cluster_name, node_pool_name)
-        async with self._request(
-            "GET", path, headers=self._create_headers(token=token)
-        ) as response:
-            resp_payload = await response.json()
-            return self._entity_factory.create_node_pool(resp_payload)
-
-    async def list_node_pools(
-        self, cluster_name: str, *, token: str | None = None
-    ) -> list[NodePool]:
-        path = self._endpoints.node_pools(cluster_name)
-        async with self._request(
-            "GET", path, headers=self._create_headers(token=token)
-        ) as response:
-            resp_payload = await response.json()
-            return [self._entity_factory.create_node_pool(n) for n in resp_payload]
-
-    async def add_node_pool(
-        self,
-        cluster_name: str,
-        node_pool: AddNodePoolRequest,
-        *,
-        start_deployment: bool = True,
-        token: str | None = None,
-    ) -> Cluster:
-        """Add new node pool to the existing cluster.
-        Cloud provider should be already set up.
-
-        Make sure you use one of the available node pool templates by providing
-        its machine type, if the cluster is deployed in public cloud
-        (AWS / GCP / Azure / VCD).
-
-        Args:
-            cluster_name (str): Name of the cluster within the platform.
-            node_pool (NodePool): Node pool instance.
-                For templates, you could use template.to_node_pool() method
-            start_deployment (bool, optional): Start applying changes. Defaults to True.
-
-        Returns:
-            Cluster: Cluster instance with applied changes
-        """
-        path = self._endpoints.node_pools(cluster_name)
-        payload = self._payload_factory.create_add_node_pool_request(node_pool)
-        async with self._request(
-            "POST",
-            path,
-            params={"start_deployment": str(start_deployment).lower()},
-            headers=self._create_headers(token=token),
-            json=payload,
-        ) as response:
-            resp_payload = await response.json()
-            return self._entity_factory.create_cluster(resp_payload)
-
-    async def put_node_pool(
-        self,
-        cluster_name: str,
-        node_pool: PutNodePoolRequest,
-        *,
-        start_deployment: bool = True,
-        token: str | None = None,
-    ) -> Cluster:
-        path = self._endpoints.node_pool(cluster_name, node_pool.name)
-        payload = self._payload_factory.create_add_node_pool_request(node_pool)
-        async with self._request(
-            "PUT",
-            path,
-            params={"start_deployment": str(start_deployment).lower()},
-            headers=self._create_headers(token=token),
-            json=payload,
-        ) as response:
-            resp_payload = await response.json()
-            return self._entity_factory.create_cluster(resp_payload)
-
-    async def patch_node_pool(
-        self,
-        cluster_name: str,
-        node_pool_name: str,
-        request: PatchNodePoolSizeRequest | PatchNodePoolResourcesRequest,
-        *,
-        start_deployment: bool = True,
-        token: str | None = None,
-    ) -> Cluster:
-        path = self._endpoints.node_pool(cluster_name, node_pool_name)
-        payload = self._payload_factory.create_patch_node_pool_request(request)
-        async with self._request(
-            "PATCH",
-            path,
-            params={"start_deployment": str(start_deployment).lower()},
-            headers=self._create_headers(token=token),
-            json=payload,
-        ) as response:
-            resp_payload = await response.json()
-            return self._entity_factory.create_cluster(resp_payload)
-
-    async def delete_node_pool(
-        self,
-        cluster_name: str,
-        node_pool_name: str,
-        *,
-        start_deployment: bool = True,
-        token: str | None = None,
-    ) -> Cluster:
-        path = self._endpoints.node_pool(cluster_name, node_pool_name)
-        async with self._request(
-            "DELETE",
-            path,
-            params={"start_deployment": str(start_deployment).lower()},
-            headers=self._create_headers(token=token),
-        ) as response:
-            resp_payload = await response.json()
-            return self._entity_factory.create_cluster(resp_payload)
 
     async def notify(
         self,
