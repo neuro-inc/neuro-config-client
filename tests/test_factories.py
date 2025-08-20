@@ -131,6 +131,8 @@ class TestEntityFactory:
             {
                 "name": "default",
                 "status": "blank",
+                "location": "us",
+                "logo_url": "https://logo",
                 "timezone": "America/Los_Angeles",
                 "orchestrator": {
                     "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
@@ -168,6 +170,8 @@ class TestEntityFactory:
         assert result.name == "default"
         assert result.status == ClusterStatus.BLANK
         assert result.timezone == ZoneInfo("America/Los_Angeles")
+        assert result.location == "us"
+        assert result.logo_url == URL("https://logo")
         assert result.orchestrator
         assert result.storage
         assert result.registry
@@ -1572,6 +1576,8 @@ class TestPayloadFactory:
         result = factory.create_patch_cluster_request(
             PatchClusterRequest(
                 credentials=credentials,
+                location="us",
+                logo_url=URL("https://logo"),
                 storage=StorageConfig(url=URL("https://storage-dev.neu.ro")),
                 registry=RegistryConfig(url=URL("https://registry-dev.neu.ro")),
                 orchestrator=PatchOrchestratorConfigRequest(),
@@ -1595,6 +1601,8 @@ class TestPayloadFactory:
         )
 
         assert result == {
+            "location": "us",
+            "logo_url": "https://logo",
             "credentials": mock.ANY,
             "storage": mock.ANY,
             "registry": mock.ANY,

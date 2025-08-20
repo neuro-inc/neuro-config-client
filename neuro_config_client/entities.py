@@ -711,6 +711,8 @@ class Cluster:
     name: str
     status: ClusterStatus
     created_at: datetime
+    location: str | None = None
+    logo_url: URL | None = None
     timezone: tzinfo = ZoneInfo("UTC")
     platform_infra_image_tag: str | None = None
     cloud_provider: CloudProvider | None = None
@@ -731,6 +733,8 @@ class Cluster:
 
 @dataclass(frozen=True)
 class PatchClusterRequest:
+    location: str | None = None
+    logo_url: URL | None = None
     credentials: CredentialsConfig | None = None
     storage: StorageConfig | None = None
     registry: RegistryConfig | None = None
