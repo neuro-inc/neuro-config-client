@@ -158,6 +158,8 @@ class EntityFactory:
             name=payload["name"],
             status=ClusterStatus(payload["status"]),
             platform_infra_image_tag=payload.get("platform_infra_image_tag"),
+            location=payload.get("location"),
+            logo_url=URL(logo_url) if (logo_url := payload.get("logo_url")) else None,
             orchestrator=(
                 self.create_orchestrator(orchestrator) if orchestrator else None
             ),
@@ -807,6 +809,10 @@ class PayloadFactory:
         cls, request: PatchClusterRequest
     ) -> dict[str, Any]:
         payload: dict[str, Any] = {}
+        if request.location:
+            payload["location"] = request.location
+        if request.logo_url:
+            payload["logo_url"] = str(request.logo_url)
         if request.credentials:
             payload["credentials"] = cls.create_credentials(request.credentials)
         if request.storage:
