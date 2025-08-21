@@ -139,55 +139,38 @@ class EntityFactory:
         )
 
     def create_cluster(self, payload: dict[str, Any]) -> Cluster:
-        orchestrator = payload.get("orchestrator")
-        storage = payload.get("storage")
-        registry = payload.get("registry")
-        monitoring = payload.get("monitoring")
-        secrets = payload.get("secrets")
-        metrics = payload.get("metrics")
-        disks = payload.get("disks")
-        buckets = payload.get("buckets")
-        ingress = payload.get("ingress")
-        dns = payload.get("dns")
         cloud_provider = payload.get("cloud_provider")
         credentials = payload.get("credentials")
         timezone = self._create_timezone(payload.get("timezone"))
-        energy = payload.get("energy")
-        apps = payload.get("apps")
         return Cluster(
             name=payload["name"],
             status=ClusterStatus(payload["status"]),
             platform_infra_image_tag=payload.get("platform_infra_image_tag"),
             location=payload.get("location"),
             logo_url=URL(logo_url) if (logo_url := payload.get("logo_url")) else None,
-            orchestrator=(
-                self.create_orchestrator(orchestrator) if orchestrator else None
-            ),
-            storage=self.create_storage(storage) if storage else None,
-            registry=self.create_registry(registry) if registry else None,
-            monitoring=self.create_monitoring(monitoring) if monitoring else None,
-            secrets=self.create_secrets(secrets) if secrets else None,
-            metrics=self.create_metrics(metrics) if metrics else None,
-            disks=self.create_disks(disks) if disks else None,
-            buckets=self.create_buckets(buckets) if buckets else None,
-            ingress=self.create_ingress(ingress) if ingress else None,
-            dns=self.create_dns(dns) if dns else None,
+            orchestrator=self.create_orchestrator(payload["orchestrator"]),
+            storage=self.create_storage(payload["storage"]),
+            registry=self.create_registry(payload["registry"]),
+            monitoring=self.create_monitoring(payload["monitoring"]),
+            secrets=self.create_secrets(payload["secrets"]),
+            metrics=self.create_metrics(payload["metrics"]),
+            disks=self.create_disks(payload["disks"]),
+            buckets=self.create_buckets(payload["buckets"]),
+            ingress=self.create_ingress(payload["ingress"]),
+            dns=self.create_dns(payload["dns"]),
             cloud_provider=(
                 self.create_cloud_provider(cloud_provider) if cloud_provider else None
             ),
             credentials=self.create_credentials(credentials) if credentials else None,
             created_at=datetime.fromisoformat(payload["created_at"]),
             timezone=timezone,
-            energy=self.create_energy(energy, timezone=timezone) if energy else None,
-            apps=self.create_apps(apps) if apps else None,
+            energy=self.create_energy(payload["energy"], timezone=timezone),
+            apps=self.create_apps(payload["apps"]),
         )
 
     def create_orchestrator(self, payload: dict[str, Any]) -> OrchestratorConfig:
         return OrchestratorConfig(
             job_hostname_template=payload["job_hostname_template"],
-            job_internal_hostname_template=payload.get(
-                "job_internal_hostname_template"
-            ),
             job_fallback_hostname=payload["job_fallback_hostname"],
             job_schedule_timeout_s=payload["job_schedule_timeout_s"],
             job_schedule_scale_up_timeout_s=payload["job_schedule_scale_up_timeout_s"],
@@ -336,6 +319,7 @@ class EntityFactory:
             available_resource_pool_names=payload.get(
                 "available_resource_pool_names", ()
             ),
+            capacity=payload.get("capacity", 0),
         )
 
     def _create_nvidia_gpu_preset(self, payload: dict[str, Any]) -> NvidiaGPUPreset:
@@ -1001,10 +985,6 @@ class PayloadFactory:
                 self.create_resource_pool_type(r)
                 for r in orchestrator.resource_pool_types
             ]
-        if orchestrator.job_internal_hostname_template:
-            result["job_internal_hostname_template"] = (
-                orchestrator.job_internal_hostname_template
-            )
         if orchestrator.resource_presets:
             result["resource_presets"] = [
                 self.create_resource_preset(preset)
@@ -1025,10 +1005,6 @@ class PayloadFactory:
         payload: dict[str, Any] = {}
         if orchestrator.job_hostname_template:
             payload["job_hostname_template"] = orchestrator.job_hostname_template
-        if orchestrator.job_internal_hostname_template:
-            payload["job_internal_hostname_template"] = (
-                orchestrator.job_internal_hostname_template
-            )
         if orchestrator.is_http_ingress_secure is not None:
             payload["is_http_ingress_secure"] = orchestrator.is_http_ingress_secure
         if orchestrator.job_fallback_hostname:
