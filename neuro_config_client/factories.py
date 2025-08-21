@@ -319,6 +319,7 @@ class EntityFactory:
             available_resource_pool_names=payload.get(
                 "available_resource_pool_names", ()
             ),
+            capacity=payload.get("capacity", 0),
         )
 
     def _create_nvidia_gpu_preset(self, payload: dict[str, Any]) -> NvidiaGPUPreset:

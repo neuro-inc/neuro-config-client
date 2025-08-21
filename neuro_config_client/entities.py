@@ -548,6 +548,7 @@ class ResourcePreset:
     is_external_job: bool = False
     resource_pool_names: Sequence[str] = ()
     available_resource_pool_names: Sequence[str] = ()
+    capacity: int = 0
 
 
 @dataclass(frozen=True)
@@ -742,12 +743,16 @@ class EnergySchedule:
         )
 
     def check_time(self, current_time: datetime) -> bool:
-        for period in self.periods:
-            period_current_time = current_time.astimezone(period.start_time.tzinfo)
-            if period.weekday == period_current_time.isoweekday():
-                if period.start_time <= period_current_time.timetz() < period.end_time:
-                    return True
-        return False
+        return any(self._is_time_within_period(current_time, p) for p in self.periods)
+
+    def _is_time_within_period(
+        self, time_: datetime, period: EnergySchedulePeriod
+    ) -> bool:
+        time_ = time_.astimezone(period.start_time.tzinfo)
+        return (
+            period.weekday == time_.isoweekday()
+            and period.start_time <= time_.timetz() < period.end_time
+        )
 
 
 @dataclass(frozen=True)

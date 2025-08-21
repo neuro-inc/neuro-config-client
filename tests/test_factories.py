@@ -507,6 +507,7 @@ class TestEntityFactory:
                 "resource_pool_names": ["gpu"],
                 "available_resource_pool_names": ["available-gpu"],
                 "is_external_job": True,
+                "capacity": 10,
             }
         )
 
@@ -528,6 +529,7 @@ class TestEntityFactory:
             resource_pool_names=["gpu"],
             available_resource_pool_names=["available-gpu"],
             is_external_job=True,
+            capacity=10,
         )
 
     def test_create_storage(self, factory: EntityFactory) -> None:
