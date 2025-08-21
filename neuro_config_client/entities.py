@@ -761,10 +761,17 @@ class EnergyConfig:
     schedules: Sequence[EnergySchedule] = ()
 
     def get_schedule(self, name: str) -> EnergySchedule:
+        return (
+            self._get_schedule(name)
+            or self._get_schedule(DEFAULT_ENERGY_SCHEDULE_NAME)
+            or EnergySchedule.create_default(timezone=ZoneInfo("UTC"))
+        )
+
+    def _get_schedule(self, name: str) -> EnergySchedule | None:
         for schedule in self.schedules:
             if schedule.name == name:
                 return schedule
-        return self.__class__.schedules[0]
+        return None
 
     @property
     def schedule_names(self) -> list[str]:
