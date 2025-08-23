@@ -607,6 +607,10 @@ class ResourcePoolType:
     cpu_min_watts: float = 0.0
     cpu_max_watts: float = 0.0
 
+    @property
+    def has_gpu(self) -> bool:
+        return any((self.nvidia_gpu, self.amd_gpu, self.intel_gpu))
+
 
 @dataclass(frozen=True)
 class Resources:
