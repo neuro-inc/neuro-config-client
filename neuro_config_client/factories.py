@@ -11,38 +11,19 @@ from .entities import (
     AMDGPU,
     GPU,
     ACMEEnvironment,
-    AddNodePoolRequest,
     AMDGPUPreset,
     AppsConfig,
     ARecord,
-    AWSCloudProvider,
-    AWSCredentials,
-    AWSStorage,
-    AzureCloudProvider,
-    AzureCredentials,
-    AzureReplicationType,
-    AzureStorage,
-    AzureStorageTier,
     BucketsConfig,
-    CloudProvider,
-    CloudProviderOptions,
-    CloudProviderType,
     Cluster,
-    ClusterLocationType,
-    ClusterStatus,
     CredentialsConfig,
     DisksConfig,
     DNSConfig,
     DockerRegistryConfig,
-    EFSPerformanceMode,
-    EFSThroughputMode,
     EMCECSCredentials,
     EnergyConfig,
     EnergySchedule,
     EnergySchedulePeriod,
-    GoogleCloudProvider,
-    GoogleFilestoreTier,
-    GoogleStorage,
     GPUPreset,
     GrafanaCredentials,
     HelmRegistryConfig,
@@ -55,17 +36,11 @@ from .entities import (
     MinioCredentials,
     MonitoringConfig,
     NeuroAuthConfig,
-    NodePool,
-    NodePoolOptions,
-    NodeRole,
     NvidiaGPU,
     NvidiaGPUPreset,
-    OnPremCloudProvider,
     OpenStackCredentials,
     OrchestratorConfig,
     PatchClusterRequest,
-    PatchNodePoolResourcesRequest,
-    PatchNodePoolSizeRequest,
     PatchOrchestratorConfigRequest,
     PrometheusCredentials,
     RegistryConfig,
@@ -75,13 +50,8 @@ from .entities import (
     SecretsConfig,
     SentryCredentials,
     StorageConfig,
-    StorageInstance,
     TPUPreset,
     TPUResource,
-    VCDCloudProvider,
-    VCDCloudProviderOptions,
-    VCDCredentials,
-    VCDStorage,
     VolumeConfig,
 )
 
@@ -93,59 +63,11 @@ else:
 
 
 class EntityFactory:
-    @classmethod
-    def create_cloud_provider_options(
-        cls, type: CloudProviderType, payload: dict[str, Any]
-    ) -> CloudProviderOptions:
-        if type.is_vcd:
-            return cls._create_vcd_cloud_provider_options(type, payload)
-        return CloudProviderOptions(
-            type=type,
-            node_pools=[
-                cls.create_node_pool_options(p) for p in payload.get("node_pools", ())
-            ],
-        )
-
-    @classmethod
-    def _create_vcd_cloud_provider_options(
-        cls, type: CloudProviderType, payload: dict[str, Any]
-    ) -> VCDCloudProviderOptions:
-        url = payload.get("url")
-        return VCDCloudProviderOptions(
-            type=type,
-            node_pools=[
-                cls.create_node_pool_options(p) for p in payload.get("node_pools", ())
-            ],
-            url=URL(url) if url else None,
-            organization=payload.get("organization"),
-            edge_name_template=payload.get("edge_name_template"),
-            edge_external_network_name=payload.get("edge_external_network_name"),
-            catalog_name=payload.get("catalog_name"),
-            storage_profile_names=payload.get("storage_profile_names"),
-        )
-
-    @staticmethod
-    def create_node_pool_options(payload: dict[str, Any]) -> NodePoolOptions:
-        return NodePoolOptions(
-            machine_type=payload["machine_type"],
-            cpu=payload["cpu"],
-            available_cpu=payload.get("available_cpu"),
-            memory=payload["memory"],
-            available_memory=payload.get("available_memory"),
-            nvidia_gpu=payload.get("nvidia_gpu") or payload.get("gpu"),
-            nvidia_gpu_model=(
-                payload.get("nvidia_gpu_model") or payload.get("gpu_model")
-            ),
-        )
-
     def create_cluster(self, payload: dict[str, Any]) -> Cluster:
-        cloud_provider = payload.get("cloud_provider")
         credentials = payload.get("credentials")
         timezone = self._create_timezone(payload.get("timezone"))
         return Cluster(
             name=payload["name"],
-            status=ClusterStatus(payload["status"]),
-            platform_infra_image_tag=payload.get("platform_infra_image_tag"),
             location=payload.get("location"),
             logo_url=URL(logo_url) if (logo_url := payload.get("logo_url")) else None,
             orchestrator=self.create_orchestrator(payload["orchestrator"]),
@@ -158,9 +80,6 @@ class EntityFactory:
             buckets=self.create_buckets(payload["buckets"]),
             ingress=self.create_ingress(payload["ingress"]),
             dns=self.create_dns(payload["dns"]),
-            cloud_provider=(
-                self.create_cloud_provider(cloud_provider) if cloud_provider else None
-            ),
             credentials=self.create_credentials(credentials) if credentials else None,
             created_at=datetime.fromisoformat(payload["created_at"]),
             timezone=timezone,
@@ -454,192 +373,13 @@ class EntityFactory:
             additional_cors_origins=payload.get("additional_cors_origins", ()),
         )
 
-    def create_cloud_provider(self, payload: dict[str, Any]) -> CloudProvider:
-        cp_type = CloudProviderType(payload["type"].lower())
-        if cp_type == CloudProviderType.AWS:
-            return self._create_aws_cloud_provider(payload)
-        elif cp_type == CloudProviderType.GCP:
-            return self._create_google_cloud_provider(payload)
-        elif cp_type == CloudProviderType.AZURE:
-            return self._create_azure_cloud_provider(payload)
-        elif cp_type == CloudProviderType.ON_PREM:
-            return self._create_on_prem_cloud_provider(payload)
-        elif cp_type.is_vcd:
-            return self._create_vcd_cloud_provider(payload)
-        raise ValueError(f"Cloud provider '{cp_type}' is not supported")
-
-    def _create_aws_cloud_provider(self, payload: dict[str, Any]) -> CloudProvider:
-        credentials = payload["credentials"]
-        return AWSCloudProvider(
-            region=payload["region"],
-            zones=payload["zones"],
-            vpc_id=payload.get("vpc_id"),
-            credentials=AWSCredentials(
-                access_key_id=credentials["access_key_id"],
-                secret_access_key=credentials["secret_access_key"],
-            ),
-            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
-            storage=self._create_aws_storage(payload["storage"]),
-        )
-
-    def create_node_pool(self, payload: dict[str, Any]) -> NodePool:
-        price_value = payload.get("price")
-        price = Decimal(price_value) if price_value is not None else NodePool.price
-        disk_size = payload.get("disk_size", 0)
-        nvidia_gpu = payload.get("nvidia_gpu") or payload.get("gpu")
-        nvidia_gpu_model = payload.get("nvidia_gpu_model") or payload.get("gpu_model")
-        return NodePool(
-            name=payload["name"],
-            role=NodeRole(payload["role"]),
-            min_size=payload["min_size"],
-            max_size=payload["max_size"],
-            cpu=payload["cpu"],
-            available_cpu=payload["available_cpu"],
-            memory=payload["memory"],
-            available_memory=payload["available_memory"],
-            disk_size=disk_size,
-            available_disk_size=payload.get("available_disk_size", disk_size),
-            disk_type=payload.get("disk_type", NodePool.disk_type),
-            gpu=nvidia_gpu,
-            gpu_model=nvidia_gpu_model,
-            nvidia_gpu=nvidia_gpu,
-            nvidia_gpu_model=nvidia_gpu_model,
-            amd_gpu=payload.get("amd_gpu"),
-            amd_gpu_model=payload.get("amd_gpu_model"),
-            intel_gpu=payload.get("intel_gpu"),
-            intel_gpu_model=payload.get("intel_gpu_model"),
-            price=price,
-            currency=payload.get("currency", NodePool.currency),
-            machine_type=payload.get("machine_type"),
-            idle_size=payload.get("idle_size", NodePool.idle_size),
-            is_preemptible=payload.get("is_preemptible", NodePool.is_preemptible),
-            zones=payload.get("zones", NodePool.zones),
-            cpu_min_watts=payload.get("cpu_min_watts", NodePool.cpu_min_watts),
-            cpu_max_watts=payload.get("cpu_max_watts", NodePool.cpu_max_watts),
-        )
-
-    def _create_aws_storage(self, payload: dict[str, Any]) -> AWSStorage:
-        result = AWSStorage(
-            description=payload["description"],
-            performance_mode=EFSPerformanceMode(payload["performance_mode"]),
-            throughput_mode=EFSThroughputMode(payload["throughput_mode"]),
-            instances=[self._create_storage_instance(p) for p in payload["instances"]],
-        )
-        return result
-
-    def _create_google_cloud_provider(self, payload: dict[str, Any]) -> CloudProvider:
-        return GoogleCloudProvider(
-            location_type=ClusterLocationType(payload["location_type"]),
-            region=payload["region"],
-            zones=payload.get("zones", ()),
-            project=payload["project"],
-            credentials=payload["credentials"],
-            tpu_enabled=payload.get("tpu_enabled", False),
-            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
-            storage=self._create_google_storage(payload["storage"]),
-        )
-
-    def _create_google_storage(self, payload: dict[str, Any]) -> GoogleStorage:
-        result = GoogleStorage(
-            description=payload["description"],
-            tier=GoogleFilestoreTier(payload["tier"]),
-            instances=[self._create_storage_instance(p) for p in payload["instances"]],
-        )
-        return result
-
-    def _create_azure_cloud_provider(self, payload: dict[str, Any]) -> CloudProvider:
-        credentials = payload["credentials"]
-        return AzureCloudProvider(
-            region=payload["region"],
-            resource_group=payload["resource_group"],
-            virtual_network_cidr=payload.get("virtual_network_cidr"),
-            credentials=AzureCredentials(
-                subscription_id=credentials["subscription_id"],
-                tenant_id=credentials["tenant_id"],
-                client_id=credentials["client_id"],
-                client_secret=credentials["client_secret"],
-            ),
-            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
-            storage=self._create_azure_storage(payload["storage"]),
-        )
-
-    def _create_azure_storage(self, payload: dict[str, Any]) -> AzureStorage:
-        result = AzureStorage(
-            description=payload["description"],
-            replication_type=AzureReplicationType(payload["replication_type"]),
-            tier=AzureStorageTier(payload["tier"]),
-            instances=[self._create_storage_instance(p) for p in payload["instances"]],
-        )
-        return result
-
-    def _create_on_prem_cloud_provider(self, payload: dict[str, Any]) -> CloudProvider:
-        credentials = None
-        if "credentials" in payload:
-            if "token" in payload["credentials"]:
-                credentials = KubernetesCredentials(
-                    ca_data=payload["credentials"]["ca_data"],
-                    token=payload["credentials"]["token"],
-                )
-            if "client_key_data" in payload["credentials"]:
-                credentials = KubernetesCredentials(
-                    ca_data=payload["credentials"]["ca_data"],
-                    client_key_data=payload["credentials"]["client_key_data"],
-                    client_cert_data=payload["credentials"]["client_cert_data"],
-                )
-        return OnPremCloudProvider(
-            kubernetes_url=(
-                URL(payload["kubernetes_url"]) if "kubernetes_url" in payload else None
-            ),
-            credentials=credentials,
-            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
-            storage=None,
-        )
-
-    def _create_vcd_cloud_provider(self, payload: dict[str, Any]) -> CloudProvider:
-        cp_type = CloudProviderType(payload["type"])
-        credentials = payload["credentials"]
-        organization = payload["organization"]
-        virtual_data_center = payload["virtual_data_center"]
-        return VCDCloudProvider(
-            _type=cp_type,
-            url=URL(payload["url"]),
-            organization=organization,
-            virtual_data_center=virtual_data_center,
-            edge_name=payload["edge_name"],
-            edge_external_network_name=payload["edge_external_network_name"],
-            edge_public_ip=payload["edge_public_ip"],
-            catalog_name=payload["catalog_name"],
-            credentials=VCDCredentials(
-                user=credentials["user"],
-                password=credentials["password"],
-                ssh_password=credentials.get("ssh_password"),
-            ),
-            node_pools=[self.create_node_pool(p) for p in payload["node_pools"]],
-            storage=self._create_vcd_storage(payload["storage"]),
-        )
-
-    def _create_vcd_storage(self, payload: dict[str, Any]) -> VCDStorage:
-        result = VCDStorage(
-            description=payload["description"],
-            profile_name=payload["profile_name"],
-            size=payload["size"],
-            instances=[self._create_storage_instance(p) for p in payload["instances"]],
-        )
-        return result
-
-    def _create_storage_instance(self, payload: dict[str, Any]) -> StorageInstance:
-        return StorageInstance(
-            name=payload["name"],
-            size=payload.get("size"),
-            ready=payload["ready"],
-        )
-
     @classmethod
     def create_credentials(
         cls, payload: dict[str, Any] | None
     ) -> CredentialsConfig | None:
         if not payload:
             return None
+        kubernetes = payload.get("kubernetes")
         grafana = payload.get("grafana")
         prometheus = payload.get("prometheus")
         sentry = payload.get("sentry")
@@ -651,6 +391,9 @@ class EntityFactory:
             neuro=cls._create_neuro_auth(payload["neuro"]),
             neuro_registry=cls._create_docker_registry(payload["neuro_registry"]),
             neuro_helm=cls._create_helm_registry(payload["neuro_helm"]),
+            kubernetes=(
+                cls._create_kubernetes_credentials(kubernetes) if kubernetes else None
+            ),
             grafana=cls._create_grafana_credentials(grafana) if grafana else None,
             prometheus=(
                 cls._create_promtheus_credentials(prometheus) if prometheus else None
@@ -687,6 +430,27 @@ class EntityFactory:
             url=URL(payload["url"]),
             token=payload["token"],
         )
+
+    @classmethod
+    def _create_kubernetes_credentials(
+        self, payload: dict[str, Any]
+    ) -> KubernetesCredentials:
+        url = URL(payload["url"])
+        ca_data = payload["ca_data"]
+        if "token" in payload:
+            return KubernetesCredentials(
+                url=url,
+                ca_data=ca_data,
+                token=payload["token"],
+            )
+        if "client_key_data" in payload:
+            return KubernetesCredentials(
+                url=url,
+                ca_data=ca_data,
+                client_key_data=payload["client_key_data"],
+                client_cert_data=payload["client_cert_data"],
+            )
+        return KubernetesCredentials(url=url, ca_data=ca_data)
 
     @classmethod
     def _create_grafana_credentials(cls, payload: dict[str, Any]) -> GrafanaCredentials:
@@ -836,6 +600,10 @@ class PayloadFactory:
             "neuro_helm": cls._create_helm_registry(credentials.neuro_helm),
             "neuro_registry": cls._create_docker_registry(credentials.neuro_registry),
         }
+        if credentials.kubernetes is not None:
+            result["kubernetes"] = cls._create_kubernetes_credentials(
+                credentials.kubernetes
+            )
         if credentials.grafana is not None:
             result["grafana"] = cls._create_grafana_credentials(credentials.grafana)
         if credentials.prometheus is not None:
@@ -886,6 +654,24 @@ class PayloadFactory:
             "username": grafana_credentials.username,
             "password": grafana_credentials.password,
         }
+        return result
+
+    @classmethod
+    def _create_kubernetes_credentials(
+        cls, kubernetes_credentials: KubernetesCredentials
+    ) -> dict[str, str]:
+        result = {
+            "url": str(kubernetes_credentials.url),
+            "ca_data": kubernetes_credentials.ca_data,
+        }
+        if kubernetes_credentials.token:
+            result["token"] = kubernetes_credentials.token
+        if (
+            kubernetes_credentials.client_cert_data
+            and kubernetes_credentials.client_key_data
+        ):
+            result["client_cert_data"] = kubernetes_credentials.client_cert_data
+            result["client_key_data"] = kubernetes_credentials.client_key_data
         return result
 
     @classmethod
@@ -1229,113 +1015,6 @@ class PayloadFactory:
         if ingress.additional_cors_origins:
             result["additional_cors_origins"] = ingress.additional_cors_origins
         return result
-
-    @classmethod
-    def create_add_node_pool_request(
-        cls, node_pool: AddNodePoolRequest
-    ) -> dict[str, Any]:
-        result: dict[str, Any] = {
-            "name": node_pool.name,
-            "role": node_pool.role.value,
-            "min_size": node_pool.min_size,
-            "max_size": node_pool.max_size,
-        }
-        if node_pool.idle_size:
-            result["idle_size"] = node_pool.idle_size
-        if node_pool.machine_type:
-            result["machine_type"] = node_pool.machine_type
-        if node_pool.cpu:
-            result["cpu"] = node_pool.cpu
-        if node_pool.available_cpu:
-            result["available_cpu"] = node_pool.available_cpu
-        if node_pool.memory:
-            result["memory"] = node_pool.memory
-        if node_pool.available_memory:
-            result["available_memory"] = node_pool.available_memory
-        if node_pool.disk_size:
-            result["disk_size"] = node_pool.disk_size
-        if node_pool.available_disk_size:
-            result["available_disk_size"] = node_pool.available_disk_size
-        if node_pool.disk_type:
-            result["disk_type"] = node_pool.disk_type
-        if node_pool.nvidia_gpu:
-            result["nvidia_gpu"] = node_pool.nvidia_gpu
-        if node_pool.nvidia_gpu_model:
-            result["nvidia_gpu_model"] = node_pool.nvidia_gpu_model
-        if node_pool.amd_gpu:
-            result["amd_gpu"] = node_pool.amd_gpu
-        if node_pool.amd_gpu_model:
-            result["amd_gpu_model"] = node_pool.amd_gpu_model
-        if node_pool.intel_gpu:
-            result["intel_gpu"] = node_pool.intel_gpu
-        if node_pool.intel_gpu_model:
-            result["intel_gpu_model"] = node_pool.intel_gpu_model
-        if node_pool.price is not None:
-            result["price"] = str(node_pool.price)
-        if node_pool.currency:
-            result["currency"] = node_pool.currency
-        if node_pool.is_preemptible:
-            result["is_preemptible"] = node_pool.is_preemptible
-        if node_pool.zones:
-            result["zones"] = node_pool.zones
-        if node_pool.cpu_min_watts is not None:
-            result["cpu_min_watts"] = node_pool.cpu_min_watts
-        if node_pool.cpu_max_watts is not None:
-            result["cpu_max_watts"] = node_pool.cpu_max_watts
-        return result
-
-    @classmethod
-    def create_patch_node_pool_request(
-        cls, request: PatchNodePoolSizeRequest | PatchNodePoolResourcesRequest
-    ) -> dict[str, Any]:
-        if isinstance(request, PatchNodePoolSizeRequest):
-            return cls._create_patch_node_pool_size_request(request)
-        elif isinstance(request, PatchNodePoolResourcesRequest):
-            return cls._create_patch_node_pool_resources_request(request)
-        msg = "Request type is not supported"
-        raise ValueError(msg)
-
-    @classmethod
-    def _create_patch_node_pool_size_request(
-        cls, request: PatchNodePoolSizeRequest
-    ) -> dict[str, Any]:
-        payload: dict[str, Any] = {}
-        if request.min_size is not None:
-            payload["min_size"] = request.min_size
-        if request.max_size is not None:
-            payload["max_size"] = request.max_size
-        if request.idle_size is not None:
-            payload["idle_size"] = request.idle_size
-        return payload
-
-    @classmethod
-    def _create_patch_node_pool_resources_request(
-        cls, request: PatchNodePoolResourcesRequest
-    ) -> dict[str, Any]:
-        payload: dict[str, Any] = {
-            "cpu": request.cpu,
-            "available_cpu": request.available_cpu,
-            "memory": request.memory,
-            "available_memory": request.available_memory,
-            "disk_size": request.disk_size,
-            "available_disk_size": request.available_disk_size,
-        }
-        if request.nvidia_gpu:
-            payload["nvidia_gpu"] = request.nvidia_gpu
-            payload["nvidia_gpu_model"] = request.nvidia_gpu_model
-        if request.amd_gpu:
-            payload["amd_gpu"] = request.amd_gpu
-            payload["amd_gpu_model"] = request.amd_gpu_model
-        if request.intel_gpu:
-            payload["intel_gpu"] = request.intel_gpu
-            payload["intel_gpu_model"] = request.intel_gpu_model
-        if request.machine_type:
-            payload["machine_type"] = request.machine_type
-        if request.min_size is not None:
-            payload["min_size"] = request.min_size
-        if request.max_size is not None:
-            payload["max_size"] = request.max_size
-        return payload
 
     @classmethod
     def create_energy(cls, energy: EnergyConfig) -> dict[str, Any]:

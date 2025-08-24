@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import abc
 import enum
 import sys
 from collections.abc import Sequence
@@ -25,337 +24,13 @@ class NotificationType(str, enum.Enum):
     CLUSTER_UPDATE_FAILED = "cluster_update_failed"
 
 
-class CloudProviderType(str, enum.Enum):
-    AWS = "aws"
-    GCP = "gcp"
-    AZURE = "azure"
-    ON_PREM = "on_prem"
-    VCD_MTS = "vcd_mts"
-    VCD_SELECTEL = "vcd_selectel"
-
-    @property
-    def is_vcd(self) -> bool:
-        return self.startswith("vcd_")
-
-
-@dataclass(frozen=True)
-class CloudProviderOptions:
-    type: CloudProviderType
-    node_pools: list[NodePoolOptions]
-
-
-@dataclass(frozen=True)
-class VCDCloudProviderOptions(CloudProviderOptions):
-    url: URL | None = None
-    organization: str | None = None
-    edge_name_template: str | None = None
-    edge_external_network_name: str | None = None
-    catalog_name: str | None = None
-    storage_profile_names: list[str] | None = None
-
-
-@dataclass(frozen=True)
-class NodePoolOptions:
-    machine_type: str
-    cpu: float
-    memory: int
-    available_cpu: float | None = None
-    available_memory: int | None = None
-    nvidia_gpu: int | None = None
-    nvidia_gpu_model: str | None = None
-
-
-class NodeRole(str, enum.Enum):
-    KUBERNETES = "kubernetes"
-    PLATFORM = "platform"
-    PLATFORM_JOB = "platform_job"
-
-
-@dataclass(frozen=True)
-class NodePool:
-    name: str
-
-    cpu: float
-    available_cpu: float
-    memory: int
-    available_memory: int
-    disk_size: int
-    available_disk_size: int
-
-    role: NodeRole = NodeRole.PLATFORM_JOB
-
-    min_size: int = 0
-    max_size: int = 1
-    idle_size: int | None = None
-
-    machine_type: str | None = None
-
-    disk_type: str | None = None
-
-    gpu: int | None = None  # Deprecated. Use nvidia_gpu instead
-    gpu_model: str | None = None  # Deprecated. Use nvidia_gpu_model instead
-    nvidia_gpu: int | None = None
-    nvidia_gpu_model: str | None = None
-    amd_gpu: int | None = None
-    amd_gpu_model: str | None = None
-    intel_gpu: int | None = None
-    intel_gpu_model: str | None = None
-
-    price: Decimal | None = None
-    currency: str | None = None
-
-    is_preemptible: bool | None = None
-
-    zones: tuple[str, ...] | None = None
-
-    cpu_min_watts: float = 0.0
-    cpu_max_watts: float = 0.0
-
-
-@dataclass(frozen=True)
-class AddNodePoolRequest:
-    name: str
-
-    min_size: int
-    max_size: int
-    idle_size: int | None = None
-
-    role: NodeRole = NodeRole.PLATFORM_JOB
-
-    machine_type: str | None = None
-
-    cpu: float | None = None
-    available_cpu: float | None = None
-    memory: int | None = None
-    available_memory: int | None = None
-    disk_type: str | None = None
-    disk_size: int | None = None
-    available_disk_size: int | None = None
-
-    nvidia_gpu: int | None = None
-    nvidia_gpu_model: str | None = None
-    amd_gpu: int | None = None
-    amd_gpu_model: str | None = None
-    intel_gpu: int | None = None
-    intel_gpu_model: str | None = None
-
-    price: Decimal | None = None
-    currency: str | None = None
-
-    is_preemptible: bool | None = None
-
-    zones: tuple[str, ...] | None = None
-
-    cpu_min_watts: float | None = None
-    cpu_max_watts: float | None = None
-
-
-PutNodePoolRequest = AddNodePoolRequest
-
-
-@dataclass(frozen=True)
-class PatchNodePoolSizeRequest:
-    min_size: int | None = None
-    max_size: int | None = None
-    idle_size: int | None = None
-
-
-@dataclass(frozen=True)
-class PatchNodePoolResourcesRequest:
-    cpu: float
-    available_cpu: float
-    memory: int
-    available_memory: int
-    disk_size: int
-    available_disk_size: int
-
-    nvidia_gpu: int | None = None
-    nvidia_gpu_model: str | None = None
-    amd_gpu: int | None = None
-    amd_gpu_model: str | None = None
-    intel_gpu: int | None = None
-    intel_gpu_model: str | None = None
-
-    machine_type: str | None = None
-
-    min_size: int | None = None
-    max_size: int | None = None
-
-
-@dataclass(frozen=True)
-class StorageInstance:
-    name: str
-    size: int | None = None
-    ready: bool = False
-
-
-@dataclass(frozen=True)
-class Storage:
-    instances: Sequence[StorageInstance]
-
-
-@dataclass(frozen=True)
-class CloudProvider(abc.ABC):
-    node_pools: Sequence[NodePool]
-    storage: Storage | None
-
-    @property
-    @abc.abstractmethod
-    def type(self) -> CloudProviderType:
-        pass
-
-
-@dataclass(frozen=True, repr=False)
-class AWSCredentials:
-    access_key_id: str
-    secret_access_key: str = field(repr=False)
-
-
-class EFSPerformanceMode(str, enum.Enum):
-    GENERAL_PURPOSE = "generalPurpose"
-    MAX_IO = "maxIO"
-
-
-class EFSThroughputMode(str, enum.Enum):
-    BURSTING = "bursting"
-    PROVISIONED = "provisioned"
-
-
-@dataclass(frozen=True)
-class AWSStorage(Storage):
-    description: str
-    performance_mode: EFSPerformanceMode
-    throughput_mode: EFSThroughputMode
-    provisioned_throughput_mibps: int | None = None
-
-
-@dataclass(frozen=True)
-class AWSCloudProvider(CloudProvider):
-    region: str
-    zones: Sequence[str]
-    credentials: AWSCredentials = field(repr=False)
-    storage: AWSStorage | None
-    vpc_id: str | None = None
-
-    @property
-    def type(self) -> CloudProviderType:
-        return CloudProviderType.AWS
-
-
-class ClusterLocationType(str, enum.Enum):
-    ZONAL = "zonal"
-    REGIONAL = "regional"
-
-
-class GoogleFilestoreTier(str, enum.Enum):
-    STANDARD = "STANDARD"
-    PREMIUM = "PREMIUM"
-
-
-@dataclass(frozen=True)
-class GoogleStorage(Storage):
-    description: str
-    tier: GoogleFilestoreTier
-
-
-@dataclass(frozen=True)
-class GoogleCloudProvider(CloudProvider):
-    region: str
-    zones: Sequence[str]
-    project: str
-    credentials: dict[str, str] = field(repr=False)
-    location_type: ClusterLocationType = ClusterLocationType.ZONAL
-    tpu_enabled: bool = False
-
-    @property
-    def type(self) -> CloudProviderType:
-        return CloudProviderType.GCP
-
-
-@dataclass(frozen=True)
-class AzureCredentials:
-    subscription_id: str
-    tenant_id: str
-    client_id: str
-    client_secret: str = field(repr=False)
-
-
-class AzureStorageTier(str, enum.Enum):
-    STANDARD = "Standard"
-    PREMIUM = "Premium"
-
-
-class AzureReplicationType(str, enum.Enum):
-    LRS = "LRS"
-    ZRS = "ZRS"
-
-
-@dataclass(frozen=True)
-class AzureStorage(Storage):
-    description: str
-    tier: AzureStorageTier
-    replication_type: AzureReplicationType
-
-
-@dataclass(frozen=True)
-class AzureCloudProvider(CloudProvider):
-    region: str
-    resource_group: str
-    credentials: AzureCredentials
-    virtual_network_cidr: str | None = None
-
-    @property
-    def type(self) -> CloudProviderType:
-        return CloudProviderType.AZURE
-
-
 @dataclass(frozen=True)
 class KubernetesCredentials:
+    url: URL
     ca_data: str
     token: str | None = field(repr=False, default=None)
     client_key_data: str | None = field(repr=False, default=None)
     client_cert_data: str | None = field(repr=False, default=None)
-
-
-@dataclass(frozen=True)
-class OnPremCloudProvider(CloudProvider):
-    kubernetes_url: URL | None = None
-    credentials: KubernetesCredentials | None = None
-
-    @property
-    def type(self) -> CloudProviderType:
-        return CloudProviderType.ON_PREM
-
-
-@dataclass(frozen=True)
-class VCDCredentials:
-    user: str
-    password: str = field(repr=False)
-    ssh_password: str = field(repr=False)
-
-
-@dataclass(frozen=True)
-class VCDStorage(Storage):
-    description: str
-    profile_name: str
-    size: int
-
-
-@dataclass(frozen=True)
-class VCDCloudProvider(CloudProvider):
-    _type: CloudProviderType
-    url: URL
-    organization: str
-    virtual_data_center: str
-    edge_name: str
-    edge_public_ip: str
-    edge_external_network_name: str
-    catalog_name: str
-    credentials: VCDCredentials
-
-    @property
-    def type(self) -> CloudProviderType:
-        return self._type
 
 
 @dataclass(frozen=True)
@@ -431,6 +106,7 @@ class CredentialsConfig:
     neuro: NeuroAuthConfig
     neuro_helm: HelmRegistryConfig
     neuro_registry: DockerRegistryConfig
+    kubernetes: KubernetesCredentials | None = None
     grafana: GrafanaCredentials | None = None
     prometheus: PrometheusCredentials | None = None
     sentry: SentryCredentials | None = None
@@ -638,8 +314,8 @@ class IdleJobConfig:
 class OrchestratorConfig:
     job_hostname_template: str
     job_fallback_hostname: str
-    job_schedule_timeout_s: float
-    job_schedule_scale_up_timeout_s: float
+    job_schedule_timeout_s: float = 300
+    job_schedule_scale_up_timeout_s: float = 300
     is_http_ingress_secure: bool = True
     resource_pool_types: Sequence[ResourcePoolType] = ()
     resource_presets: Sequence[ResourcePreset] = ()
@@ -697,16 +373,6 @@ class ARecord:
 class DNSConfig:
     name: str
     a_records: Sequence[ARecord] = ()
-
-
-class ClusterStatus(str, enum.Enum):
-    BLANK = "blank"
-    DEPLOYING = "deploying"
-    DESTROYING = "destroying"
-    TESTING = "testing"
-    DEPLOYED = "deployed"
-    DESTROYED = "destroyed"
-    FAILED = "failed"
 
 
 @dataclass(frozen=True)
@@ -791,7 +457,6 @@ class AppsConfig:
 @dataclass(frozen=True)
 class Cluster:
     name: str
-    status: ClusterStatus
     created_at: datetime
     orchestrator: OrchestratorConfig
     storage: StorageConfig
@@ -809,8 +474,6 @@ class Cluster:
     logo_url: URL | None = None
     timezone: tzinfo = ZoneInfo("UTC")
     credentials: CredentialsConfig | None = None
-    platform_infra_image_tag: str | None = None
-    cloud_provider: CloudProvider | None = None
 
 
 @dataclass(frozen=True)
