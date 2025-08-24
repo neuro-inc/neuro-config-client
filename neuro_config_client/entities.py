@@ -134,6 +134,13 @@ class StorageConfig:
 class RegistryConfig:
     url: URL
 
+    @property
+    def host(self) -> str:
+        """Returns registry hostname with port (if specified)"""
+        port = self.url.explicit_port
+        suffix = f":{port}" if port is not None else ""
+        return f"{self.url.host}{suffix}"
+
 
 @dataclass(frozen=True)
 class MonitoringConfig:
@@ -217,6 +224,7 @@ class ResourcePreset:
     is_external_job: bool = False
     resource_pool_names: Sequence[str] = ()
     available_resource_pool_names: Sequence[str] = ()
+    capacity: int = 0
 
 
 @dataclass(frozen=True)
@@ -275,6 +283,10 @@ class ResourcePoolType:
     cpu_min_watts: float = 0.0
     cpu_max_watts: float = 0.0
 
+    @property
+    def has_gpu(self) -> bool:
+        return any((self.nvidia_gpu, self.amd_gpu, self.intel_gpu))
+
 
 @dataclass(frozen=True)
 class Resources:
@@ -311,6 +323,26 @@ class OrchestratorConfig:
     allow_job_priority: bool = False
     pre_pull_images: Sequence[str] = ()
     idle_jobs: Sequence[IdleJobConfig] = ()
+
+    @property
+    def allow_scheduler_enabled_job(self) -> bool:
+        for preset in self.resource_presets:
+            if preset.scheduler_enabled:
+                return True
+        return False
+
+    @property
+    def tpu_resources(self) -> Sequence[TPUResource]:
+        return tuple(
+            resource.tpu for resource in self.resource_pool_types if resource.tpu
+        )
+
+    @property
+    def tpu_ipv4_cidr_block(self) -> str | None:
+        tpus = self.tpu_resources
+        if not tpus:
+            return None
+        return tpus[0].ipv4_cidr_block
 
 
 @dataclass
@@ -350,6 +382,17 @@ class EnergySchedulePeriod:
     start_time: time
     end_time: time
 
+    @classmethod
+    def create_full_day(cls, *, weekday: int, timezone: tzinfo) -> EnergySchedulePeriod:
+        return cls(
+            weekday=weekday,
+            start_time=time.min.replace(tzinfo=timezone),
+            end_time=time.max.replace(tzinfo=timezone),
+        )
+
+
+DEFAULT_ENERGY_SCHEDULE_NAME = "default"
+
 
 @dataclass(frozen=True)
 class EnergySchedule:
@@ -357,11 +400,52 @@ class EnergySchedule:
     periods: Sequence[EnergySchedulePeriod] = ()
     price_per_kwh: Decimal = Decimal("0")
 
+    @classmethod
+    def create_default(
+        cls, *, timezone: tzinfo, name: str = DEFAULT_ENERGY_SCHEDULE_NAME
+    ) -> EnergySchedule:
+        return cls(
+            name=name,
+            periods=[
+                EnergySchedulePeriod.create_full_day(weekday=weekday, timezone=timezone)
+                for weekday in range(1, 8)
+            ],
+        )
+
+    def check_time(self, current_time: datetime) -> bool:
+        return any(self._is_time_within_period(current_time, p) for p in self.periods)
+
+    def _is_time_within_period(
+        self, time_: datetime, period: EnergySchedulePeriod
+    ) -> bool:
+        time_ = time_.astimezone(period.start_time.tzinfo)
+        return (
+            period.weekday == time_.isoweekday()
+            and period.start_time <= time_.timetz() < period.end_time
+        )
+
 
 @dataclass(frozen=True)
 class EnergyConfig:
     co2_grams_eq_per_kwh: float = 0
     schedules: Sequence[EnergySchedule] = ()
+
+    def get_schedule(self, name: str) -> EnergySchedule:
+        return (
+            self._get_schedule(name)
+            or self._get_schedule(DEFAULT_ENERGY_SCHEDULE_NAME)
+            or EnergySchedule.create_default(timezone=ZoneInfo("UTC"))
+        )
+
+    def _get_schedule(self, name: str) -> EnergySchedule | None:
+        for schedule in self.schedules:
+            if schedule.name == name:
+                return schedule
+        return None
+
+    @property
+    def schedule_names(self) -> list[str]:
+        return [schedule.name for schedule in self.schedules]
 
 
 @dataclass(frozen=True)
@@ -374,24 +458,28 @@ class AppsConfig:
 class Cluster:
     name: str
     created_at: datetime
+    orchestrator: OrchestratorConfig
+    storage: StorageConfig
+    registry: RegistryConfig
+    monitoring: MonitoringConfig
+    secrets: SecretsConfig
+    metrics: MetricsConfig
+    dns: DNSConfig
+    disks: DisksConfig
+    buckets: BucketsConfig
+    ingress: IngressConfig
+    energy: EnergyConfig
+    apps: AppsConfig
+    location: str | None = None
+    logo_url: URL | None = None
     timezone: tzinfo = ZoneInfo("UTC")
     credentials: CredentialsConfig | None = None
-    orchestrator: OrchestratorConfig | None = None
-    storage: StorageConfig | None = None
-    registry: RegistryConfig | None = None
-    monitoring: MonitoringConfig | None = None
-    secrets: SecretsConfig | None = None
-    metrics: MetricsConfig | None = None
-    dns: DNSConfig | None = None
-    disks: DisksConfig | None = None
-    buckets: BucketsConfig | None = None
-    ingress: IngressConfig | None = None
-    energy: EnergyConfig | None = None
-    apps: AppsConfig | None = None
 
 
 @dataclass(frozen=True)
 class PatchClusterRequest:
+    location: str | None = None
+    logo_url: URL | None = None
     credentials: CredentialsConfig | None = None
     storage: StorageConfig | None = None
     registry: RegistryConfig | None = None

@@ -17,7 +17,6 @@ from neuro_config_client.entities import (
     AppsConfig,
     ARecord,
     BucketsConfig,
-    Cluster,
     CredentialsConfig,
     DisksConfig,
     DNSConfig,
@@ -84,12 +83,84 @@ class TestEntityFactory:
     def factory(self) -> EntityFactory:
         return EntityFactory()
 
-    def test_create_empty_cluster(self, factory: EntityFactory) -> None:
+    def test_create_cluster_defaults(self, factory: EntityFactory) -> None:
         result = factory.create_cluster(
-            {"name": "default", "status": "blank", "created_at": str(datetime.now())}
+            {
+                "name": "default",
+                "status": "blank",
+                "orchestrator": {
+                    "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
+                    "job_fallback_hostname": "default.jobs-dev.neu.ro",
+                    "job_schedule_timeout_s": 1,
+                    "job_schedule_scale_up_timeout_s": 2,
+                    "is_http_ingress_secure": False,
+                    "resource_pool_types": [{"name": "node-pool"}],
+                },
+                "storage": {"url": "https://storage-dev.neu.ro"},
+                "registry": {
+                    "url": "https://registry-dev.neu.ro",
+                    "email": "dev@neu.ro",
+                },
+                "monitoring": {"url": "https://monitoring-dev.neu.ro"},
+                "secrets": {"url": "https://secrets-dev.neu.ro"},
+                "metrics": {"url": "https://secrets-dev.neu.ro"},
+                "disks": {
+                    "url": "https://secrets-dev.neu.ro",
+                    "storage_limit_per_user": 1024,
+                },
+                "ingress": {"acme_environment": "production"},
+                "dns": {
+                    "name": "neu.ro",
+                    "a_records": [
+                        {"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}
+                    ],
+                },
+                "buckets": {
+                    "url": "https://buckets-dev.neu.ro",
+                    "disable_creation": True,
+                },
+                "energy": {
+                    "co2_grams_eq_per_kwh": 100,
+                    "schedules": [
+                        {"name": "default", "price_per_kwh": "123.4"},
+                        {
+                            "name": "green",
+                            "price_per_kwh": "123.4",
+                            "periods": [
+                                {
+                                    "weekday": 1,
+                                    "start_time": "23:00",
+                                    "end_time": "23:59",
+                                }
+                            ],
+                        },
+                    ],
+                },
+                "apps": {
+                    "apps_hostname_templates": ["{app_name}.apps.default.org.neu.ro"],
+                    "app_proxy_url": "outputs-proxy.apps.default.org.neu.ro",
+                },
+                "created_at": str(datetime.now()),
+            }
         )
 
-        assert result == Cluster(name="default", created_at=mock.ANY)
+        assert result.name == "default"
+        assert result.timezone == ZoneInfo("UTC")
+        assert result.location is None
+        assert result.logo_url is None
+        assert result.orchestrator
+        assert result.storage
+        assert result.registry
+        assert result.monitoring
+        assert result.secrets
+        assert result.metrics
+        assert result.disks
+        assert result.ingress
+        assert result.dns
+        assert result.buckets
+        assert result.energy
+        assert result.apps
+        assert result.created_at
 
     def test_create_cluster(
         self,
@@ -100,6 +171,8 @@ class TestEntityFactory:
             {
                 "name": "default",
                 "status": "blank",
+                "location": "us",
+                "logo_url": "https://logo",
                 "timezone": "America/Los_Angeles",
                 "orchestrator": {
                     "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
@@ -128,6 +201,31 @@ class TestEntityFactory:
                         {"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}
                     ],
                 },
+                "buckets": {
+                    "url": "https://buckets-dev.neu.ro",
+                    "disable_creation": True,
+                },
+                "energy": {
+                    "co2_grams_eq_per_kwh": 100,
+                    "schedules": [
+                        {"name": "default", "price_per_kwh": "123.4"},
+                        {
+                            "name": "green",
+                            "price_per_kwh": "123.4",
+                            "periods": [
+                                {
+                                    "weekday": 1,
+                                    "start_time": "23:00",
+                                    "end_time": "23:59",
+                                }
+                            ],
+                        },
+                    ],
+                },
+                "apps": {
+                    "apps_hostname_templates": ["{app_name}.apps.default.org.neu.ro"],
+                    "app_proxy_url": "outputs-proxy.apps.default.org.neu.ro",
+                },
                 "credentials": credentials,
                 "created_at": str(datetime.now()),
             }
@@ -135,17 +233,9 @@ class TestEntityFactory:
 
         assert result.name == "default"
         assert result.timezone == ZoneInfo("America/Los_Angeles")
-        assert result.orchestrator
-        assert result.storage
-        assert result.registry
-        assert result.monitoring
-        assert result.secrets
-        assert result.metrics
-        assert result.disks
-        assert result.ingress
-        assert result.dns
+        assert result.location == "us"
+        assert result.logo_url == URL("https://logo")
         assert result.credentials
-        assert result.created_at
 
     def test_create_cluster__invalid_timezone(self, factory: EntityFactory) -> None:
         with pytest.raises(ValueError, match="invalid timezone"):
@@ -386,6 +476,7 @@ class TestEntityFactory:
                 "resource_pool_names": ["gpu"],
                 "available_resource_pool_names": ["available-gpu"],
                 "is_external_job": True,
+                "capacity": 10,
             }
         )
 
@@ -407,6 +498,7 @@ class TestEntityFactory:
             resource_pool_names=["gpu"],
             available_resource_pool_names=["available-gpu"],
             is_external_job=True,
+            capacity=10,
         )
 
     def test_create_storage(self, factory: EntityFactory) -> None:
@@ -748,7 +840,7 @@ class TestEntityFactory:
                         "name": "green",
                         "price_per_kwh": "123.4",
                         "periods": [
-                            {"weekday": 1, "start_time": "23:00", "end_time": "00:00"}
+                            {"weekday": 1, "start_time": "23:00", "end_time": "23:59"}
                         ],
                     },
                 ],
@@ -771,7 +863,7 @@ class TestEntityFactory:
                         EnergySchedulePeriod(
                             weekday=1,
                             start_time=time(hour=23, minute=0, tzinfo=timezone),
-                            end_time=time(hour=0, minute=0, tzinfo=timezone),
+                            end_time=time(hour=23, minute=59, tzinfo=timezone),
                         )
                     ],
                 ),
@@ -798,65 +890,6 @@ class TestEntityFactory:
         result = factory.create_apps(apps_dict)
         assert result == apps
 
-    def test_create_cluster_with_apps(
-        self,
-        factory: EntityFactory,
-        credentials: dict[str, Any],
-        apps_dict: dict[str, Any],
-    ) -> None:
-        result = factory.create_cluster(
-            {
-                "name": "default",
-                "status": "blank",
-                "timezone": "America/Los_Angeles",
-                "orchestrator": {
-                    "job_hostname_template": "{job_id}.jobs-dev.neu.ro",
-                    "job_fallback_hostname": "default.jobs-dev.neu.ro",
-                    "job_schedule_timeout_s": 1,
-                    "job_schedule_scale_up_timeout_s": 2,
-                    "is_http_ingress_secure": False,
-                },
-                "storage": {"url": "https://storage-dev.neu.ro"},
-                "registry": {"url": "https://registry-dev.neu.ro"},
-                "monitoring": {"url": "https://monitoring-dev.neu.ro"},
-                "secrets": {"url": "https://secrets-dev.neu.ro"},
-                "metrics": {"url": "https://secrets-dev.neu.ro"},
-                "disks": {
-                    "url": "https://secrets-dev.neu.ro",
-                    "storage_limit_per_user": 1024,
-                },
-                "ingress": {"acme_environment": "production"},
-                "dns": {
-                    "name": "neu.ro",
-                    "a_records": [
-                        {"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}
-                    ],
-                },
-                "credentials": credentials,
-                "apps": apps_dict,
-                "created_at": str(datetime.now()),
-            }
-        )
-
-        assert result.name == "default"
-        assert result.timezone == ZoneInfo("America/Los_Angeles")
-        assert result.orchestrator
-        assert result.storage
-        assert result.registry
-        assert result.monitoring
-        assert result.secrets
-        assert result.metrics
-        assert result.disks
-        assert result.ingress
-        assert result.dns
-        assert result.credentials
-        assert result.created_at
-        assert result.apps
-        assert result.apps.apps_hostname_templates == [
-            "{app_name}.apps.default.org.neu.ro"
-        ]
-        assert result.apps.app_proxy_url == URL("outputs-proxy.apps.default.org.neu.ro")
-
 
 class TestPayloadFactory:
     @pytest.fixture
@@ -869,6 +902,8 @@ class TestPayloadFactory:
         result = factory.create_patch_cluster_request(
             PatchClusterRequest(
                 credentials=credentials,
+                location="us",
+                logo_url=URL("https://logo"),
                 storage=StorageConfig(url=URL("https://storage-dev.neu.ro")),
                 registry=RegistryConfig(url=URL("https://registry-dev.neu.ro")),
                 orchestrator=PatchOrchestratorConfigRequest(),
@@ -888,10 +923,16 @@ class TestPayloadFactory:
                 ),
                 timezone=ZoneInfo("America/Los_Angeles"),
                 energy=EnergyConfig(co2_grams_eq_per_kwh=100),
+                apps=AppsConfig(
+                    apps_hostname_templates=["{app_name}.apps.default.org.neu.ro"],
+                    app_proxy_url=URL("outputs-proxy.apps.default.org.neu.ro"),
+                ),
             )
         )
 
         assert result == {
+            "location": "us",
+            "logo_url": "https://logo",
             "credentials": mock.ANY,
             "storage": mock.ANY,
             "registry": mock.ANY,
@@ -905,6 +946,7 @@ class TestPayloadFactory:
             "dns": mock.ANY,
             "timezone": "America/Los_Angeles",
             "energy": mock.ANY,
+            "apps": mock.ANY,
         }
 
     def test_create_patch_cluster_request_default(
@@ -1602,53 +1644,4 @@ class TestPayloadFactory:
         assert result == {
             "apps_hostname_templates": ["{app_name}.apps.default.org.neu.ro"],
             "app_proxy_url": "outputs-proxy.apps.default.org.neu.ro",
-        }
-
-    def test_create_patch_cluster_request_with_apps(
-        self, factory: PayloadFactory, credentials: CredentialsConfig, apps: AppsConfig
-    ) -> None:
-        result = factory.create_patch_cluster_request(
-            PatchClusterRequest(
-                credentials=credentials,
-                storage=StorageConfig(url=URL("https://storage-dev.neu.ro")),
-                registry=RegistryConfig(url=URL("https://registry-dev.neu.ro")),
-                orchestrator=PatchOrchestratorConfigRequest(),
-                monitoring=MonitoringConfig(url=URL("https://monitoring-dev.neu.ro")),
-                secrets=SecretsConfig(url=URL("https://secrets-dev.neu.ro")),
-                metrics=MetricsConfig(url=URL("https://metrics-dev.neu.ro")),
-                disks=DisksConfig(
-                    url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user=1024
-                ),
-                buckets=BucketsConfig(
-                    url=URL("https://buckets-dev.neu.ro"), disable_creation=True
-                ),
-                ingress=IngressConfig(acme_environment=ACMEEnvironment.PRODUCTION),
-                dns=DNSConfig(
-                    name="neu.ro",
-                    a_records=[ARecord(name="*.jobs-dev.neu.ro.", ips=["192.168.0.2"])],
-                ),
-                timezone=ZoneInfo("America/Los_Angeles"),
-                energy=EnergyConfig(co2_grams_eq_per_kwh=100),
-                apps=apps,
-            )
-        )
-
-        assert result == {
-            "credentials": mock.ANY,
-            "storage": mock.ANY,
-            "registry": mock.ANY,
-            "orchestrator": mock.ANY,
-            "monitoring": mock.ANY,
-            "secrets": mock.ANY,
-            "metrics": mock.ANY,
-            "disks": mock.ANY,
-            "buckets": mock.ANY,
-            "ingress": mock.ANY,
-            "dns": mock.ANY,
-            "timezone": "America/Los_Angeles",
-            "energy": mock.ANY,
-            "apps": {
-                "apps_hostname_templates": ["{app_name}.apps.default.org.neu.ro"],
-                "app_proxy_url": "outputs-proxy.apps.default.org.neu.ro",
-            },
         }
