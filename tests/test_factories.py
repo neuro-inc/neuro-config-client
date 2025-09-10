@@ -1270,7 +1270,6 @@ class TestPayloadFactory:
             "nvidia_gpu": {
                 "count": 1,
                 "model": nvidia_small_gpu,
-                "memory": 123,
             },
             "amd_gpu": 2,
             "amd_gpu_model": amd_small_gpu,

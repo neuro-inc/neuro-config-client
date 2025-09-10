@@ -925,8 +925,6 @@ class PayloadFactory:
         result: dict[str, Any] = {"count": gpu_preset.count}
         if gpu_preset.model:
             result["model"] = gpu_preset.model
-        if gpu_preset.memory:
-            result["memory"] = gpu_preset.memory
         return result
 
     @classmethod
