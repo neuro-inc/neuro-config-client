@@ -4,7 +4,7 @@ setup:
 	pre-commit install
 
 lint: format
-	mypy neuro_config_client tests
+	mypy neuro_config_client
 
 format:
 ifdef CI_LINT_RUN

@@ -373,7 +373,8 @@ class TestEntityFactory:
                 "available_cpu": 3.0,
                 "memory": 12 * 1024,
                 "available_memory": 10 * 1024,
-                "disk_size": 700,
+                "disk_size": 700 * 2**30,
+                "available_disk_size": 600 * 2**30,
                 "nvidia_gpu": {
                     "count": 1,
                     "model": nvidia_small_gpu,
@@ -409,6 +410,8 @@ class TestEntityFactory:
             available_cpu=3.0,
             memory=12 * 1024,
             available_memory=10 * 1024,
+            disk_size=700 * 2**30,
+            available_disk_size=600 * 2**30,
             nvidia_gpu=NvidiaGPU(count=1, model=nvidia_small_gpu, memory=123),
             amd_gpu=AMDGPU(count=2, model=amd_small_gpu),
             intel_gpu=IntelGPU(count=3, model=intel_small_gpu),
