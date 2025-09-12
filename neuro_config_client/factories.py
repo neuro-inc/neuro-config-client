@@ -117,6 +117,7 @@ class EntityFactory:
     def create_resource_pool_type(self, payload: dict[str, Any]) -> ResourcePoolType:
         cpu = payload.get("cpu", ResourcePoolType.cpu)
         memory = payload.get("memory", ResourcePoolType.memory)
+        disk_size = payload.get("disk_size", ResourcePoolType.disk_size)
         return ResourcePoolType(
             name=payload["name"],
             min_size=payload.get("min_size", ResourcePoolType.min_size),
@@ -126,6 +127,8 @@ class EntityFactory:
             available_cpu=payload.get("available_cpu") or cpu,
             memory=memory,
             available_memory=payload.get("available_memory") or memory,
+            disk_size=disk_size,
+            available_disk_size=payload.get("available_disk_size", disk_size),
             nvidia_gpu=(
                 self._create_nvidia_gpu(
                     payload if isinstance(nvidia_gpu, int) else nvidia_gpu
