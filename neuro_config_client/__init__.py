@@ -48,6 +48,7 @@ from .entities import (
     StorageConfig,
     TPUPreset,
     TPUResource,
+    VolumeConfig,
 )
 
 __all__ = [
@@ -98,5 +99,6 @@ __all__ = [
     "StorageConfig",
     "TPUPreset",
     "TPUResource",
+    "VolumeConfig",
 ]
 __version__ = version(__name__)
