@@ -190,7 +190,7 @@ class GPUPreset:
 
 @dataclass(frozen=True)
 class NvidiaGPUPreset(GPUPreset):
-    pass
+    mig_profile: str | None = None
 
 
 @dataclass(frozen=True)
@@ -235,8 +235,16 @@ class GPU:
 
 
 @dataclass(frozen=True)
+class NvidiaMigProfile:
+    name: str
+    count: int
+    model: str
+    memory: int | None = None
+
+
+@dataclass(frozen=True)
 class NvidiaGPU(GPU):
-    pass
+    mig_profiles: Sequence[NvidiaMigProfile] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
