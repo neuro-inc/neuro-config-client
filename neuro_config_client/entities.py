@@ -16,14 +16,6 @@ else:
     from backports.zoneinfo._zoneinfo import ZoneInfo
 
 
-class NotificationType(str, enum.Enum):
-    SUCCESS = "success"
-    ERROR = "error"
-    CLUSTER_UPDATING = "cluster_updating"
-    CLUSTER_UPDATE_SUCCEEDED = "cluster_update_succeeded"
-    CLUSTER_UPDATE_FAILED = "cluster_update_failed"
-
-
 @dataclass(frozen=True)
 class KubernetesCredentials:
     url: URL
@@ -224,7 +216,6 @@ class ResourcePreset:
     is_external_job: bool = False
     resource_pool_names: Sequence[str] = ()
     available_resource_pool_names: Sequence[str] = ()
-    capacity: int = 0
 
 
 @dataclass(frozen=True)
@@ -235,7 +226,7 @@ class GPU:
 
 
 @dataclass(frozen=True)
-class NvidiaMigProfile:
+class NvidiaMIGProfile:
     name: str
     count: int
     model: str
@@ -244,7 +235,7 @@ class NvidiaMigProfile:
 
 @dataclass(frozen=True)
 class NvidiaGPU(GPU):
-    mig_profiles: Sequence[NvidiaMigProfile] = field(default_factory=list)
+    mig_profiles: Sequence[NvidiaMIGProfile] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

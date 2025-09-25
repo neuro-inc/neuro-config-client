@@ -38,7 +38,7 @@ from neuro_config_client.entities import (
     NeuroAuthConfig,
     NvidiaGPU,
     NvidiaGPUPreset,
-    NvidiaMigProfile,
+    NvidiaMIGProfile,
     OpenStackCredentials,
     OrchestratorConfig,
     PatchClusterRequest,
@@ -426,7 +426,7 @@ class TestEntityFactory:
                 model=nvidia_small_gpu,
                 memory=123,
                 mig_profiles=[
-                    NvidiaMigProfile(
+                    NvidiaMIGProfile(
                         name="1g.5gb",
                         count=7,
                         model=f"{nvidia_small_gpu}-1g-5gb",
@@ -501,7 +501,6 @@ class TestEntityFactory:
                 "resource_pool_names": ["gpu"],
                 "available_resource_pool_names": ["available-gpu"],
                 "is_external_job": True,
-                "capacity": 10,
             }
         )
 
@@ -524,7 +523,6 @@ class TestEntityFactory:
             resource_pool_names=["gpu"],
             available_resource_pool_names=["available-gpu"],
             is_external_job=True,
-            capacity=10,
         )
 
     def test_create_storage(self, factory: EntityFactory) -> None:
@@ -1172,7 +1170,7 @@ class TestPayloadFactory:
                     model=nvidia_small_gpu,
                     memory=123,
                     mig_profiles=[
-                        NvidiaMigProfile(
+                        NvidiaMIGProfile(
                             name="1g.5gb",
                             count=7,
                             model=f"{nvidia_small_gpu}-1g-5gb",

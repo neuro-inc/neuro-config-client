@@ -14,7 +14,6 @@ from yarl import URL
 
 from .entities import (
     Cluster,
-    NotificationType,
     PatchClusterRequest,
     ResourcePreset,
 )
@@ -26,19 +25,9 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class _Endpoints:
     clusters: str = "clusters"
-    cloud_providers: str = "cloud_providers"
 
     def cluster(self, cluster_name: str) -> str:
         return f"{self.clusters}/{cluster_name}"
-
-    def storages(self, cluster_name: str) -> str:
-        return f"{self.cluster(cluster_name)}/cloud_provider/storages"
-
-    def storage(self, cluster_name: str, storage_name: str) -> str:
-        return f"{self.storages(cluster_name)}/{storage_name}"
-
-    def notifications(self, cluster_name: str) -> str:
-        return f"{self.cluster(cluster_name)}/notifications"
 
     def resource_presets(self, cluster_name: str) -> str:
         return f"{self.cluster(cluster_name)}/orchestrator/resource_presets"
@@ -126,103 +115,6 @@ class ConfigClientBase:
             "DELETE",
             self._endpoints.cluster(name),
             headers=self._create_headers(token=token),
-        ):
-            pass
-
-    async def add_storage(
-        self,
-        cluster_name: str,
-        storage_name: str,
-        size: int | None = None,
-        *,
-        start_deployment: bool = True,
-        ignore_existing: bool = False,
-        token: str | None = None,
-    ) -> Cluster:
-        try:
-            path = self._endpoints.storages(cluster_name)
-            payload: dict[str, Any] = {"name": storage_name}
-            if size is not None:
-                payload["size"] = size
-            async with self._request(
-                "POST",
-                path,
-                params={"start_deployment": str(start_deployment).lower()},
-                headers=self._create_headers(token=token),
-                json=payload,
-            ) as response:
-                resp_payload = await response.json()
-                return self._entity_factory.create_cluster(resp_payload)
-        except ClientResponseError as e:
-            if not ignore_existing or e.status != 409:
-                raise
-        return await self.get_cluster(cluster_name)
-
-    async def patch_storage(
-        self,
-        cluster_name: str,
-        storage_name: str | None,
-        ready: bool | None = None,
-        *,
-        ignore_not_found: bool = False,
-        token: str | None = None,
-    ) -> Cluster:
-        try:
-            if storage_name:
-                path = self._endpoints.storage(cluster_name, storage_name)
-            else:
-                path = self._endpoints.storage(cluster_name, "default/entry")
-            payload: dict[str, Any] = {}
-            if ready is not None:
-                payload["ready"] = ready
-            async with self._request(
-                "PATCH", path, headers=self._create_headers(token=token), json=payload
-            ) as response:
-                resp_payload = await response.json()
-                return self._entity_factory.create_cluster(resp_payload)
-        except ClientResponseError as e:
-            if not ignore_not_found or e.status != 404:
-                raise
-        return await self.get_cluster(cluster_name)
-
-    async def remove_storage(
-        self,
-        cluster_name: str,
-        storage_name: str,
-        *,
-        start_deployment: bool = True,
-        ignore_not_found: bool = False,
-        token: str | None = None,
-    ) -> Cluster:
-        try:
-            path = self._endpoints.storage(cluster_name, storage_name)
-            async with self._request(
-                "DELETE",
-                path,
-                params={"start_deployment": str(start_deployment).lower()},
-                headers=self._create_headers(token=token),
-            ) as response:
-                resp_payload = await response.json()
-                return self._entity_factory.create_cluster(resp_payload)
-        except ClientResponseError as e:
-            if not ignore_not_found or e.status != 404:
-                raise
-        return await self.get_cluster(cluster_name)
-
-    async def notify(
-        self,
-        cluster_name: str,
-        notification_type: NotificationType,
-        message: str | None = None,
-        *,
-        token: str | None = None,
-    ) -> None:
-        path = self._endpoints.notifications(cluster_name)
-        payload = {"notification_type": notification_type.value}
-        if message:
-            payload["message"] = message
-        async with self._request(
-            "POST", path, headers=self._create_headers(token=token), json=payload
         ):
             pass
 

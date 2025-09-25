@@ -38,7 +38,7 @@ from .entities import (
     NeuroAuthConfig,
     NvidiaGPU,
     NvidiaGPUPreset,
-    NvidiaMigProfile,
+    NvidiaMIGProfile,
     OpenStackCredentials,
     OrchestratorConfig,
     PatchClusterRequest,
@@ -168,8 +168,8 @@ class EntityFactory:
             ],
         )
 
-    def _create_nvidia_mig_profile(self, payload: dict[str, Any]) -> NvidiaMigProfile:
-        return NvidiaMigProfile(
+    def _create_nvidia_mig_profile(self, payload: dict[str, Any]) -> NvidiaMIGProfile:
+        return NvidiaMIGProfile(
             name=payload["name"],
             count=payload["count"],
             model=payload["model"],
@@ -226,7 +226,6 @@ class EntityFactory:
             available_resource_pool_names=payload.get(
                 "available_resource_pool_names", ()
             ),
-            capacity=payload.get("capacity", 0),
         )
 
     def _create_nvidia_gpu_preset(self, payload: dict[str, Any]) -> NvidiaGPUPreset:
@@ -839,7 +838,7 @@ class PayloadFactory:
 
     @classmethod
     def _create_nvidia_mig_profile(
-        cls, mig_profile: NvidiaMigProfile
+        cls, mig_profile: NvidiaMIGProfile
     ) -> dict[str, Any]:
         result = {
             "name": mig_profile.name,
