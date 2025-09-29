@@ -182,7 +182,15 @@ class GPUPreset:
 
 @dataclass(frozen=True)
 class NvidiaGPUPreset(GPUPreset):
-    mig_profile: str | None = None
+    pass
+
+
+@dataclass(frozen=True)
+class NvidiaMIGPreset:
+    count: int
+    profile_name: str | None = None
+    model: str | None = None
+    memory: int | None = None
 
 
 @dataclass(frozen=True)
@@ -208,6 +216,7 @@ class ResourcePreset:
     cpu: float
     memory: int
     nvidia_gpu: NvidiaGPUPreset | None = None
+    nvidia_migs: Sequence[NvidiaMIGPreset] | None = None
     amd_gpu: AMDGPUPreset | None = None
     intel_gpu: IntelGPUPreset | None = None
     tpu: TPUPreset | None = None
@@ -226,8 +235,8 @@ class GPU:
 
 
 @dataclass(frozen=True)
-class NvidiaMIGProfile:
-    name: str
+class NvidiaMIG:
+    profile_name: str
     count: int
     model: str
     memory: int | None = None
@@ -235,7 +244,7 @@ class NvidiaMIGProfile:
 
 @dataclass(frozen=True)
 class NvidiaGPU(GPU):
-    mig_profiles: Sequence[NvidiaMIGProfile] = field(default_factory=list)
+    pass
 
 
 @dataclass(frozen=True)
@@ -270,6 +279,7 @@ class ResourcePoolType:
     available_disk_size: int = 150 * 2**30  # 150gb
 
     nvidia_gpu: NvidiaGPU | None = None
+    nvidia_migs: Sequence[NvidiaMIG] | None = None
     amd_gpu: AMDGPU | None = None
     intel_gpu: IntelGPU | None = None
     tpu: TPUResource | None = None
