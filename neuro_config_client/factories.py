@@ -244,8 +244,8 @@ class EntityFactory:
 
     def _create_nvidia_mig_preset(self, payload: dict[str, Any]) -> NvidiaMIGPreset:
         return NvidiaMIGPreset(
+            profile_name=payload["profile_name"],
             count=payload["count"],
-            profile_name=payload.get("profile_name"),
             model=payload.get("model"),
             memory=payload.get("memory"),
         )
@@ -904,9 +904,10 @@ class PayloadFactory:
 
     @classmethod
     def _create_nvidia_mig_preset(cls, mig_preset: NvidiaMIGPreset) -> dict[str, Any]:
-        result: dict[str, Any] = {"count": mig_preset.count}
-        if mig_preset.profile_name:
-            result["profile_name"] = mig_preset.profile_name
+        result: dict[str, Any] = {
+            "profile_name": mig_preset.profile_name,
+            "count": mig_preset.count,
+        }
         if mig_preset.model:
             result["model"] = mig_preset.model
         return result

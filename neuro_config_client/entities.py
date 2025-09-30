@@ -187,8 +187,8 @@ class NvidiaGPUPreset(GPUPreset):
 
 @dataclass(frozen=True)
 class NvidiaMIGPreset:
+    profile_name: str
     count: int
-    profile_name: str | None = None
     model: str | None = None
     memory: int | None = None
 
