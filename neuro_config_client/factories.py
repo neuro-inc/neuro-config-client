@@ -38,8 +38,6 @@ from .entities import (
     NeuroAuthConfig,
     NvidiaGPU,
     NvidiaGPUPreset,
-    NvidiaMIG,
-    NvidiaMIGPreset,
     OpenStackCredentials,
     OrchestratorConfig,
     PatchClusterRequest,
@@ -137,7 +135,7 @@ class EntityFactory:
                 else None
             ),
             nvidia_migs=(
-                [self._create_nvidia_mig(mig) for mig in migs]
+                {key: self._create_nvidia_gpu(value) for key, value in migs.items()}
                 if (migs := payload.get("nvidia_migs"))
                 else None
             ),
@@ -165,14 +163,6 @@ class EntityFactory:
 
     def _create_nvidia_gpu(self, payload: dict[str, Any]) -> NvidiaGPU:
         return NvidiaGPU(
-            count=payload["count"],
-            model=payload["model"],
-            memory=payload.get("memory"),
-        )
-
-    def _create_nvidia_mig(self, payload: dict[str, Any]) -> NvidiaMIG:
-        return NvidiaMIG(
-            profile_name=payload["profile_name"],
             count=payload["count"],
             model=payload["model"],
             memory=payload.get("memory"),
@@ -211,7 +201,10 @@ class EntityFactory:
                 else None
             ),
             nvidia_migs=(
-                [self._create_nvidia_mig_preset(mig) for mig in migs]
+                {
+                    key: self._create_nvidia_gpu_preset(value)
+                    for key, value in migs.items()
+                }
                 if (migs := payload.get("nvidia_migs"))
                 else None
             ),
@@ -237,14 +230,6 @@ class EntityFactory:
 
     def _create_nvidia_gpu_preset(self, payload: dict[str, Any]) -> NvidiaGPUPreset:
         return NvidiaGPUPreset(
-            count=payload["count"],
-            model=payload.get("model"),
-            memory=payload.get("memory"),
-        )
-
-    def _create_nvidia_mig_preset(self, payload: dict[str, Any]) -> NvidiaMIGPreset:
-        return NvidiaMIGPreset(
-            profile_name=payload["profile_name"],
             count=payload["count"],
             model=payload.get("model"),
             memory=payload.get("memory"),
@@ -827,9 +812,10 @@ class PayloadFactory:
         if resource_pool_type.nvidia_gpu:
             result["nvidia_gpu"] = cls._create_gpu(resource_pool_type.nvidia_gpu)
         if resource_pool_type.nvidia_migs:
-            result["nvidia_migs"] = [
-                cls._create_nvidia_mig(mig) for mig in resource_pool_type.nvidia_migs
-            ]
+            result["nvidia_migs"] = {
+                key: cls._create_gpu(value)
+                for key, value in resource_pool_type.nvidia_migs.items()
+            }
         if resource_pool_type.amd_gpu:
             result["amd_gpu"] = cls._create_gpu(resource_pool_type.amd_gpu)
         if resource_pool_type.intel_gpu:
@@ -843,17 +829,6 @@ class PayloadFactory:
             result["cpu_min_watts"] = resource_pool_type.cpu_min_watts
         if resource_pool_type.cpu_max_watts:
             result["cpu_max_watts"] = resource_pool_type.cpu_max_watts
-        return result
-
-    @classmethod
-    def _create_nvidia_mig(cls, mig: NvidiaMIG) -> dict[str, Any]:
-        result = {
-            "profile_name": mig.profile_name,
-            "count": mig.count,
-            "model": mig.model,
-        }
-        if mig.memory:
-            result["memory"] = mig.memory
         return result
 
     @classmethod
@@ -885,9 +860,10 @@ class PayloadFactory:
         if preset.nvidia_gpu:
             result["nvidia_gpu"] = cls._create_gpu_preset(preset.nvidia_gpu)
         if preset.nvidia_migs:
-            result["nvidia_migs"] = [
-                cls._create_nvidia_mig_preset(mig) for mig in preset.nvidia_migs
-            ]
+            result["nvidia_migs"] = {
+                key: cls._create_gpu_preset(value)
+                for key, value in preset.nvidia_migs.items()
+            }
         if preset.amd_gpu:
             result["amd_gpu"] = cls._create_gpu_preset(preset.amd_gpu)
         if preset.intel_gpu:
@@ -900,16 +876,6 @@ class PayloadFactory:
             result["preemptible_node"] = preset.preemptible_node
         if preset.resource_pool_names:
             result["resource_pool_names"] = preset.resource_pool_names
-        return result
-
-    @classmethod
-    def _create_nvidia_mig_preset(cls, mig_preset: NvidiaMIGPreset) -> dict[str, Any]:
-        result: dict[str, Any] = {
-            "profile_name": mig_preset.profile_name,
-            "count": mig_preset.count,
-        }
-        if mig_preset.model:
-            result["model"] = mig_preset.model
         return result
 
     @classmethod

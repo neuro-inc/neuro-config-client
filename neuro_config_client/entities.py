@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, time, tzinfo
 from decimal import Decimal
@@ -186,14 +186,6 @@ class NvidiaGPUPreset(GPUPreset):
 
 
 @dataclass(frozen=True)
-class NvidiaMIGPreset:
-    profile_name: str
-    count: int
-    model: str | None = None
-    memory: int | None = None
-
-
-@dataclass(frozen=True)
 class AMDGPUPreset(GPUPreset):
     pass
 
@@ -216,7 +208,7 @@ class ResourcePreset:
     cpu: float
     memory: int
     nvidia_gpu: NvidiaGPUPreset | None = None
-    nvidia_migs: Sequence[NvidiaMIGPreset] | None = None
+    nvidia_migs: Mapping[str, NvidiaGPUPreset] | None = None
     amd_gpu: AMDGPUPreset | None = None
     intel_gpu: IntelGPUPreset | None = None
     tpu: TPUPreset | None = None
@@ -229,14 +221,6 @@ class ResourcePreset:
 
 @dataclass(frozen=True)
 class GPU:
-    count: int
-    model: str
-    memory: int | None = None
-
-
-@dataclass(frozen=True)
-class NvidiaMIG:
-    profile_name: str
     count: int
     model: str
     memory: int | None = None
@@ -279,7 +263,7 @@ class ResourcePoolType:
     available_disk_size: int = 150 * 2**30  # 150gb
 
     nvidia_gpu: NvidiaGPU | None = None
-    nvidia_migs: Sequence[NvidiaMIG] | None = None
+    nvidia_migs: Mapping[str, NvidiaGPU] | None = None
     amd_gpu: AMDGPU | None = None
     intel_gpu: IntelGPU | None = None
     tpu: TPUResource | None = None
