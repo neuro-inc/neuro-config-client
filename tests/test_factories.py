@@ -38,8 +38,6 @@ from neuro_config_client.entities import (
     NeuroAuthConfig,
     NvidiaGPU,
     NvidiaGPUPreset,
-    NvidiaMIG,
-    NvidiaMIGPreset,
     OpenStackCredentials,
     OrchestratorConfig,
     PatchClusterRequest,
@@ -382,14 +380,13 @@ class TestEntityFactory:
                     "model": nvidia_small_gpu,
                     "memory": 123,
                 },
-                "nvidia_migs": [
-                    {
-                        "profile_name": "1g.5gb",
+                "nvidia_migs": {
+                    "1g.5gb": {
                         "count": 7,
                         "model": f"{nvidia_small_gpu}-1g-5gb",
                         "memory": 456,
                     }
-                ],
+                },
                 "amd_gpu": {
                     "count": 2,
                     "model": amd_small_gpu,
@@ -427,14 +424,13 @@ class TestEntityFactory:
                 model=nvidia_small_gpu,
                 memory=123,
             ),
-            nvidia_migs=[
-                NvidiaMIG(
-                    profile_name="1g.5gb",
+            nvidia_migs={
+                "1g.5gb": NvidiaGPU(
                     count=7,
                     model=f"{nvidia_small_gpu}-1g-5gb",
                     memory=456,
                 )
-            ],
+            },
             amd_gpu=AMDGPU(count=2, model=amd_small_gpu),
             intel_gpu=IntelGPU(count=3, model=intel_small_gpu),
             tpu=mock.ANY,
@@ -493,14 +489,13 @@ class TestEntityFactory:
                     "model": nvidia_small_gpu,
                     "memory": 123,
                 },
-                "nvidia_migs": [
-                    {
-                        "profile_name": "1g.5gb",
+                "nvidia_migs": {
+                    "1g.5gb": {
                         "count": 7,
                         "model": f"{nvidia_small_gpu}-1g-5gb",
                         "memory": 456,
                     }
-                ],
+                },
                 "amd_gpu": {"count": 2},
                 "intel_gpu": {"count": 3},
                 "tpu": {"type": "tpu", "software_version": "v1"},
@@ -522,14 +517,13 @@ class TestEntityFactory:
                 model=nvidia_small_gpu,
                 memory=123,
             ),
-            nvidia_migs=[
-                NvidiaMIGPreset(
+            nvidia_migs={
+                "1g.5gb": NvidiaGPUPreset(
                     count=7,
-                    profile_name="1g.5gb",
                     model=f"{nvidia_small_gpu}-1g-5gb",
                     memory=456,
                 )
-            ],
+            },
             amd_gpu=AMDGPUPreset(count=2),
             intel_gpu=IntelGPUPreset(count=3),
             tpu=TPUPreset(type="tpu", software_version="v1"),
@@ -1185,14 +1179,13 @@ class TestPayloadFactory:
                     model=nvidia_small_gpu,
                     memory=123,
                 ),
-                nvidia_migs=[
-                    NvidiaMIG(
-                        profile_name="1g.5gb",
+                nvidia_migs={
+                    "1g.5gb": NvidiaGPU(
                         count=7,
                         model=f"{nvidia_small_gpu}-1g-5gb",
                         memory=456,
                     )
-                ],
+                },
                 amd_gpu=AMDGPU(count=2, model=amd_small_gpu),
                 intel_gpu=IntelGPU(count=3, model=intel_small_gpu),
                 tpu=TPUResource(
@@ -1224,14 +1217,13 @@ class TestPayloadFactory:
                 "model": nvidia_small_gpu,
                 "memory": 123,
             },
-            "nvidia_migs": [
-                {
-                    "profile_name": "1g.5gb",
+            "nvidia_migs": {
+                "1g.5gb": {
                     "count": 7,
                     "model": f"{nvidia_small_gpu}-1g-5gb",
                     "memory": 456,
                 }
-            ],
+            },
             "amd_gpu": {
                 "count": 2,
                 "model": amd_small_gpu,
@@ -1312,14 +1304,13 @@ class TestPayloadFactory:
                 cpu=4.0,
                 memory=12288,
                 nvidia_gpu=NvidiaGPUPreset(count=1, model=nvidia_small_gpu, memory=123),
-                nvidia_migs=[
-                    NvidiaMIGPreset(
-                        profile_name="1g.5gb",
+                nvidia_migs={
+                    "1g.5gb": NvidiaGPUPreset(
                         count=7,
                         model=f"{nvidia_small_gpu}-1g-5gb",
                         memory=456,
                     )
-                ],
+                },
                 amd_gpu=AMDGPUPreset(count=2, model=amd_small_gpu),
                 intel_gpu=IntelGPUPreset(count=3),
                 tpu=TPUPreset(type="tpu", software_version="v1"),
@@ -1338,13 +1329,12 @@ class TestPayloadFactory:
                 "count": 1,
                 "model": nvidia_small_gpu,
             },
-            "nvidia_migs": [
-                {
-                    "profile_name": "1g.5gb",
+            "nvidia_migs": {
+                "1g.5gb": {
                     "count": 7,
                     "model": f"{nvidia_small_gpu}-1g-5gb",
                 }
-            ],
+            },
             "amd_gpu": {"count": 2, "model": amd_small_gpu},
             "intel_gpu": {"count": 3},
             "tpu": {"type": "tpu", "software_version": "v1"},
