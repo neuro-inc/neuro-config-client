@@ -6,6 +6,8 @@ on:
     tags: [v*.*.*]
   pull_request:
     branches: [master]
+  merge_group:
+    branches: [master]
   schedule:
   - cron: 0 4 * * *
 
