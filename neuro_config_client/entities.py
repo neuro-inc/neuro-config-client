@@ -15,6 +15,10 @@ else:
     # why not backports.zoneinfo: https://github.com/pganssle/zoneinfo/issues/125
     from backports.zoneinfo._zoneinfo import ZoneInfo
 
+UTC = ZoneInfo("UTC")
+
+UNSET_DATETIME = datetime.min.replace(tzinfo=UTC)
+
 
 @dataclass(frozen=True)
 class VolumeConfig:
@@ -61,7 +65,7 @@ class SecretsConfig:
 @dataclass(frozen=True)
 class DisksConfig:
     url: URL
-    storage_limit_per_user: int
+    storage_limit_per_user: int = 500 * 2**30  # 500gb
 
 
 @dataclass(frozen=True)
@@ -212,7 +216,7 @@ class IdleJobConfig:
     node_selector: dict[str, str] = field(default_factory=dict)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OrchestratorConfig:
     job_hostname_template: str
     job_fallback_hostname: str
@@ -271,7 +275,7 @@ class ARecord:
     evaluate_target_health: bool = False
 
 
-@dataclass
+@dataclass(frozen=True)
 class DNSConfig:
     name: str = "not-used"
     a_records: Sequence[ARecord] = ()
@@ -336,7 +340,7 @@ class EnergyConfig:
         return (
             self._get_schedule(name)
             or self._get_schedule(DEFAULT_ENERGY_SCHEDULE_NAME)
-            or EnergySchedule.create_default(timezone=ZoneInfo("UTC"))
+            or EnergySchedule.create_default(timezone=UTC)
         )
 
     def _get_schedule(self, name: str) -> EnergySchedule | None:
@@ -359,7 +363,6 @@ class AppsConfig:
 @dataclass(frozen=True)
 class Cluster:
     name: str
-    created_at: datetime
     orchestrator: OrchestratorConfig
     storage: StorageConfig
     registry: RegistryConfig
@@ -368,13 +371,16 @@ class Cluster:
     metrics: MetricsConfig
     disks: DisksConfig
     buckets: BucketsConfig
-    energy: EnergyConfig
     apps: AppsConfig
     dns: DNSConfig = DNSConfig()
     ingress: IngressConfig = IngressConfig()
+    energy: EnergyConfig = EnergyConfig()
     location: str | None = None
     logo_url: URL | None = None
-    timezone: tzinfo = ZoneInfo("UTC")
+    timezone: tzinfo = UTC
+    created_at: datetime = field(
+        default=datetime.min.replace(tzinfo=UTC), compare=False
+    )
 
 
 @dataclass(frozen=True)
