@@ -17,98 +17,6 @@ else:
 
 
 @dataclass(frozen=True)
-class KubernetesCredentials:
-    url: URL
-    ca_data: str
-    token: str | None = field(repr=False, default=None)
-    client_key_data: str | None = field(repr=False, default=None)
-    client_cert_data: str | None = field(repr=False, default=None)
-
-
-@dataclass(frozen=True)
-class NeuroAuthConfig:
-    url: URL
-    token: str = field(repr=False)
-
-
-@dataclass(frozen=True)
-class HelmRegistryConfig:
-    url: URL
-    username: str | None = None
-    password: str | None = field(repr=False, default=None)
-
-
-@dataclass(frozen=True)
-class DockerRegistryConfig:
-    url: URL
-    username: str | None = None
-    password: str | None = field(repr=False, default=None)
-    email: str | None = None
-
-
-@dataclass(frozen=True)
-class GrafanaCredentials:
-    username: str
-    password: str = field(repr=False)
-
-
-@dataclass(frozen=True)
-class PrometheusCredentials:
-    username: str
-    password: str = field(repr=False)
-
-
-@dataclass(frozen=True)
-class SentryCredentials:
-    client_key_id: str
-    public_dsn: URL
-    sample_rate: float = 0.01
-
-
-@dataclass(frozen=True)
-class MinioCredentials:
-    username: str
-    password: str = field(repr=False)
-
-
-@dataclass(frozen=True)
-class EMCECSCredentials:
-    """
-    Credentials to EMC ECS (blob storage engine developed by vmware creators)
-    """
-
-    access_key_id: str
-    secret_access_key: str = field(repr=False)
-    s3_endpoint: URL
-    management_endpoint: URL
-    s3_assumable_role: str
-
-
-@dataclass(frozen=True)
-class OpenStackCredentials:
-    account_id: str
-    password: str = field(repr=False)
-    endpoint: URL
-    s3_endpoint: URL
-    region_name: str
-
-
-@dataclass(frozen=True)
-class CredentialsConfig:
-    neuro: NeuroAuthConfig
-    neuro_helm: HelmRegistryConfig
-    neuro_registry: DockerRegistryConfig
-    kubernetes: KubernetesCredentials | None = None
-    grafana: GrafanaCredentials | None = None
-    prometheus: PrometheusCredentials | None = None
-    sentry: SentryCredentials | None = None
-    docker_hub: DockerRegistryConfig | None = None
-    minio: MinioCredentials | None = None
-    emc_ecs: EMCECSCredentials | None = None
-    open_stack: OpenStackCredentials | None = None
-
-
-@dataclass(frozen=True)
 class VolumeConfig:
     name: str
     size: int | None = None
@@ -141,7 +49,8 @@ class MonitoringConfig:
 
 @dataclass(frozen=True)
 class MetricsConfig:
-    url: URL
+    grafana_url: URL
+    prometheus_url: URL
 
 
 @dataclass(frozen=True)
@@ -168,7 +77,7 @@ class ACMEEnvironment(str, enum.Enum):
 
 @dataclass(frozen=True)
 class IngressConfig:
-    acme_environment: ACMEEnvironment
+    acme_environment: ACMEEnvironment = ACMEEnvironment.PRODUCTION
     default_cors_origins: Sequence[str] = ()
     additional_cors_origins: Sequence[str] = ()
 
@@ -364,7 +273,7 @@ class ARecord:
 
 @dataclass
 class DNSConfig:
-    name: str
+    name: str = "not-used"
     a_records: Sequence[ARecord] = ()
 
 
@@ -457,23 +366,21 @@ class Cluster:
     monitoring: MonitoringConfig
     secrets: SecretsConfig
     metrics: MetricsConfig
-    dns: DNSConfig
     disks: DisksConfig
     buckets: BucketsConfig
-    ingress: IngressConfig
     energy: EnergyConfig
     apps: AppsConfig
+    dns: DNSConfig = DNSConfig()
+    ingress: IngressConfig = IngressConfig()
     location: str | None = None
     logo_url: URL | None = None
     timezone: tzinfo = ZoneInfo("UTC")
-    credentials: CredentialsConfig | None = None
 
 
 @dataclass(frozen=True)
 class PatchClusterRequest:
     location: str | None = None
     logo_url: URL | None = None
-    credentials: CredentialsConfig | None = None
     storage: StorageConfig | None = None
     registry: RegistryConfig | None = None
     orchestrator: PatchOrchestratorConfigRequest | None = None
@@ -482,8 +389,6 @@ class PatchClusterRequest:
     metrics: MetricsConfig | None = None
     disks: DisksConfig | None = None
     buckets: BucketsConfig | None = None
-    ingress: IngressConfig | None = None
-    dns: DNSConfig | None = None
     timezone: ZoneInfo | None = None
     energy: EnergyConfig | None = None
     apps: AppsConfig | None = None

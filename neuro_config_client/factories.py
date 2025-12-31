@@ -10,45 +10,31 @@ from yarl import URL
 from .entities import (
     AMDGPU,
     GPU,
-    ACMEEnvironment,
     AMDGPUPreset,
     AppsConfig,
     ARecord,
     BucketsConfig,
     Cluster,
-    CredentialsConfig,
     DisksConfig,
-    DNSConfig,
-    DockerRegistryConfig,
-    EMCECSCredentials,
     EnergyConfig,
     EnergySchedule,
     EnergySchedulePeriod,
     GPUPreset,
-    GrafanaCredentials,
-    HelmRegistryConfig,
     IdleJobConfig,
-    IngressConfig,
     IntelGPU,
     IntelGPUPreset,
-    KubernetesCredentials,
     MetricsConfig,
-    MinioCredentials,
     MonitoringConfig,
-    NeuroAuthConfig,
     NvidiaGPU,
     NvidiaGPUPreset,
-    OpenStackCredentials,
     OrchestratorConfig,
     PatchClusterRequest,
     PatchOrchestratorConfigRequest,
-    PrometheusCredentials,
     RegistryConfig,
     ResourcePoolType,
     ResourcePreset,
     Resources,
     SecretsConfig,
-    SentryCredentials,
     StorageConfig,
     TPUPreset,
     TPUResource,
@@ -64,7 +50,6 @@ else:
 
 class EntityFactory:
     def create_cluster(self, payload: dict[str, Any]) -> Cluster:
-        credentials = payload.get("credentials")
         timezone = self._create_timezone(payload.get("timezone"))
         return Cluster(
             name=payload["name"],
@@ -78,9 +63,6 @@ class EntityFactory:
             metrics=self.create_metrics(payload["metrics"]),
             disks=self.create_disks(payload["disks"]),
             buckets=self.create_buckets(payload["buckets"]),
-            ingress=self.create_ingress(payload["ingress"]),
-            dns=self.create_dns(payload["dns"]),
-            credentials=self.create_credentials(credentials) if credentials else None,
             created_at=datetime.fromisoformat(payload["created_at"]),
             timezone=timezone,
             energy=self.create_energy(payload["energy"], timezone=timezone),
@@ -304,12 +286,13 @@ class EntityFactory:
         return SecretsConfig(url=URL(payload["url"]))
 
     def create_metrics(self, payload: dict[str, Any]) -> MetricsConfig:
-        return MetricsConfig(url=URL(payload["url"]))
-
-    def create_dns(self, payload: dict[str, Any]) -> DNSConfig:
-        return DNSConfig(
-            name=payload["name"],
-            a_records=[self.create_a_record(r) for r in payload.get("a_records", ())],
+        grafana_url = payload.get("grafana_url") or payload["url"]
+        prometheus_url = payload.get("prometheus_url")
+        if not prometheus_url:
+            prometheus_url = grafana_url.replace("grafana", "prometheus")
+        return MetricsConfig(
+            grafana_url=URL(grafana_url),
+            prometheus_url=URL(prometheus_url),
         )
 
     def create_a_record(self, payload: dict[str, Any]) -> ARecord:
@@ -333,142 +316,6 @@ class EntityFactory:
         return BucketsConfig(
             url=URL(payload["url"]),
             disable_creation=payload.get("disable_creation", False),
-        )
-
-    def create_ingress(self, payload: dict[str, Any]) -> IngressConfig:
-        return IngressConfig(
-            acme_environment=ACMEEnvironment(payload["acme_environment"]),
-            default_cors_origins=payload.get("default_cors_origins", ()),
-            additional_cors_origins=payload.get("additional_cors_origins", ()),
-        )
-
-    @classmethod
-    def create_credentials(
-        cls, payload: dict[str, Any] | None
-    ) -> CredentialsConfig | None:
-        if not payload:
-            return None
-        kubernetes = payload.get("kubernetes")
-        grafana = payload.get("grafana")
-        prometheus = payload.get("prometheus")
-        sentry = payload.get("sentry")
-        docker_hub = payload.get("docker_hub")
-        minio = payload.get("minio")
-        emc_ecs = payload.get("emc_ecs")
-        open_stack = payload.get("open_stack")
-        return CredentialsConfig(
-            neuro=cls._create_neuro_auth(payload["neuro"]),
-            neuro_registry=cls._create_docker_registry(payload["neuro_registry"]),
-            neuro_helm=cls._create_helm_registry(payload["neuro_helm"]),
-            kubernetes=(
-                cls._create_kubernetes_credentials(kubernetes) if kubernetes else None
-            ),
-            grafana=cls._create_grafana_credentials(grafana) if grafana else None,
-            prometheus=(
-                cls._create_promtheus_credentials(prometheus) if prometheus else None
-            ),
-            sentry=cls._create_sentry_credentials(sentry) if sentry else None,
-            docker_hub=cls._create_docker_registry(docker_hub) if docker_hub else None,
-            minio=cls._create_minio_credentials(minio) if minio else None,
-            emc_ecs=cls._create_emc_ecs_credentials(emc_ecs) if emc_ecs else None,
-            open_stack=(
-                cls._create_open_stack_credentials(open_stack) if open_stack else None
-            ),
-        )
-
-    @classmethod
-    def _create_docker_registry(cls, payload: dict[str, Any]) -> DockerRegistryConfig:
-        return DockerRegistryConfig(
-            url=URL(payload["url"]),
-            username=payload.get("username"),
-            password=payload.get("password"),
-            email=payload.get("email"),
-        )
-
-    @classmethod
-    def _create_helm_registry(cls, payload: dict[str, Any]) -> HelmRegistryConfig:
-        return HelmRegistryConfig(
-            url=URL(payload["url"]),
-            username=payload.get("username"),
-            password=payload.get("password"),
-        )
-
-    @classmethod
-    def _create_neuro_auth(cls, payload: dict[str, Any]) -> NeuroAuthConfig:
-        return NeuroAuthConfig(
-            url=URL(payload["url"]),
-            token=payload["token"],
-        )
-
-    @classmethod
-    def _create_kubernetes_credentials(
-        self, payload: dict[str, Any]
-    ) -> KubernetesCredentials:
-        url = URL(payload["url"])
-        ca_data = payload["ca_data"]
-        if "token" in payload:
-            return KubernetesCredentials(
-                url=url,
-                ca_data=ca_data,
-                token=payload["token"],
-            )
-        if "client_key_data" in payload:
-            return KubernetesCredentials(
-                url=url,
-                ca_data=ca_data,
-                client_key_data=payload["client_key_data"],
-                client_cert_data=payload["client_cert_data"],
-            )
-        return KubernetesCredentials(url=url, ca_data=ca_data)
-
-    @classmethod
-    def _create_grafana_credentials(cls, payload: dict[str, Any]) -> GrafanaCredentials:
-        return GrafanaCredentials(
-            username=payload["username"], password=payload["password"]
-        )
-
-    @classmethod
-    def _create_promtheus_credentials(
-        cls, payload: dict[str, Any]
-    ) -> PrometheusCredentials:
-        return PrometheusCredentials(
-            username=payload["username"], password=payload["password"]
-        )
-
-    @classmethod
-    def _create_sentry_credentials(cls, payload: dict[str, Any]) -> SentryCredentials:
-        return SentryCredentials(
-            client_key_id=payload["client_key_id"],
-            public_dsn=URL(payload["public_dsn"]),
-            sample_rate=payload.get("sample_rate", SentryCredentials.sample_rate),
-        )
-
-    @classmethod
-    def _create_minio_credentials(cls, payload: dict[str, Any]) -> MinioCredentials:
-        return MinioCredentials(
-            username=payload["username"], password=payload["password"]
-        )
-
-    @classmethod
-    def _create_emc_ecs_credentials(cls, payload: dict[str, Any]) -> EMCECSCredentials:
-        return EMCECSCredentials(
-            access_key_id=payload["access_key_id"],
-            secret_access_key=payload["secret_access_key"],
-            s3_endpoint=URL(payload["s3_endpoint"]),
-            management_endpoint=URL(payload["management_endpoint"]),
-            s3_assumable_role=payload["s3_assumable_role"],
-        )
-
-    @classmethod
-    def _create_open_stack_credentials(
-        cls, payload: dict[str, Any]
-    ) -> OpenStackCredentials:
-        return OpenStackCredentials(
-            account_id=payload["account_id"],
-            password=payload["password"],
-            s3_endpoint=URL(payload["s3_endpoint"]),
-            endpoint=URL(payload["endpoint"]),
-            region_name=payload["region_name"],
         )
 
     def _create_timezone(self, name: str | None) -> tzinfo:
@@ -530,8 +377,6 @@ class PayloadFactory:
             payload["location"] = request.location
         if request.logo_url:
             payload["logo_url"] = str(request.logo_url)
-        if request.credentials:
-            payload["credentials"] = cls.create_credentials(request.credentials)
         if request.storage:
             payload["storage"] = cls.create_storage(request.storage)
         if request.registry:
@@ -550,10 +395,6 @@ class PayloadFactory:
             payload["disks"] = cls.create_disks(request.disks)
         if request.buckets:
             payload["buckets"] = cls.create_buckets(request.buckets)
-        if request.ingress:
-            payload["ingress"] = cls.create_ingress(request.ingress)
-        if request.dns:
-            payload["dns"] = cls.create_dns(request.dns)
         if request.timezone:
             payload["timezone"] = str(request.timezone)
         if request.energy:
@@ -561,142 +402,6 @@ class PayloadFactory:
         if request.apps:
             payload["apps"] = cls.create_apps(request.apps)
         return payload
-
-    @classmethod
-    def create_credentials(cls, credentials: CredentialsConfig) -> dict[str, Any]:
-        result = {
-            "neuro": cls._create_neuro_auth(credentials.neuro),
-            "neuro_helm": cls._create_helm_registry(credentials.neuro_helm),
-            "neuro_registry": cls._create_docker_registry(credentials.neuro_registry),
-        }
-        if credentials.kubernetes is not None:
-            result["kubernetes"] = cls._create_kubernetes_credentials(
-                credentials.kubernetes
-            )
-        if credentials.grafana is not None:
-            result["grafana"] = cls._create_grafana_credentials(credentials.grafana)
-        if credentials.prometheus is not None:
-            result["prometheus"] = cls._create_prometheus_credentials(
-                credentials.prometheus
-            )
-        if credentials.sentry is not None:
-            result["sentry"] = cls._create_sentry_credentials(credentials.sentry)
-        if credentials.docker_hub is not None:
-            result["docker_hub"] = cls._create_docker_registry(credentials.docker_hub)
-        if credentials.minio is not None:
-            result["minio"] = cls._create_minio_credentials(credentials.minio)
-        if credentials.emc_ecs is not None:
-            result["emc_ecs"] = cls._create_emc_ecs_credentials(credentials.emc_ecs)
-        if credentials.open_stack is not None:
-            result["open_stack"] = cls._create_open_stack_credentials(
-                credentials.open_stack
-            )
-        return result
-
-    @classmethod
-    def _create_neuro_auth(cls, neuro_auth: NeuroAuthConfig) -> dict[str, Any]:
-        return {"token": neuro_auth.token}
-
-    @classmethod
-    def _create_helm_registry(cls, helm_registry: HelmRegistryConfig) -> dict[str, Any]:
-        result = {
-            "username": helm_registry.username,
-            "password": helm_registry.password,
-        }
-        return result
-
-    @classmethod
-    def _create_docker_registry(
-        cls, docker_registry: DockerRegistryConfig
-    ) -> dict[str, Any]:
-        result = {
-            "username": docker_registry.username,
-            "password": docker_registry.password,
-        }
-        return result
-
-    @classmethod
-    def _create_grafana_credentials(
-        cls, grafana_credentials: GrafanaCredentials
-    ) -> dict[str, str]:
-        result = {
-            "username": grafana_credentials.username,
-            "password": grafana_credentials.password,
-        }
-        return result
-
-    @classmethod
-    def _create_kubernetes_credentials(
-        cls, kubernetes_credentials: KubernetesCredentials
-    ) -> dict[str, str]:
-        result = {
-            "url": str(kubernetes_credentials.url),
-            "ca_data": kubernetes_credentials.ca_data,
-        }
-        if kubernetes_credentials.token:
-            result["token"] = kubernetes_credentials.token
-        if (
-            kubernetes_credentials.client_cert_data
-            and kubernetes_credentials.client_key_data
-        ):
-            result["client_cert_data"] = kubernetes_credentials.client_cert_data
-            result["client_key_data"] = kubernetes_credentials.client_key_data
-        return result
-
-    @classmethod
-    def _create_prometheus_credentials(
-        cls, prometheus_credentials: PrometheusCredentials
-    ) -> dict[str, str]:
-        return {
-            "username": prometheus_credentials.username,
-            "password": prometheus_credentials.password,
-        }
-
-    @classmethod
-    def _create_sentry_credentials(
-        cls, sentry_credentials: SentryCredentials
-    ) -> dict[str, Any]:
-        return {
-            "client_key_id": sentry_credentials.client_key_id,
-            "public_dsn": str(sentry_credentials.public_dsn),
-            "sample_rate": sentry_credentials.sample_rate,
-        }
-
-    @classmethod
-    def _create_minio_credentials(
-        cls, minio_credentials: MinioCredentials
-    ) -> dict[str, str]:
-        result = {
-            "username": minio_credentials.username,
-            "password": minio_credentials.password,
-        }
-        return result
-
-    @classmethod
-    def _create_emc_ecs_credentials(
-        cls, emc_ecs_credentials: EMCECSCredentials
-    ) -> dict[str, str]:
-        result = {
-            "access_key_id": emc_ecs_credentials.access_key_id,
-            "secret_access_key": emc_ecs_credentials.secret_access_key,
-            "s3_endpoint": str(emc_ecs_credentials.s3_endpoint),
-            "management_endpoint": str(emc_ecs_credentials.management_endpoint),
-            "s3_assumable_role": emc_ecs_credentials.s3_assumable_role,
-        }
-        return result
-
-    @classmethod
-    def _create_open_stack_credentials(
-        cls, open_stack_credentials: OpenStackCredentials
-    ) -> dict[str, str]:
-        result = {
-            "account_id": open_stack_credentials.account_id,
-            "password": open_stack_credentials.password,
-            "endpoint": str(open_stack_credentials.endpoint),
-            "s3_endpoint": str(open_stack_credentials.s3_endpoint),
-            "region_name": open_stack_credentials.region_name,
-        }
-        return result
 
     @classmethod
     def create_storage(cls, storage: StorageConfig) -> dict[str, Any]:
@@ -926,7 +631,10 @@ class PayloadFactory:
 
     @classmethod
     def create_metrics(cls, metrics: MetricsConfig) -> dict[str, Any]:
-        return {"url": str(metrics.url)}
+        return {
+            "grafana_url": str(metrics.grafana_url),
+            "prometheus_url": str(metrics.prometheus_url),
+        }
 
     @classmethod
     def create_secrets(cls, secrets: SecretsConfig) -> dict[str, Any]:
@@ -935,13 +643,6 @@ class PayloadFactory:
     @classmethod
     def create_buckets(cls, buckets: BucketsConfig) -> dict[str, Any]:
         return {"url": str(buckets.url), "disable_creation": buckets.disable_creation}
-
-    @classmethod
-    def create_dns(cls, dns: DNSConfig) -> dict[str, Any]:
-        result: dict[str, Any] = {"name": dns.name}
-        if dns.a_records:
-            result["a_records"] = [cls.create_a_record(r) for r in dns.a_records]
-        return result
 
     @classmethod
     def create_a_record(cls, a_record: ARecord) -> dict[str, Any]:
@@ -964,13 +665,6 @@ class PayloadFactory:
             "url": str(disks.url),
             "storage_limit_per_user": disks.storage_limit_per_user,
         }
-
-    @classmethod
-    def create_ingress(cls, ingress: IngressConfig) -> dict[str, Any]:
-        result: dict[str, Any] = {"acme_environment": ingress.acme_environment.value}
-        if ingress.additional_cors_origins:
-            result["additional_cors_origins"] = ingress.additional_cors_origins
-        return result
 
     @classmethod
     def create_energy(cls, energy: EnergyConfig) -> dict[str, Any]:

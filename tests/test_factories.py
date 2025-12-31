@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import replace
 from datetime import datetime, time
 from decimal import Decimal
 from typing import Any
@@ -12,43 +11,29 @@ from yarl import URL
 
 from neuro_config_client.entities import (
     AMDGPU,
-    ACMEEnvironment,
     AMDGPUPreset,
     AppsConfig,
     ARecord,
     BucketsConfig,
-    CredentialsConfig,
     DisksConfig,
-    DNSConfig,
-    DockerRegistryConfig,
-    EMCECSCredentials,
     EnergyConfig,
     EnergySchedule,
     EnergySchedulePeriod,
-    GrafanaCredentials,
-    HelmRegistryConfig,
     IdleJobConfig,
-    IngressConfig,
     IntelGPU,
     IntelGPUPreset,
-    KubernetesCredentials,
     MetricsConfig,
-    MinioCredentials,
     MonitoringConfig,
-    NeuroAuthConfig,
     NvidiaGPU,
     NvidiaGPUPreset,
-    OpenStackCredentials,
     OrchestratorConfig,
     PatchClusterRequest,
     PatchOrchestratorConfigRequest,
-    PrometheusCredentials,
     RegistryConfig,
     ResourcePoolType,
     ResourcePreset,
     Resources,
     SecretsConfig,
-    SentryCredentials,
     StorageConfig,
     TPUPreset,
     TPUResource,
@@ -108,13 +93,6 @@ class TestEntityFactory:
                     "url": "https://secrets-dev.neu.ro",
                     "storage_limit_per_user": 1024,
                 },
-                "ingress": {"acme_environment": "production"},
-                "dns": {
-                    "name": "neu.ro",
-                    "a_records": [
-                        {"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}
-                    ],
-                },
                 "buckets": {
                     "url": "https://buckets-dev.neu.ro",
                     "disable_creation": True,
@@ -155,18 +133,13 @@ class TestEntityFactory:
         assert result.secrets
         assert result.metrics
         assert result.disks
-        assert result.ingress
         assert result.dns
         assert result.buckets
         assert result.energy
         assert result.apps
         assert result.created_at
 
-    def test_create_cluster(
-        self,
-        factory: EntityFactory,
-        credentials: dict[str, Any],
-    ) -> None:
+    def test_create_cluster(self, factory: EntityFactory) -> None:
         result = factory.create_cluster(
             {
                 "name": "default",
@@ -194,13 +167,6 @@ class TestEntityFactory:
                     "url": "https://secrets-dev.neu.ro",
                     "storage_limit_per_user": 1024,
                 },
-                "ingress": {"acme_environment": "production"},
-                "dns": {
-                    "name": "neu.ro",
-                    "a_records": [
-                        {"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}
-                    ],
-                },
                 "buckets": {
                     "url": "https://buckets-dev.neu.ro",
                     "disable_creation": True,
@@ -226,7 +192,6 @@ class TestEntityFactory:
                     "apps_hostname_templates": ["{app_name}.apps.default.org.neu.ro"],
                     "app_proxy_url": "outputs-proxy.apps.default.org.neu.ro",
                 },
-                "credentials": credentials,
                 "created_at": str(datetime.now()),
             }
         )
@@ -235,7 +200,6 @@ class TestEntityFactory:
         assert result.timezone == ZoneInfo("America/Los_Angeles")
         assert result.location == "us"
         assert result.logo_url == URL("https://logo")
-        assert result.credentials
 
     def test_create_cluster__invalid_timezone(self, factory: EntityFactory) -> None:
         with pytest.raises(ValueError, match="invalid timezone"):
@@ -586,19 +550,24 @@ class TestEntityFactory:
         assert result == SecretsConfig(url=URL("https://secrets-dev.neu.ro"))
 
     def test_create_metrics(self, factory: EntityFactory) -> None:
-        result = factory.create_metrics({"url": "https://metrics-dev.neu.ro"})
+        result = factory.create_metrics({"url": "https://grafana-dev.neu.ro"})
 
-        assert result == MetricsConfig(url=URL("https://metrics-dev.neu.ro"))
+        assert result == MetricsConfig(
+            grafana_url=URL("https://grafana-dev.neu.ro"),
+            prometheus_url=URL("https://prometheus-dev.neu.ro"),
+        )
 
-    def test_create_dns(self, factory: EntityFactory) -> None:
-        result = factory.create_dns(
+        result = factory.create_metrics(
             {
-                "name": "neu.ro",
-                "a_records": [{"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}],
+                "grafana_url": "https://grafana-dev.neu.ro",
+                "prometheus_url": "https://prometheus-dev.neu.ro",
             }
         )
 
-        assert result == DNSConfig(name="neu.ro", a_records=[mock.ANY])
+        assert result == MetricsConfig(
+            grafana_url=URL("https://grafana-dev.neu.ro"),
+            prometheus_url=URL("https://prometheus-dev.neu.ro"),
+        )
 
     def test_create_a_record_with_ips(self, factory: EntityFactory) -> None:
         result = factory.create_a_record(
@@ -640,226 +609,6 @@ class TestEntityFactory:
 
         assert result == BucketsConfig(
             url=URL("https://buckets-dev.neu.ro"), disable_creation=True
-        )
-
-    def test_create_ingress(self, factory: EntityFactory) -> None:
-        result = factory.create_ingress(
-            {
-                "acme_environment": "production",
-                "default_cors_origins": ["https://console.apolo.us"],
-                "additional_cors_origins": ["https://custom.app"],
-            }
-        )
-
-        assert result == IngressConfig(
-            acme_environment=ACMEEnvironment.PRODUCTION,
-            default_cors_origins=["https://console.apolo.us"],
-            additional_cors_origins=["https://custom.app"],
-        )
-
-    def test_create_ingress_defaults(self, factory: EntityFactory) -> None:
-        result = factory.create_ingress({"acme_environment": "production"})
-
-        assert result == IngressConfig(acme_environment=ACMEEnvironment.PRODUCTION)
-
-    @pytest.fixture
-    def credentials(self) -> dict[str, Any]:
-        return {
-            "neuro": {
-                "url": "https://neu.ro",
-                "token": "cluster_token",
-            },
-            "neuro_registry": {
-                "url": "https://ghcr.io/neuro-inc",
-                "username": "username",
-                "password": "password",
-                "email": "username@neu.ro",
-            },
-            "neuro_helm": {
-                "url": "oci://neuro-inc.ghcr.io",
-                "username": "username",
-                "password": "password",
-            },
-            "kubernetes": {
-                "url": "https://kubernetes",
-                "ca_data": "k8s-ca-data",
-                "token": "k8s-token",
-            },
-            "grafana": {
-                "username": "grafana-username",
-                "password": "grafana-password",
-            },
-            "prometheus": {
-                "username": "prometheus-username",
-                "password": "prometheus-password",
-            },
-            "sentry": {
-                "client_key_id": "key",
-                "public_dsn": "dsn",
-                "sample_rate": 0.2,
-            },
-            "docker_hub": {
-                "url": "https://index.docker.io/v1",
-                "username": "test",
-                "password": "password",
-                "email": "test@neu.ro",
-            },
-            "minio": {
-                "username": "test",
-                "password": "password",
-            },
-            "emc_ecs": {
-                "access_key_id": "key_id",
-                "secret_access_key": "secret_key",
-                "s3_endpoint": "https://emc-ecs.s3",
-                "management_endpoint": "https://emc-ecs.management",
-                "s3_assumable_role": "s3-role",
-            },
-            "open_stack": {
-                "account_id": "id",
-                "password": "password",
-                "s3_endpoint": "https://os.s3",
-                "endpoint": "https://os.management",
-                "region_name": "region",
-            },
-        }
-
-    def test_create_credentials(
-        self, factory: EntityFactory, credentials: dict[str, Any]
-    ) -> None:
-        result = factory.create_credentials(credentials)
-
-        assert result == CredentialsConfig(
-            neuro=NeuroAuthConfig(
-                url=URL("https://neu.ro"),
-                token="cluster_token",
-            ),
-            neuro_registry=DockerRegistryConfig(
-                url=URL("https://ghcr.io/neuro-inc"),
-                username="username",
-                password="password",
-                email="username@neu.ro",
-            ),
-            neuro_helm=HelmRegistryConfig(
-                url=URL("oci://neuro-inc.ghcr.io"),
-                username="username",
-                password="password",
-            ),
-            kubernetes=KubernetesCredentials(
-                url=URL("https://kubernetes"),
-                ca_data="k8s-ca-data",
-                token="k8s-token",
-            ),
-            grafana=GrafanaCredentials(
-                username="grafana-username",
-                password="grafana-password",
-            ),
-            prometheus=PrometheusCredentials(
-                username="prometheus-username",
-                password="prometheus-password",
-            ),
-            sentry=SentryCredentials(
-                client_key_id="key", public_dsn=URL("dsn"), sample_rate=0.2
-            ),
-            docker_hub=DockerRegistryConfig(
-                url=URL("https://index.docker.io/v1"),
-                username="test",
-                password="password",
-                email="test@neu.ro",
-            ),
-            minio=MinioCredentials(
-                username="test",
-                password="password",
-            ),
-            emc_ecs=EMCECSCredentials(
-                access_key_id="key_id",
-                secret_access_key="secret_key",
-                s3_endpoint=URL("https://emc-ecs.s3"),
-                management_endpoint=URL("https://emc-ecs.management"),
-                s3_assumable_role="s3-role",
-            ),
-            open_stack=OpenStackCredentials(
-                account_id="id",
-                password="password",
-                s3_endpoint=URL("https://os.s3"),
-                endpoint=URL("https://os.management"),
-                region_name="region",
-            ),
-        )
-
-    def test_create_minimal_credentials(
-        self, factory: EntityFactory, credentials: dict[str, Any]
-    ) -> None:
-        del credentials["kubernetes"]
-        del credentials["grafana"]
-        del credentials["prometheus"]
-        del credentials["sentry"]
-        del credentials["docker_hub"]
-        del credentials["minio"]
-        del credentials["emc_ecs"]
-        del credentials["open_stack"]
-        result = factory.create_credentials(credentials)
-
-        assert result == CredentialsConfig(
-            neuro=NeuroAuthConfig(
-                url=URL("https://neu.ro"),
-                token="cluster_token",
-            ),
-            neuro_registry=DockerRegistryConfig(
-                url=URL("https://ghcr.io/neuro-inc"),
-                username="username",
-                password="password",
-                email="username@neu.ro",
-            ),
-            neuro_helm=HelmRegistryConfig(
-                url=URL("oci://neuro-inc.ghcr.io"),
-                username="username",
-                password="password",
-            ),
-        )
-
-    def test_create_credentials__kubernetes_token(
-        self, factory: EntityFactory, credentials: dict[str, Any]
-    ) -> None:
-        result = factory.create_credentials(
-            {
-                **credentials,
-                "kubernetes": {
-                    "url": "https://kubernetes",
-                    "ca_data": "k8s-ca-data",
-                    "token": "k8s-token",
-                },
-            }
-        )
-
-        assert result
-        assert result.kubernetes == KubernetesCredentials(
-            url=URL("https://kubernetes"),
-            ca_data="k8s-ca-data",
-            token="k8s-token",
-        )
-
-    def test_create_credentials__kubernetes_client_cert(
-        self, factory: EntityFactory, credentials: dict[str, Any]
-    ) -> None:
-        result = factory.create_credentials(
-            {
-                **credentials,
-                "kubernetes": {
-                    "url": "https://kubernetes",
-                    "ca_data": "k8s-ca-data",
-                    "client_cert_data": "k8s-client-cert-data",
-                    "client_key_data": "k8s-client-key-data",
-                },
-            }
-        )
-
-        assert result
-        assert result.kubernetes == KubernetesCredentials(
-            url=URL("https://kubernetes"),
-            ca_data="k8s-ca-data",
-            client_cert_data="k8s-client-cert-data",
-            client_key_data="k8s-client-key-data",
         )
 
     def test_create_energy(self, factory: EntityFactory) -> None:
@@ -929,12 +678,9 @@ class TestPayloadFactory:
     def factory(self) -> PayloadFactory:
         return PayloadFactory()
 
-    def test_create_patch_cluster_request(
-        self, factory: PayloadFactory, credentials: CredentialsConfig
-    ) -> None:
+    def test_create_patch_cluster_request(self, factory: PayloadFactory) -> None:
         result = factory.create_patch_cluster_request(
             PatchClusterRequest(
-                credentials=credentials,
                 location="us",
                 logo_url=URL("https://logo"),
                 storage=StorageConfig(url=URL("https://storage-dev.neu.ro")),
@@ -942,17 +688,15 @@ class TestPayloadFactory:
                 orchestrator=PatchOrchestratorConfigRequest(),
                 monitoring=MonitoringConfig(url=URL("https://monitoring-dev.neu.ro")),
                 secrets=SecretsConfig(url=URL("https://secrets-dev.neu.ro")),
-                metrics=MetricsConfig(url=URL("https://metrics-dev.neu.ro")),
+                metrics=MetricsConfig(
+                    grafana_url=URL("https://grafana-dev.neu.ro"),
+                    prometheus_url=URL("https://prometheus-dev.neu.ro"),
+                ),
                 disks=DisksConfig(
                     url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user=1024
                 ),
                 buckets=BucketsConfig(
                     url=URL("https://buckets-dev.neu.ro"), disable_creation=True
-                ),
-                ingress=IngressConfig(acme_environment=ACMEEnvironment.PRODUCTION),
-                dns=DNSConfig(
-                    name="neu.ro",
-                    a_records=[ARecord(name="*.jobs-dev.neu.ro.", ips=["192.168.0.2"])],
                 ),
                 timezone=ZoneInfo("America/Los_Angeles"),
                 energy=EnergyConfig(co2_grams_eq_per_kwh=100),
@@ -966,7 +710,6 @@ class TestPayloadFactory:
         assert result == {
             "location": "us",
             "logo_url": "https://logo",
-            "credentials": mock.ANY,
             "storage": mock.ANY,
             "registry": mock.ANY,
             "orchestrator": mock.ANY,
@@ -975,8 +718,6 @@ class TestPayloadFactory:
             "metrics": mock.ANY,
             "disks": mock.ANY,
             "buckets": mock.ANY,
-            "ingress": mock.ANY,
-            "dns": mock.ANY,
             "timezone": "America/Los_Angeles",
             "energy": mock.ANY,
             "apps": mock.ANY,
@@ -1405,22 +1146,15 @@ class TestPayloadFactory:
 
     def test_create_metrics(self, factory: PayloadFactory) -> None:
         result = factory.create_metrics(
-            MetricsConfig(url=URL("https://metrics-dev.neu.ro"))
-        )
-
-        assert result == {"url": "https://metrics-dev.neu.ro"}
-
-    def test_create_dns(self, factory: PayloadFactory) -> None:
-        result = factory.create_dns(
-            DNSConfig(
-                name="neu.ro",
-                a_records=[ARecord(name="*.jobs-dev.neu.ro.", ips=["192.168.0.2"])],
+            MetricsConfig(
+                grafana_url=URL("https://grafana-dev.neu.ro"),
+                prometheus_url=URL("https://prometheus-dev.neu.ro"),
             )
         )
 
         assert result == {
-            "name": "neu.ro",
-            "a_records": [{"name": "*.jobs-dev.neu.ro.", "ips": ["192.168.0.2"]}],
+            "grafana_url": "https://grafana-dev.neu.ro",
+            "prometheus_url": "https://prometheus-dev.neu.ro",
         }
 
     def test_create_a_record_with_ips(self, factory: PayloadFactory) -> None:
@@ -1465,198 +1199,6 @@ class TestPayloadFactory:
         )
 
         assert result == {"url": "https://buckets-dev.neu.ro", "disable_creation": True}
-
-    def test_create_ingress(self, factory: PayloadFactory) -> None:
-        result = factory.create_ingress(
-            IngressConfig(
-                acme_environment=ACMEEnvironment.PRODUCTION,
-                additional_cors_origins=["https://custom.app"],
-            )
-        )
-
-        assert result == {
-            "acme_environment": "production",
-            "additional_cors_origins": ["https://custom.app"],
-        }
-
-    def test_create_ingress_defaults(self, factory: PayloadFactory) -> None:
-        result = factory.create_ingress(
-            IngressConfig(acme_environment=ACMEEnvironment.PRODUCTION)
-        )
-
-        assert result == {"acme_environment": "production"}
-
-    @pytest.fixture
-    def credentials(self) -> CredentialsConfig:
-        return CredentialsConfig(
-            neuro=NeuroAuthConfig(
-                url=URL("https://neu.ro"),
-                token="cluster_token",
-            ),
-            neuro_registry=DockerRegistryConfig(
-                url=URL("https://ghcr.io/neuro-inc"),
-                username="username",
-                password="password",
-                email="username@neu.ro",
-            ),
-            neuro_helm=HelmRegistryConfig(
-                url=URL("oci://neuro-inc.ghcr.io"),
-                username="username",
-                password="password",
-            ),
-            kubernetes=KubernetesCredentials(
-                url=URL("https://kubernetes"),
-                ca_data="k8s-ca-data",
-                token="k8s-token",
-            ),
-            grafana=GrafanaCredentials(
-                username="grafana-username",
-                password="grafana-password",
-            ),
-            prometheus=PrometheusCredentials(
-                username="prometheus-username",
-                password="prometheus-password",
-            ),
-            sentry=SentryCredentials(
-                client_key_id="key", public_dsn=URL("dsn"), sample_rate=0.2
-            ),
-            docker_hub=DockerRegistryConfig(
-                url=URL("https://index.docker.io/v1"),
-                username="test",
-                password="password",
-                email="test@neu.ro",
-            ),
-            minio=MinioCredentials(
-                username="test",
-                password="password",
-            ),
-            emc_ecs=EMCECSCredentials(
-                access_key_id="key_id",
-                secret_access_key="secret_key",
-                s3_endpoint=URL("https://emc-ecs.s3"),
-                management_endpoint=URL("https://emc-ecs.management"),
-                s3_assumable_role="s3-role",
-            ),
-            open_stack=OpenStackCredentials(
-                account_id="id",
-                password="password",
-                s3_endpoint=URL("https://os.s3"),
-                endpoint=URL("https://os.management"),
-                region_name="region",
-            ),
-        )
-
-    def test_create_credentials(
-        self, factory: PayloadFactory, credentials: CredentialsConfig
-    ) -> None:
-        result = factory.create_credentials(credentials)
-
-        assert result == {
-            "neuro": {"token": "cluster_token"},
-            "neuro_registry": {"username": "username", "password": "password"},
-            "neuro_helm": {"username": "username", "password": "password"},
-            "kubernetes": {
-                "url": "https://kubernetes",
-                "ca_data": "k8s-ca-data",
-                "token": "k8s-token",
-            },
-            "grafana": {
-                "username": "grafana-username",
-                "password": "grafana-password",
-            },
-            "prometheus": {
-                "username": "prometheus-username",
-                "password": "prometheus-password",
-            },
-            "sentry": {
-                "client_key_id": "key",
-                "public_dsn": "dsn",
-                "sample_rate": 0.2,
-            },
-            "docker_hub": {"username": "test", "password": "password"},
-            "minio": {
-                "username": "test",
-                "password": "password",
-            },
-            "emc_ecs": {
-                "access_key_id": "key_id",
-                "secret_access_key": "secret_key",
-                "s3_endpoint": "https://emc-ecs.s3",
-                "management_endpoint": "https://emc-ecs.management",
-                "s3_assumable_role": "s3-role",
-            },
-            "open_stack": {
-                "account_id": "id",
-                "password": "password",
-                "s3_endpoint": "https://os.s3",
-                "endpoint": "https://os.management",
-                "region_name": "region",
-            },
-        }
-
-    def test_create_minimal_credentials(
-        self, factory: PayloadFactory, credentials: CredentialsConfig
-    ) -> None:
-        credentials = replace(
-            credentials,
-            kubernetes=None,
-            grafana=None,
-            prometheus=None,
-            sentry=None,
-            docker_hub=None,
-            minio=None,
-            emc_ecs=None,
-            open_stack=None,
-        )
-        result = factory.create_credentials(credentials)
-
-        assert result == {
-            "neuro": {"token": "cluster_token"},
-            "neuro_registry": {"username": "username", "password": "password"},
-            "neuro_helm": {"username": "username", "password": "password"},
-        }
-
-    def test_create_credentials__kubernetes_token(
-        self, factory: PayloadFactory, credentials: CredentialsConfig
-    ) -> None:
-        result = factory.create_credentials(
-            replace(
-                credentials,
-                kubernetes=KubernetesCredentials(
-                    url=URL("https://kubernetes"),
-                    ca_data="k8s-ca-data",
-                    token="k8s-token",
-                ),
-            )
-        )
-
-        assert result["kubernetes"] == {
-            "url": "https://kubernetes",
-            "ca_data": "k8s-ca-data",
-            "token": "k8s-token",
-        }
-
-    def test_create_credentials__kubernetes_client_cert(
-        self, factory: PayloadFactory, credentials: CredentialsConfig
-    ) -> None:
-        result = factory.create_credentials(
-            replace(
-                credentials,
-                kubernetes=KubernetesCredentials(
-                    url=URL("https://kubernetes"),
-                    ca_data="k8s-ca-data",
-                    client_cert_data="k8s-client-cert-data",
-                    client_key_data="k8s-client-key-data",
-                ),
-            )
-        )
-
-        assert result["kubernetes"] == {
-            "url": "https://kubernetes",
-            "ca_data": "k8s-ca-data",
-            "client_cert_data": "k8s-client-cert-data",
-            "client_key_data": "k8s-client-key-data",
-        }
 
     def test_create_energy(self, factory: PayloadFactory) -> None:
         timezone = ZoneInfo("America/Los_Angeles")
