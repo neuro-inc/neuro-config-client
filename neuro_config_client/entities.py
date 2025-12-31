@@ -15,97 +15,9 @@ else:
     # why not backports.zoneinfo: https://github.com/pganssle/zoneinfo/issues/125
     from backports.zoneinfo._zoneinfo import ZoneInfo
 
+UTC = ZoneInfo("UTC")
 
-@dataclass(frozen=True)
-class KubernetesCredentials:
-    url: URL
-    ca_data: str
-    token: str | None = field(repr=False, default=None)
-    client_key_data: str | None = field(repr=False, default=None)
-    client_cert_data: str | None = field(repr=False, default=None)
-
-
-@dataclass(frozen=True)
-class NeuroAuthConfig:
-    url: URL
-    token: str = field(repr=False)
-
-
-@dataclass(frozen=True)
-class HelmRegistryConfig:
-    url: URL
-    username: str | None = None
-    password: str | None = field(repr=False, default=None)
-
-
-@dataclass(frozen=True)
-class DockerRegistryConfig:
-    url: URL
-    username: str | None = None
-    password: str | None = field(repr=False, default=None)
-    email: str | None = None
-
-
-@dataclass(frozen=True)
-class GrafanaCredentials:
-    username: str
-    password: str = field(repr=False)
-
-
-@dataclass(frozen=True)
-class PrometheusCredentials:
-    username: str
-    password: str = field(repr=False)
-
-
-@dataclass(frozen=True)
-class SentryCredentials:
-    client_key_id: str
-    public_dsn: URL
-    sample_rate: float = 0.01
-
-
-@dataclass(frozen=True)
-class MinioCredentials:
-    username: str
-    password: str = field(repr=False)
-
-
-@dataclass(frozen=True)
-class EMCECSCredentials:
-    """
-    Credentials to EMC ECS (blob storage engine developed by vmware creators)
-    """
-
-    access_key_id: str
-    secret_access_key: str = field(repr=False)
-    s3_endpoint: URL
-    management_endpoint: URL
-    s3_assumable_role: str
-
-
-@dataclass(frozen=True)
-class OpenStackCredentials:
-    account_id: str
-    password: str = field(repr=False)
-    endpoint: URL
-    s3_endpoint: URL
-    region_name: str
-
-
-@dataclass(frozen=True)
-class CredentialsConfig:
-    neuro: NeuroAuthConfig
-    neuro_helm: HelmRegistryConfig
-    neuro_registry: DockerRegistryConfig
-    kubernetes: KubernetesCredentials | None = None
-    grafana: GrafanaCredentials | None = None
-    prometheus: PrometheusCredentials | None = None
-    sentry: SentryCredentials | None = None
-    docker_hub: DockerRegistryConfig | None = None
-    minio: MinioCredentials | None = None
-    emc_ecs: EMCECSCredentials | None = None
-    open_stack: OpenStackCredentials | None = None
+UNSET_DATETIME = datetime.min.replace(tzinfo=UTC)
 
 
 @dataclass(frozen=True)
@@ -140,7 +52,12 @@ class MonitoringConfig:
 
 
 @dataclass(frozen=True)
-class MetricsConfig:
+class GrafanaConfig:
+    url: URL
+
+
+@dataclass(frozen=True)
+class PrometheusConfig:
     url: URL
 
 
@@ -152,7 +69,7 @@ class SecretsConfig:
 @dataclass(frozen=True)
 class DisksConfig:
     url: URL
-    storage_limit_per_user: int
+    storage_limit_per_user: int = 500 * 2**30  # 500gb
 
 
 @dataclass(frozen=True)
@@ -168,7 +85,7 @@ class ACMEEnvironment(str, enum.Enum):
 
 @dataclass(frozen=True)
 class IngressConfig:
-    acme_environment: ACMEEnvironment
+    acme_environment: ACMEEnvironment = ACMEEnvironment.PRODUCTION
     default_cors_origins: Sequence[str] = ()
     additional_cors_origins: Sequence[str] = ()
 
@@ -303,7 +220,7 @@ class IdleJobConfig:
     node_selector: dict[str, str] = field(default_factory=dict)
 
 
-@dataclass
+@dataclass(frozen=True)
 class OrchestratorConfig:
     job_hostname_template: str
     job_fallback_hostname: str
@@ -362,9 +279,9 @@ class ARecord:
     evaluate_target_health: bool = False
 
 
-@dataclass
+@dataclass(frozen=True)
 class DNSConfig:
-    name: str
+    name: str = "not-used"
     a_records: Sequence[ARecord] = ()
 
 
@@ -427,7 +344,7 @@ class EnergyConfig:
         return (
             self._get_schedule(name)
             or self._get_schedule(DEFAULT_ENERGY_SCHEDULE_NAME)
-            or EnergySchedule.create_default(timezone=ZoneInfo("UTC"))
+            or EnergySchedule.create_default(timezone=UTC)
         )
 
     def _get_schedule(self, name: str) -> EnergySchedule | None:
@@ -450,40 +367,40 @@ class AppsConfig:
 @dataclass(frozen=True)
 class Cluster:
     name: str
-    created_at: datetime
     orchestrator: OrchestratorConfig
     storage: StorageConfig
     registry: RegistryConfig
     monitoring: MonitoringConfig
     secrets: SecretsConfig
-    metrics: MetricsConfig
-    dns: DNSConfig
+    grafana: GrafanaConfig
+    prometheus: PrometheusConfig
     disks: DisksConfig
     buckets: BucketsConfig
-    ingress: IngressConfig
-    energy: EnergyConfig
     apps: AppsConfig
+    dns: DNSConfig = DNSConfig()
+    ingress: IngressConfig = IngressConfig()
+    energy: EnergyConfig = EnergyConfig()
     location: str | None = None
     logo_url: URL | None = None
-    timezone: tzinfo = ZoneInfo("UTC")
-    credentials: CredentialsConfig | None = None
+    timezone: tzinfo = UTC
+    created_at: datetime = field(
+        default=datetime.min.replace(tzinfo=UTC), compare=False
+    )
 
 
 @dataclass(frozen=True)
 class PatchClusterRequest:
     location: str | None = None
     logo_url: URL | None = None
-    credentials: CredentialsConfig | None = None
     storage: StorageConfig | None = None
     registry: RegistryConfig | None = None
     orchestrator: PatchOrchestratorConfigRequest | None = None
     monitoring: MonitoringConfig | None = None
     secrets: SecretsConfig | None = None
-    metrics: MetricsConfig | None = None
+    grafana: GrafanaConfig | None = None
+    prometheus: PrometheusConfig | None = None
     disks: DisksConfig | None = None
     buckets: BucketsConfig | None = None
-    ingress: IngressConfig | None = None
-    dns: DNSConfig | None = None
     timezone: ZoneInfo | None = None
     energy: EnergyConfig | None = None
     apps: AppsConfig | None = None
