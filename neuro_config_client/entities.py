@@ -52,9 +52,13 @@ class MonitoringConfig:
 
 
 @dataclass(frozen=True)
-class MetricsConfig:
-    grafana_url: URL
-    prometheus_url: URL
+class GrafanaConfig:
+    url: URL
+
+
+@dataclass(frozen=True)
+class PrometheusConfig:
+    url: URL
 
 
 @dataclass(frozen=True)
@@ -368,7 +372,8 @@ class Cluster:
     registry: RegistryConfig
     monitoring: MonitoringConfig
     secrets: SecretsConfig
-    metrics: MetricsConfig
+    grafana: GrafanaConfig
+    prometheus: PrometheusConfig
     disks: DisksConfig
     buckets: BucketsConfig
     apps: AppsConfig
@@ -392,7 +397,8 @@ class PatchClusterRequest:
     orchestrator: PatchOrchestratorConfigRequest | None = None
     monitoring: MonitoringConfig | None = None
     secrets: SecretsConfig | None = None
-    metrics: MetricsConfig | None = None
+    grafana: GrafanaConfig | None = None
+    prometheus: PrometheusConfig | None = None
     disks: DisksConfig | None = None
     buckets: BucketsConfig | None = None
     timezone: ZoneInfo | None = None

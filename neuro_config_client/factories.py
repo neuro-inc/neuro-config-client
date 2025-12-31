@@ -20,16 +20,17 @@ from .entities import (
     EnergySchedule,
     EnergySchedulePeriod,
     GPUPreset,
+    GrafanaConfig,
     IdleJobConfig,
     IntelGPU,
     IntelGPUPreset,
-    MetricsConfig,
     MonitoringConfig,
     NvidiaGPU,
     NvidiaGPUPreset,
     OrchestratorConfig,
     PatchClusterRequest,
     PatchOrchestratorConfigRequest,
+    PrometheusConfig,
     RegistryConfig,
     ResourcePoolType,
     ResourcePreset,
@@ -60,7 +61,10 @@ class EntityFactory:
             registry=self.create_registry(payload["registry"]),
             monitoring=self.create_monitoring(payload["monitoring"]),
             secrets=self.create_secrets(payload["secrets"]),
-            metrics=self.create_metrics(payload["metrics"]),
+            grafana=self.create_grafana(payload.get("grafana") or payload["metrics"]),
+            prometheus=self.create_prometheus(
+                payload.get("prometheus") or payload["metrics"]
+            ),
             disks=self.create_disks(payload["disks"]),
             buckets=self.create_buckets(payload["buckets"]),
             created_at=datetime.fromisoformat(payload["created_at"]),
@@ -285,14 +289,12 @@ class EntityFactory:
     def create_secrets(self, payload: dict[str, Any]) -> SecretsConfig:
         return SecretsConfig(url=URL(payload["url"]))
 
-    def create_metrics(self, payload: dict[str, Any]) -> MetricsConfig:
-        grafana_url = payload.get("grafana_url") or payload["url"]
-        prometheus_url = payload.get("prometheus_url")
-        if not prometheus_url:
-            prometheus_url = grafana_url.replace("grafana", "prometheus")
-        return MetricsConfig(
-            grafana_url=URL(grafana_url),
-            prometheus_url=URL(prometheus_url),
+    def create_grafana(self, payload: dict[str, Any]) -> GrafanaConfig:
+        return GrafanaConfig(url=URL(payload["url"]))
+
+    def create_prometheus(self, payload: dict[str, Any]) -> PrometheusConfig:
+        return PrometheusConfig(
+            url=URL(payload["url"].replace("grafana", "prometheus"))
         )
 
     def create_a_record(self, payload: dict[str, Any]) -> ARecord:
@@ -389,8 +391,10 @@ class PayloadFactory:
             payload["monitoring"] = cls.create_monitoring(request.monitoring)
         if request.secrets:
             payload["secrets"] = cls.create_secrets(request.secrets)
-        if request.metrics:
-            payload["metrics"] = cls.create_metrics(request.metrics)
+        if request.grafana:
+            payload["grafana"] = cls.create_grafana(request.grafana)
+        if request.prometheus:
+            payload["prometheus"] = cls.create_prometheus(request.prometheus)
         if request.disks:
             payload["disks"] = cls.create_disks(request.disks)
         if request.buckets:
@@ -630,11 +634,12 @@ class PayloadFactory:
         return {"url": str(monitoring.url)}
 
     @classmethod
-    def create_metrics(cls, metrics: MetricsConfig) -> dict[str, Any]:
-        return {
-            "grafana_url": str(metrics.grafana_url),
-            "prometheus_url": str(metrics.prometheus_url),
-        }
+    def create_grafana(cls, grafana: GrafanaConfig) -> dict[str, Any]:
+        return {"url": str(grafana.url)}
+
+    @classmethod
+    def create_prometheus(cls, prometheus: PrometheusConfig) -> dict[str, Any]:
+        return {"url": str(prometheus.url)}
 
     @classmethod
     def create_secrets(cls, secrets: SecretsConfig) -> dict[str, Any]:

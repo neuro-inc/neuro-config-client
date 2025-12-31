@@ -19,16 +19,17 @@ from neuro_config_client.entities import (
     EnergyConfig,
     EnergySchedule,
     EnergySchedulePeriod,
+    GrafanaConfig,
     IdleJobConfig,
     IntelGPU,
     IntelGPUPreset,
-    MetricsConfig,
     MonitoringConfig,
     NvidiaGPU,
     NvidiaGPUPreset,
     OrchestratorConfig,
     PatchClusterRequest,
     PatchOrchestratorConfigRequest,
+    PrometheusConfig,
     RegistryConfig,
     ResourcePoolType,
     ResourcePreset,
@@ -88,9 +89,10 @@ class TestEntityFactory:
                 },
                 "monitoring": {"url": "https://monitoring-dev.neu.ro"},
                 "secrets": {"url": "https://secrets-dev.neu.ro"},
-                "metrics": {"url": "https://secrets-dev.neu.ro"},
+                "grafana": {"url": "https://grafana-dev.neu.ro"},
+                "prometheus": {"url": "https://prometheus-dev.neu.ro"},
                 "disks": {
-                    "url": "https://secrets-dev.neu.ro",
+                    "url": "https://disks-dev.neu.ro",
                     "storage_limit_per_user": 1024,
                 },
                 "buckets": {
@@ -131,7 +133,8 @@ class TestEntityFactory:
         assert result.registry
         assert result.monitoring
         assert result.secrets
-        assert result.metrics
+        assert result.grafana
+        assert result.prometheus
         assert result.disks
         assert result.dns
         assert result.buckets
@@ -162,9 +165,10 @@ class TestEntityFactory:
                 },
                 "monitoring": {"url": "https://monitoring-dev.neu.ro"},
                 "secrets": {"url": "https://secrets-dev.neu.ro"},
-                "metrics": {"url": "https://secrets-dev.neu.ro"},
+                "grafana": {"url": "https://grafana-dev.neu.ro"},
+                "prometheus": {"url": "https://prometheus-dev.neu.ro"},
                 "disks": {
-                    "url": "https://secrets-dev.neu.ro",
+                    "url": "https://disks-dev.neu.ro",
                     "storage_limit_per_user": 1024,
                 },
                 "buckets": {
@@ -549,24 +553,23 @@ class TestEntityFactory:
 
         assert result == SecretsConfig(url=URL("https://secrets-dev.neu.ro"))
 
-    def test_create_metrics(self, factory: EntityFactory) -> None:
-        result = factory.create_metrics({"url": "https://grafana-dev.neu.ro"})
+    def test_create_grafana(self, factory: EntityFactory) -> None:
+        result = factory.create_grafana({"url": "https://grafana-dev.neu.ro"})
 
-        assert result == MetricsConfig(
-            grafana_url=URL("https://grafana-dev.neu.ro"),
-            prometheus_url=URL("https://prometheus-dev.neu.ro"),
+        assert result == GrafanaConfig(
+            url=URL("https://grafana-dev.neu.ro"),
         )
 
-        result = factory.create_metrics(
-            {
-                "grafana_url": "https://grafana-dev.neu.ro",
-                "prometheus_url": "https://prometheus-dev.neu.ro",
-            }
-        )
+    def test_create_prometheus(self, factory: EntityFactory) -> None:
+        result = factory.create_prometheus({"url": "https://prometheus-dev.neu.ro"})
 
-        assert result == MetricsConfig(
-            grafana_url=URL("https://grafana-dev.neu.ro"),
-            prometheus_url=URL("https://prometheus-dev.neu.ro"),
+        assert result == PrometheusConfig(
+            url=URL("https://prometheus-dev.neu.ro"),
+        )
+        result = factory.create_prometheus({"url": "https://grafana-dev.neu.ro"})
+
+        assert result == PrometheusConfig(
+            url=URL("https://prometheus-dev.neu.ro"),
         )
 
     def test_create_a_record_with_ips(self, factory: EntityFactory) -> None:
@@ -595,11 +598,11 @@ class TestEntityFactory:
 
     def test_create_disks(self, factory: EntityFactory) -> None:
         result = factory.create_disks(
-            {"url": "https://metrics-dev.neu.ro", "storage_limit_per_user": 1024}
+            {"url": "https://disks-dev.neu.ro", "storage_limit_per_user": 1024}
         )
 
         assert result == DisksConfig(
-            url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user=1024
+            url=URL("https://disks-dev.neu.ro"), storage_limit_per_user=1024
         )
 
     def test_create_buckets(self, factory: EntityFactory) -> None:
@@ -688,12 +691,14 @@ class TestPayloadFactory:
                 orchestrator=PatchOrchestratorConfigRequest(),
                 monitoring=MonitoringConfig(url=URL("https://monitoring-dev.neu.ro")),
                 secrets=SecretsConfig(url=URL("https://secrets-dev.neu.ro")),
-                metrics=MetricsConfig(
-                    grafana_url=URL("https://grafana-dev.neu.ro"),
-                    prometheus_url=URL("https://prometheus-dev.neu.ro"),
+                grafana=GrafanaConfig(
+                    url=URL("https://grafana-dev.neu.ro"),
+                ),
+                prometheus=PrometheusConfig(
+                    url=URL("https://prometheus-dev.neu.ro"),
                 ),
                 disks=DisksConfig(
-                    url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user=1024
+                    url=URL("https://disks-dev.neu.ro"), storage_limit_per_user=1024
                 ),
                 buckets=BucketsConfig(
                     url=URL("https://buckets-dev.neu.ro"), disable_creation=True
@@ -715,7 +720,8 @@ class TestPayloadFactory:
             "orchestrator": mock.ANY,
             "monitoring": mock.ANY,
             "secrets": mock.ANY,
-            "metrics": mock.ANY,
+            "grafana": mock.ANY,
+            "prometheus": mock.ANY,
             "disks": mock.ANY,
             "buckets": mock.ANY,
             "timezone": "America/Los_Angeles",
@@ -1144,17 +1150,26 @@ class TestPayloadFactory:
 
         assert result == {"url": "https://secrets-dev.neu.ro"}
 
-    def test_create_metrics(self, factory: PayloadFactory) -> None:
-        result = factory.create_metrics(
-            MetricsConfig(
-                grafana_url=URL("https://grafana-dev.neu.ro"),
-                prometheus_url=URL("https://prometheus-dev.neu.ro"),
+    def test_create_grafana(self, factory: PayloadFactory) -> None:
+        result = factory.create_grafana(
+            GrafanaConfig(
+                url=URL("https://grafana-dev.neu.ro"),
             )
         )
 
         assert result == {
-            "grafana_url": "https://grafana-dev.neu.ro",
-            "prometheus_url": "https://prometheus-dev.neu.ro",
+            "url": "https://grafana-dev.neu.ro",
+        }
+
+    def test_create_prometheus(self, factory: PayloadFactory) -> None:
+        result = factory.create_prometheus(
+            PrometheusConfig(
+                url=URL("https://prometheus-dev.neu.ro"),
+            )
+        )
+
+        assert result == {
+            "url": "https://prometheus-dev.neu.ro",
         }
 
     def test_create_a_record_with_ips(self, factory: PayloadFactory) -> None:
@@ -1184,12 +1199,12 @@ class TestPayloadFactory:
     def test_create_disks(self, factory: PayloadFactory) -> None:
         result = factory.create_disks(
             DisksConfig(
-                url=URL("https://metrics-dev.neu.ro"), storage_limit_per_user=1024
+                url=URL("https://disks-dev.neu.ro"), storage_limit_per_user=1024
             )
         )
 
         assert result == {
-            "url": "https://metrics-dev.neu.ro",
+            "url": "https://disks-dev.neu.ro",
             "storage_limit_per_user": 1024,
         }
 
