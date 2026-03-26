@@ -78,12 +78,11 @@ class ConfigClientBase:
     async def create_blank_cluster(
         self,
         name: str,
-        service_token: str,
         *,
         ignore_existing: bool = False,
         token: str | None = None,
     ) -> Cluster:
-        payload = {"name": name, "token": service_token}
+        payload = {"name": name}
         try:
             async with self._request(
                 "POST",
