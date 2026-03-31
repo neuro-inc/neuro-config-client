@@ -366,6 +366,7 @@ class EntityFactory:
         return AppsConfig(
             apps_hostname_templates=payload.get("apps_hostname_templates", []),
             app_proxy_url=URL(payload["app_proxy_url"]),
+            launchpad_use_subdomain=payload.get("launchpad_use_subdomain", False),
         )
 
 
@@ -704,4 +705,5 @@ class PayloadFactory:
         return {
             "apps_hostname_templates": apps.apps_hostname_templates,
             "app_proxy_url": str(apps.app_proxy_url),
+            "launchpad_use_subdomain": apps.launchpad_use_subdomain,
         }
