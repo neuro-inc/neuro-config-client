@@ -362,6 +362,7 @@ class EnergyConfig:
 class AppsConfig:
     apps_hostname_templates: list[str]
     app_proxy_url: URL
+    launchpad_use_subdomain: bool
 
 
 @dataclass(frozen=True)

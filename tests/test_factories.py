@@ -195,6 +195,7 @@ class TestEntityFactory:
                 "apps": {
                     "apps_hostname_templates": ["{app_name}.apps.default.org.neu.ro"],
                     "app_proxy_url": "outputs-proxy.apps.default.org.neu.ro",
+                    "launchpad_use_subdomain": True,
                 },
                 "created_at": str(datetime.now()),
             }
@@ -204,6 +205,11 @@ class TestEntityFactory:
         assert result.timezone == ZoneInfo("America/Los_Angeles")
         assert result.location == "us"
         assert result.logo_url == URL("https://logo")
+        assert result.apps == AppsConfig(
+            apps_hostname_templates=["{app_name}.apps.default.org.neu.ro"],
+            app_proxy_url=URL("outputs-proxy.apps.default.org.neu.ro"),
+            launchpad_use_subdomain=True,
+        )
 
     def test_create_cluster__invalid_timezone(self, factory: EntityFactory) -> None:
         with pytest.raises(ValueError, match="invalid timezone"):
@@ -660,6 +666,7 @@ class TestEntityFactory:
         return AppsConfig(
             apps_hostname_templates=["{app_name}.apps.default.org.neu.ro"],
             app_proxy_url=URL("outputs-proxy.apps.default.org.neu.ro"),
+            launchpad_use_subdomain=False,
         )
 
     @pytest.fixture
@@ -708,6 +715,7 @@ class TestPayloadFactory:
                 apps=AppsConfig(
                     apps_hostname_templates=["{app_name}.apps.default.org.neu.ro"],
                     app_proxy_url=URL("outputs-proxy.apps.default.org.neu.ro"),
+                    launchpad_use_subdomain=True,
                 ),
             )
         )
@@ -1256,6 +1264,7 @@ class TestPayloadFactory:
         return AppsConfig(
             apps_hostname_templates=["{app_name}.apps.default.org.neu.ro"],
             app_proxy_url=URL("outputs-proxy.apps.default.org.neu.ro"),
+            launchpad_use_subdomain=False,
         )
 
     def test_create_apps(self, factory: PayloadFactory, apps: AppsConfig) -> None:
@@ -1263,4 +1272,5 @@ class TestPayloadFactory:
         assert result == {
             "apps_hostname_templates": ["{app_name}.apps.default.org.neu.ro"],
             "app_proxy_url": "outputs-proxy.apps.default.org.neu.ro",
+            "launchpad_use_subdomain": False,
         }
